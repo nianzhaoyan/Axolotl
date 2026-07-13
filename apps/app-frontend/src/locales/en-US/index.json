@@ -134,6 +134,27 @@
   "app.appearance-settings.advanced-rendering.title": {
     "message": "Advanced rendering"
   },
+  "app.appearance-settings.accent-color.blue": {
+    "message": "Blue"
+  },
+  "app.appearance-settings.accent-color.description": {
+    "message": "Choose the color used for buttons, selections, and highlights."
+  },
+  "app.appearance-settings.accent-color.green": {
+    "message": "Green"
+  },
+  "app.appearance-settings.accent-color.orange": {
+    "message": "Orange"
+  },
+  "app.appearance-settings.accent-color.pink": {
+    "message": "Pink"
+  },
+  "app.appearance-settings.accent-color.purple": {
+    "message": "Purple"
+  },
+  "app.appearance-settings.accent-color.title": {
+    "message": "Accent color"
+  },
   "app.appearance-settings.color-theme.description": {
     "message": "Select your preferred color theme for Axolotl Launcher."
   },

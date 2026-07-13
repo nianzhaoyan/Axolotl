@@ -134,6 +134,27 @@
 	"app.appearance-settings.advanced-rendering.title": {
 		"message": "高级渲染"
 	},
+	"app.appearance-settings.accent-color.blue": {
+		"message": "蓝色"
+	},
+	"app.appearance-settings.accent-color.description": {
+		"message": "选择用于按钮、选中状态和高亮元素的颜色。"
+	},
+	"app.appearance-settings.accent-color.green": {
+		"message": "绿色"
+	},
+	"app.appearance-settings.accent-color.orange": {
+		"message": "橙色"
+	},
+	"app.appearance-settings.accent-color.pink": {
+		"message": "粉色"
+	},
+	"app.appearance-settings.accent-color.purple": {
+		"message": "紫色"
+	},
+	"app.appearance-settings.accent-color.title": {
+		"message": "强调色"
+	},
 	"app.appearance-settings.color-theme.description": {
 		"message": "为 Axolotl Launcher 选择偏好的色彩主题。"
 	},

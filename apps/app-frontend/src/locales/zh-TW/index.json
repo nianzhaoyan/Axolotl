@@ -65,6 +65,27 @@
   "app.appearance-settings.advanced-rendering.title": {
     "message": "進階繪製"
   },
+  "app.appearance-settings.accent-color.blue": {
+    "message": "藍色"
+  },
+  "app.appearance-settings.accent-color.description": {
+    "message": "選擇用於按鈕、選取狀態與醒目提示的顏色。"
+  },
+  "app.appearance-settings.accent-color.green": {
+    "message": "綠色"
+  },
+  "app.appearance-settings.accent-color.orange": {
+    "message": "橙色"
+  },
+  "app.appearance-settings.accent-color.pink": {
+    "message": "粉色"
+  },
+  "app.appearance-settings.accent-color.purple": {
+    "message": "紫色"
+  },
+  "app.appearance-settings.accent-color.title": {
+    "message": "強調色"
+  },
   "app.appearance-settings.color-theme.description": {
     "message": "請選擇你偏好的 Axolotl Launcher 色彩主題。"
   },

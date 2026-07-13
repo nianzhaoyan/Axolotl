@@ -158,7 +158,8 @@ type AppSettings = {
 	max_concurrent_downloads: number
 	max_concurrent_writes: number
 
-	theme: 'dark' | 'light' | 'oled'
+	theme: 'dark' | 'light' | 'oled' | 'system'
+	accent_color: 'pink' | 'orange' | 'green' | 'blue' | 'purple'
 	default_page: 'Home' | 'Library'
 	collapsed_navigation: boolean
 	advanced_rendering: boolean

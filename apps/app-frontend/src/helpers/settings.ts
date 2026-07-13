@@ -6,7 +6,7 @@
 import { invoke } from '@tauri-apps/api/core'
 
 import type { Hooks, MemorySettings, WindowSize } from '@/helpers/types'
-import type { ColorTheme, FeatureFlag } from '@/store/theme.ts'
+import type { AccentColor, ColorTheme, FeatureFlag } from '@/store/theme.ts'
 
 // Settings object
 /*
@@ -36,6 +36,7 @@ export type AppSettings = {
 	max_concurrent_writes: number
 
 	theme: ColorTheme
+	accent_color: AccentColor
 	locale: string
 	default_page: 'home' | 'library'
 	collapsed_navigation: boolean

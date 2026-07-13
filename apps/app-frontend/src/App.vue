@@ -313,6 +313,7 @@ async function setupApp() {
 	const {
 		native_decorations,
 		theme,
+		accent_color,
 		locale,
 		telemetry,
 		collapsed_navigation,
@@ -350,6 +351,7 @@ async function setupApp() {
 	if (os.value !== 'MacOS') await getCurrentWindow().setDecorations(native_decorations)
 
 	themeStore.setThemeState(theme)
+	themeStore.setAccentColor(accent_color)
 	themeStore.collapsedNavigation = collapsed_navigation
 	themeStore.advancedRendering = advanced_rendering
 	themeStore.hideNametagSkinsPage = hide_nametag_skins_page

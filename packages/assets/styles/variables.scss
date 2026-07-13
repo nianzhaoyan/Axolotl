@@ -72,6 +72,19 @@
 	--color-purple-950: #370368;
 	--color-purple: var(--color-purple-600);
 
+	--color-pink-50: #fdf2f8;
+	--color-pink-100: #fce7f3;
+	--color-pink-200: #fbcfe8;
+	--color-pink-300: #f9a8d4;
+	--color-pink-400: #f472b6;
+	--color-pink-500: #ec4899;
+	--color-pink-600: #db2777;
+	--color-pink-700: #be185d;
+	--color-pink-800: #9d174d;
+	--color-pink-900: #831843;
+	--color-pink-950: #500724;
+	--color-pink: var(--color-pink-600);
+
 	--color-gray-50: #f5f5f6;
 	--color-gray-100: #e5e5e8;
 	--color-gray-200: #cecfd3;
@@ -112,6 +125,7 @@
 	--color-green-highlight: rgba(0, 175, 92, 0.25);
 	--color-blue-highlight: rgba(31, 104, 192, 0.25);
 	--color-purple-highlight: rgba(142, 50, 243, 0.25);
+	--color-pink-highlight: rgba(219, 39, 119, 0.22);
 	--color-gray-highlight: rgba(89, 91, 97, 0.25);
 
 	--color-red-bg: rgba(203, 34, 69, 0.1);
@@ -119,6 +133,7 @@
 	--color-green-bg: rgba(0, 175, 92, 0.1);
 	--color-blue-bg: rgba(31, 104, 192, 0.1);
 	--color-purple-bg: rgba(142, 50, 243, 0.1);
+	--color-pink-bg: rgba(219, 39, 119, 0.1);
 
 	--color-brand: var(--color-green);
 	--color-brand-highlight: var(--color-green-highlight);
@@ -297,6 +312,19 @@ html {
 	--color-purple-950: #3d0566;
 	--color-purple: var(--color-purple-400);
 
+	--color-pink-50: #fdf2f8;
+	--color-pink-100: #fce7f3;
+	--color-pink-200: #fbcfe8;
+	--color-pink-300: #f9a8d4;
+	--color-pink-400: #f472b6;
+	--color-pink-500: #ec4899;
+	--color-pink-600: #db2777;
+	--color-pink-700: #be185d;
+	--color-pink-800: #9d174d;
+	--color-pink-900: #831843;
+	--color-pink-950: #500724;
+	--color-pink: var(--color-pink-400);
+
 	--color-gray-50: #f5f7f8;
 	--color-gray-100: #edeff2;
 	--color-gray-200: #dfe2e6;
@@ -337,6 +365,7 @@ html {
 	--color-green-highlight: rgba(27, 217, 106, 0.25);
 	--color-blue-highlight: rgba(79, 156, 255, 0.25);
 	--color-purple-highlight: rgba(199, 138, 255, 0.25);
+	--color-pink-highlight: rgba(244, 114, 182, 0.25);
 	--color-gray-highlight: rgba(159, 164, 179, 0.25);
 
 	--color-red-bg: rgba(255, 73, 110, 0.2);
@@ -344,6 +373,7 @@ html {
 	--color-green-bg: rgba(27, 217, 106, 0.2);
 	--color-blue-bg: rgba(79, 156, 255, 0.2);
 	--color-purple-bg: rgba(199, 138, 255, 0.2);
+	--color-pink-bg: rgba(244, 114, 182, 0.2);
 
 	--color-brand: var(--color-green);
 	--color-brand-highlight: rgba(27, 217, 106, 0.25);
@@ -419,6 +449,61 @@ html {
 	);
 
 	--color-gradient-button-bg: linear-gradient(180deg, #1b1b20 0%, #25262b 100%);
+}
+
+:is(.accent-pink, .accent-orange, .accent-green, .accent-blue, .accent-purple) {
+	--color-focus-ring: var(--color-brand);
+	--brand-gradient-bg: linear-gradient(
+		0deg,
+		color-mix(in srgb, var(--color-brand) 14%, transparent) 0%,
+		color-mix(in srgb, var(--color-brand) 9%, transparent) 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		color-mix(in srgb, var(--color-brand) 18%, var(--surface-1)) 0%,
+		color-mix(in srgb, var(--color-brand) 11%, var(--surface-1)) 100%
+	);
+	--brand-gradient-border: color-mix(in srgb, var(--color-brand) 16%, transparent);
+	--brand-gradient-fade-out-color: linear-gradient(
+		to bottom,
+		transparent 0%,
+		color-mix(in srgb, var(--color-brand) 10%, var(--surface-1)) 78%
+	);
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		color-mix(in srgb, var(--color-brand) 68%, white) 100%
+	);
+}
+
+.accent-pink {
+	--color-brand: var(--color-pink);
+	--color-brand-highlight: var(--color-pink-highlight);
+	--color-brand-shadow: color-mix(in srgb, var(--color-pink) 68%, transparent);
+}
+
+.accent-orange {
+	--color-brand: var(--color-orange);
+	--color-brand-highlight: var(--color-orange-highlight);
+	--color-brand-shadow: color-mix(in srgb, var(--color-orange) 68%, transparent);
+}
+
+.accent-green {
+	--color-brand: var(--color-green);
+	--color-brand-highlight: var(--color-green-highlight);
+	--color-brand-shadow: color-mix(in srgb, var(--color-green) 68%, transparent);
+}
+
+.accent-blue {
+	--color-brand: var(--color-blue);
+	--color-brand-highlight: var(--color-blue-highlight);
+	--color-brand-shadow: color-mix(in srgb, var(--color-blue) 68%, transparent);
+}
+
+.accent-purple {
+	--color-brand: var(--color-purple);
+	--color-brand-highlight: var(--color-purple-highlight);
+	--color-brand-shadow: color-mix(in srgb, var(--color-purple) 68%, transparent);
 }
 
 .retro-mode {

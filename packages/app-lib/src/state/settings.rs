@@ -12,6 +12,7 @@ pub struct Settings {
     pub max_concurrent_writes: usize,
 
     pub theme: Theme,
+    pub accent_color: AccentColor,
     pub locale: String,
     pub default_page: DefaultPage,
     pub collapsed_navigation: bool,
@@ -85,7 +86,7 @@ impl Settings {
                 mc_memory_max, mc_force_fullscreen, mc_game_resolution_x, mc_game_resolution_y, hide_on_process_start,
                 hook_pre_launch, hook_wrapper, hook_post_exit,
                 custom_dir, prev_custom_dir, migrated, json(feature_flags) feature_flags, toggle_sidebar,
-                skipped_update, pending_update_toast_for_version, auto_download_updates,
+                skipped_update, pending_update_toast_for_version, auto_download_updates, accent_color,
                 version
             FROM settings
             "
@@ -97,6 +98,7 @@ impl Settings {
             max_concurrent_downloads: res.max_concurrent_downloads as usize,
             max_concurrent_writes: res.max_concurrent_writes as usize,
             theme: Theme::from_string(&res.theme),
+            accent_color: AccentColor::from_string(&res.accent_color),
             locale: res.locale,
             default_page: DefaultPage::from_string(&res.default_page),
             collapsed_navigation: res.collapsed_navigation == 1,
@@ -156,6 +158,7 @@ impl Settings {
         let max_concurrent_writes = self.max_concurrent_writes as i32;
         let max_concurrent_downloads = self.max_concurrent_downloads as i32;
         let theme = self.theme.as_str();
+        let accent_color = self.accent_color.as_str();
         let default_page = self.default_page.as_str();
         let extra_launch_args = serde_json::to_string(&self.extra_launch_args)?;
         let custom_env_vars = serde_json::to_string(&self.custom_env_vars)?;
@@ -206,8 +209,9 @@ impl Settings {
                 skipped_update = $30,
                 pending_update_toast_for_version = $31,
                 auto_download_updates = $32,
+                accent_color = $33,
 
-                version = $33
+                version = $34
             ",
             max_concurrent_writes,
             max_concurrent_downloads,
@@ -241,6 +245,7 @@ impl Settings {
             self.skipped_update,
             self.pending_update_toast_for_version,
             self.auto_download_updates,
+            accent_color,
             version,
         )
         .execute(exec)
@@ -319,6 +324,39 @@ impl Settings {
         }
 
         Ok(())
+    }
+}
+
+/// Accent color used for interactive controls and highlights.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AccentColor {
+    Pink,
+    Orange,
+    Green,
+    Blue,
+    Purple,
+}
+
+impl AccentColor {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AccentColor::Pink => "pink",
+            AccentColor::Orange => "orange",
+            AccentColor::Green => "green",
+            AccentColor::Blue => "blue",
+            AccentColor::Purple => "purple",
+        }
+    }
+
+    pub fn from_string(string: &str) -> AccentColor {
+        match string {
+            "orange" => AccentColor::Orange,
+            "green" => AccentColor::Green,
+            "blue" => AccentColor::Blue,
+            "purple" => AccentColor::Purple,
+            _ => AccentColor::Pink,
+        }
     }
 }
 
