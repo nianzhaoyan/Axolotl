@@ -161,6 +161,36 @@
   "app.appearance-settings.color-theme.title": {
     "message": "Color theme"
   },
+  "app.appearance-settings.custom-background.blur": {
+    "message": "Background blur"
+  },
+  "app.appearance-settings.custom-background.blur-description": {
+    "message": "Soften image details to keep launcher content easy to read."
+  },
+  "app.appearance-settings.custom-background.choose": {
+    "message": "Choose image"
+  },
+  "app.appearance-settings.custom-background.description": {
+    "message": "Choose a custom image and fine-tune how it blends with the launcher interface."
+  },
+  "app.appearance-settings.custom-background.empty": {
+    "message": "No custom background selected"
+  },
+  "app.appearance-settings.custom-background.opacity": {
+    "message": "Background visibility"
+  },
+  "app.appearance-settings.custom-background.opacity-description": {
+    "message": "Control how strongly the image shows through the interface."
+  },
+  "app.appearance-settings.custom-background.remove": {
+    "message": "Remove"
+  },
+  "app.appearance-settings.custom-background.replace": {
+    "message": "Replace image"
+  },
+  "app.appearance-settings.custom-background.title": {
+    "message": "Launcher background"
+  },
   "app.appearance-settings.default-landing-page.description": {
     "message": "Change the page to which the launcher opens on."
   },
@@ -608,6 +638,9 @@
   "app.instance.never-played": {
     "message": "Never played"
   },
+  "app.instance.offline-installed-only": {
+    "message": "Offline mode can only launch fully downloaded instances."
+  },
   "app.instance.played": {
     "message": "Played {time}"
   },
@@ -637,9 +670,6 @@
   },
   "app.instance.screenshots.empty-title": {
     "message": "No screenshots yet"
-  },
-  "app.instance.offline-installed-only": {
-    "message": "Offline mode can only launch fully downloaded instances."
   },
   "app.instance.screenshots.loading-failed": {
     "message": "Could not load screenshots"
@@ -1790,6 +1820,12 @@
   "minecraft-account.not-signed-in": {
     "message": "Not signed in"
   },
+  "minecraft-account.offline-mode": {
+    "message": "Offline mode"
+  },
+  "minecraft-account.offline-mode.description": {
+    "message": "Only offline accounts are available. You can launch fully downloaded instances."
+  },
   "minecraft-account.offline-account": {
     "message": "Offline Minecraft account"
   },
@@ -1819,12 +1855,6 @@
   },
   "minecraft-account.select-account": {
     "message": "Select account"
-  },
-  "minecraft-account.offline-mode": {
-    "message": "Offline mode"
-  },
-  "minecraft-account.offline-mode.description": {
-    "message": "Only offline accounts are available. You can launch fully downloaded instances."
   },
   "minecraft-account.sign-in": {
     "message": "Sign in to Minecraft"

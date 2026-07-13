@@ -165,6 +165,9 @@ type AppSettings = {
 	collapsed_navigation: boolean
 	advanced_rendering: boolean
 	native_decorations: boolean
+	custom_background_path: string | null
+	custom_background_blur: number
+	custom_background_opacity: number
 	worlds_in_home: boolean
 
 	telemetry: boolean

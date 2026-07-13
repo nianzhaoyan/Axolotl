@@ -44,6 +44,9 @@ export type AppSettings = {
 	advanced_rendering: boolean
 	native_decorations: boolean
 	toggle_sidebar: boolean
+	custom_background_path: string | null
+	custom_background_blur: number
+	custom_background_opacity: number
 
 	telemetry: boolean
 	discord_rpc: boolean

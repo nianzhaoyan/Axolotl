@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            SELECT\n                max_concurrent_writes, max_concurrent_downloads,\n                theme, locale, default_page, collapsed_navigation, hide_nametag_skins_page, advanced_rendering, native_decorations,\n                discord_rpc, developer_mode, telemetry, personalized_ads,\n                onboarded,\n                json(extra_launch_args) extra_launch_args, json(custom_env_vars) custom_env_vars,\n                mc_memory_max, mc_force_fullscreen, mc_game_resolution_x, mc_game_resolution_y, hide_on_process_start,\n                hook_pre_launch, hook_wrapper, hook_post_exit,\n                custom_dir, prev_custom_dir, migrated, json(feature_flags) feature_flags, toggle_sidebar,\n                skipped_update, pending_update_toast_for_version, auto_download_updates, accent_color,\n                version\n            FROM settings\n            ",
+  "query": "\n            SELECT\n                max_concurrent_writes, max_concurrent_downloads,\n                theme, locale, default_page, collapsed_navigation, hide_nametag_skins_page, advanced_rendering, native_decorations,\n                discord_rpc, developer_mode, telemetry, personalized_ads,\n                onboarded,\n                json(extra_launch_args) extra_launch_args, json(custom_env_vars) custom_env_vars,\n                mc_memory_max, mc_force_fullscreen, mc_game_resolution_x, mc_game_resolution_y, hide_on_process_start,\n                hook_pre_launch, hook_wrapper, hook_post_exit,\n                custom_dir, prev_custom_dir, migrated, json(feature_flags) feature_flags, toggle_sidebar,\n                skipped_update, pending_update_toast_for_version, auto_download_updates, accent_color,\n                custom_background_path, custom_background_blur, custom_background_opacity,\n                version\n            FROM settings\n            ",
   "describe": {
     "columns": [
       {
@@ -169,8 +169,23 @@
         "type_info": "Text"
       },
       {
-        "name": "version",
+        "name": "custom_background_path",
         "ordinal": 33,
+        "type_info": "Text"
+      },
+      {
+        "name": "custom_background_blur",
+        "ordinal": 34,
+        "type_info": "Integer"
+      },
+      {
+        "name": "custom_background_opacity",
+        "ordinal": 35,
+        "type_info": "Integer"
+      },
+      {
+        "name": "version",
+        "ordinal": 36,
         "type_info": "Integer"
       }
     ],
@@ -211,8 +226,11 @@
       true,
       true,
       false,
+      true,
+      false,
+      false,
       false
     ]
   },
-  "hash": "ea04742e18c02b2a7a86dc3b4ca0f01132eecba2708c3a9fca69e673d6c61bbb"
+  "hash": "2222b0c8ca3fafb78069c0f92c1ba3aebd08fb1d23be0d3fb81c5d42d3b3c705"
 }

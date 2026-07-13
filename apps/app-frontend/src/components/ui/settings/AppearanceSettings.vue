@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { CheckIcon } from '@modrinth/assets'
+import { CheckIcon, ImageIcon, TrashIcon, UploadIcon } from '@modrinth/assets'
 import {
+	ButtonStyled,
 	Combobox,
 	defineMessages,
+	injectNotificationManager,
 	type MessageDescriptor,
+	Slider,
 	ThemeSelector,
 	Toggle,
 	useVIntl,
 } from '@modrinth/ui'
-import { ref, watch } from 'vue'
+import { convertFileSrc } from '@tauri-apps/api/core'
+import { appDataDir, join } from '@tauri-apps/api/path'
+import { open } from '@tauri-apps/plugin-dialog'
+import { exists, mkdir, readFile, remove, writeFile } from '@tauri-apps/plugin-fs'
+import { computed, ref, watch } from 'vue'
 
 import { get, set } from '@/helpers/settings.ts'
 import { getOS } from '@/helpers/utils'
@@ -17,6 +24,7 @@ import type { AccentColor, ColorTheme, FeatureFlag } from '@/store/theme.ts'
 
 const themeStore = useTheming()
 const { formatMessage } = useVIntl()
+const { handleError } = injectNotificationManager()
 
 const worldsInHomeFlag: FeatureFlag = 'worlds_in_home'
 const skipNonEssentialWarningsFlag: FeatureFlag = 'skip_non_essential_warnings'
@@ -59,6 +67,47 @@ const messages = defineMessages({
 	accentColorPurple: {
 		id: 'app.appearance-settings.accent-color.purple',
 		defaultMessage: 'Purple',
+	},
+	customBackgroundTitle: {
+		id: 'app.appearance-settings.custom-background.title',
+		defaultMessage: 'Launcher background',
+	},
+	customBackgroundDescription: {
+		id: 'app.appearance-settings.custom-background.description',
+		defaultMessage:
+			'Choose a custom image and fine-tune how it blends with the launcher interface.',
+	},
+	customBackgroundEmpty: {
+		id: 'app.appearance-settings.custom-background.empty',
+		defaultMessage: 'No custom background selected',
+	},
+	customBackgroundChoose: {
+		id: 'app.appearance-settings.custom-background.choose',
+		defaultMessage: 'Choose image',
+	},
+	customBackgroundReplace: {
+		id: 'app.appearance-settings.custom-background.replace',
+		defaultMessage: 'Replace image',
+	},
+	customBackgroundRemove: {
+		id: 'app.appearance-settings.custom-background.remove',
+		defaultMessage: 'Remove',
+	},
+	customBackgroundBlur: {
+		id: 'app.appearance-settings.custom-background.blur',
+		defaultMessage: 'Background blur',
+	},
+	customBackgroundBlurDescription: {
+		id: 'app.appearance-settings.custom-background.blur-description',
+		defaultMessage: 'Soften image details to keep launcher content easy to read.',
+	},
+	customBackgroundOpacity: {
+		id: 'app.appearance-settings.custom-background.opacity',
+		defaultMessage: 'Background visibility',
+	},
+	customBackgroundOpacityDescription: {
+		id: 'app.appearance-settings.custom-background.opacity-description',
+		defaultMessage: 'Control how strongly the image shows through the interface.',
 	},
 	advancedRenderingTitle: {
 		id: 'app.appearance-settings.advanced-rendering.title',
@@ -163,6 +212,11 @@ const messages = defineMessages({
 
 const os = ref(await getOS())
 const settings = ref(await get())
+const customBackgroundPreview = computed(() =>
+	settings.value.custom_background_path
+		? convertFileSrc(settings.value.custom_background_path)
+		: null,
+)
 
 const accentColorOptions: Array<{
 	value: AccentColor
@@ -175,6 +229,66 @@ const accentColorOptions: Array<{
 	{ value: 'blue', color: 'var(--color-blue)', label: messages.accentColorBlue },
 	{ value: 'purple', color: 'var(--color-purple)', label: messages.accentColorPurple },
 ]
+
+async function chooseCustomBackground() {
+	const selectedPath = await open({
+		multiple: false,
+		filters: [
+			{
+				name: 'Image',
+				extensions: ['png', 'jpeg', 'jpg', 'webp', 'gif', 'avif', 'bmp'],
+			},
+		],
+	})
+
+	if (!selectedPath || Array.isArray(selectedPath)) return
+
+	try {
+		const extension = selectedPath.split('.').pop()?.toLowerCase() ?? 'png'
+		const backgroundDirectory = await join(await appDataDir(), 'backgrounds')
+		const storedPath = await join(backgroundDirectory, `launcher-background.${extension}`)
+		const previousPath = settings.value.custom_background_path
+
+		await mkdir(backgroundDirectory, { recursive: true })
+		await writeFile(storedPath, await readFile(selectedPath))
+
+		if (previousPath && previousPath !== storedPath && (await exists(previousPath))) {
+			await remove(previousPath)
+		}
+
+		settings.value.custom_background_path = storedPath
+	} catch (error) {
+		handleError(error)
+	}
+}
+
+async function removeCustomBackground() {
+	const backgroundPath = settings.value.custom_background_path
+	settings.value.custom_background_path = null
+
+	if (!backgroundPath) return
+
+	try {
+		if (await exists(backgroundPath)) await remove(backgroundPath)
+	} catch (error) {
+		handleError(error)
+	}
+}
+
+watch(
+	() =>
+		[
+			settings.value.custom_background_path,
+			settings.value.custom_background_blur,
+			settings.value.custom_background_opacity,
+		] as const,
+	([path, blur, opacity]) => {
+		themeStore.customBackgroundPath = path
+		themeStore.customBackgroundBlur = blur
+		themeStore.customBackgroundOpacity = opacity
+	},
+	{ immediate: true },
+)
 
 watch(
 	settings,
@@ -242,6 +356,93 @@ watch(
 					class="ml-auto size-4 shrink-0"
 				/>
 			</button>
+		</div>
+	</div>
+
+	<div class="mt-6">
+		<h2 class="m-0 text-lg font-semibold text-contrast">
+			{{ formatMessage(messages.customBackgroundTitle) }}
+		</h2>
+		<p class="m-0 mt-1">{{ formatMessage(messages.customBackgroundDescription) }}</p>
+
+		<div
+			class="relative mt-3 h-44 overflow-hidden rounded-2xl border border-solid border-divider bg-bg"
+		>
+			<div
+				v-if="customBackgroundPreview"
+				class="absolute -inset-10 bg-cover bg-center"
+				:style="{
+					backgroundImage: `url(&quot;${customBackgroundPreview}&quot;)`,
+					filter: `blur(${settings.custom_background_blur}px)`,
+					opacity: settings.custom_background_opacity / 100,
+				}"
+			/>
+			<div class="absolute inset-0 bg-bg/35" />
+			<div class="relative flex h-full items-center justify-center">
+				<div
+					v-if="!customBackgroundPreview"
+					class="flex flex-col items-center gap-2 text-secondary"
+				>
+					<ImageIcon class="size-8" />
+					<span class="font-semibold">{{ formatMessage(messages.customBackgroundEmpty) }}</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-3 flex flex-wrap gap-2">
+			<ButtonStyled>
+				<button type="button" @click="chooseCustomBackground">
+					<UploadIcon />
+					{{
+						formatMessage(
+							customBackgroundPreview
+								? messages.customBackgroundReplace
+								: messages.customBackgroundChoose,
+						)
+					}}
+				</button>
+			</ButtonStyled>
+			<ButtonStyled v-if="customBackgroundPreview" color="red" type="outlined">
+				<button type="button" @click="removeCustomBackground">
+					<TrashIcon />
+					{{ formatMessage(messages.customBackgroundRemove) }}
+				</button>
+			</ButtonStyled>
+		</div>
+
+		<div v-if="customBackgroundPreview" class="mt-5 grid gap-5 lg:grid-cols-2">
+			<div class="flex flex-col gap-2">
+				<h3 class="m-0 font-semibold text-contrast">
+					{{ formatMessage(messages.customBackgroundBlur) }}
+				</h3>
+				<Slider
+					id="custom-background-blur"
+					v-model="settings.custom_background_blur"
+					:min="0"
+					:max="40"
+					:step="1"
+					unit="px"
+				/>
+				<p class="m-0 text-sm text-secondary">
+					{{ formatMessage(messages.customBackgroundBlurDescription) }}
+				</p>
+			</div>
+			<div class="flex flex-col gap-2">
+				<h3 class="m-0 font-semibold text-contrast">
+					{{ formatMessage(messages.customBackgroundOpacity) }}
+				</h3>
+				<Slider
+					id="custom-background-opacity"
+					v-model="settings.custom_background_opacity"
+					:min="10"
+					:max="100"
+					:step="5"
+					unit="%"
+				/>
+				<p class="m-0 text-sm text-secondary">
+					{{ formatMessage(messages.customBackgroundOpacityDescription) }}
+				</p>
+			</div>
 		</div>
 	</div>
 

@@ -89,6 +89,7 @@
 		"security": {
 			"assetProtocol": {
 				"scope": [
+					"$APPDATA/backgrounds/*",
 					"$APPDATA/caches/icons/*",
 					"$APPCONFIG/caches/icons/*",
 					"$CONFIG/caches/icons/*",

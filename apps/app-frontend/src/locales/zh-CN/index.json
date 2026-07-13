@@ -161,6 +161,36 @@
 	"app.appearance-settings.color-theme.title": {
 		"message": "色彩主题"
 	},
+	"app.appearance-settings.custom-background.blur": {
+		"message": "背景模糊"
+	},
+	"app.appearance-settings.custom-background.blur-description": {
+		"message": "柔化图片细节，使启动器内容保持清晰易读。"
+	},
+	"app.appearance-settings.custom-background.choose": {
+		"message": "选择图片"
+	},
+	"app.appearance-settings.custom-background.description": {
+		"message": "选择自定义图片，并调整它与启动器界面的融合效果。"
+	},
+	"app.appearance-settings.custom-background.empty": {
+		"message": "尚未选择自定义背景"
+	},
+	"app.appearance-settings.custom-background.opacity": {
+		"message": "背景可见度"
+	},
+	"app.appearance-settings.custom-background.opacity-description": {
+		"message": "调整背景图片透过界面显示的强度。"
+	},
+	"app.appearance-settings.custom-background.remove": {
+		"message": "移除"
+	},
+	"app.appearance-settings.custom-background.replace": {
+		"message": "更换图片"
+	},
+	"app.appearance-settings.custom-background.title": {
+		"message": "启动器背景"
+	},
 	"app.appearance-settings.default-landing-page.description": {
 		"message": "更改启动器打开的页面。"
 	},
@@ -608,6 +638,9 @@
 	"app.instance.never-played": {
 		"message": "从未游玩"
 	},
+	"app.instance.offline-installed-only": {
+		"message": "离线模式只能启动已完整下载的实例。"
+	},
 	"app.instance.played": {
 		"message": "游玩于 {time}"
 	},
@@ -637,9 +670,6 @@
 	},
 	"app.instance.screenshots.empty-title": {
 		"message": "还没有截图"
-	},
-	"app.instance.offline-installed-only": {
-		"message": "离线模式只能启动已完整下载的实例。"
 	},
 	"app.instance.screenshots.loading-failed": {
 		"message": "无法加载截图"
@@ -1790,6 +1820,12 @@
 	"minecraft-account.not-signed-in": {
 		"message": "未登录"
 	},
+	"minecraft-account.offline-mode": {
+		"message": "离线模式"
+	},
+	"minecraft-account.offline-mode.description": {
+		"message": "仅可使用离线账号，并且只能启动已完整下载的实例。"
+	},
 	"minecraft-account.offline-account": {
 		"message": "Minecraft 离线账户"
 	},
@@ -1819,12 +1855,6 @@
 	},
 	"minecraft-account.select-account": {
 		"message": "选择账户"
-	},
-	"minecraft-account.offline-mode": {
-		"message": "离线模式"
-	},
-	"minecraft-account.offline-mode.description": {
-		"message": "仅可使用离线账号，并且只能启动已完整下载的实例。"
 	},
 	"minecraft-account.sign-in": {
 		"message": "登录 Minecraft"

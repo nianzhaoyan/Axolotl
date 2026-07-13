@@ -92,6 +92,36 @@
   "app.appearance-settings.color-theme.title": {
     "message": "色彩主題"
   },
+  "app.appearance-settings.custom-background.blur": {
+    "message": "背景模糊"
+  },
+  "app.appearance-settings.custom-background.blur-description": {
+    "message": "柔化圖片細節，讓啟動器內容保持清晰易讀。"
+  },
+  "app.appearance-settings.custom-background.choose": {
+    "message": "選擇圖片"
+  },
+  "app.appearance-settings.custom-background.description": {
+    "message": "選擇自訂圖片，並調整它與啟動器介面的融合效果。"
+  },
+  "app.appearance-settings.custom-background.empty": {
+    "message": "尚未選擇自訂背景"
+  },
+  "app.appearance-settings.custom-background.opacity": {
+    "message": "背景可見度"
+  },
+  "app.appearance-settings.custom-background.opacity-description": {
+    "message": "調整背景圖片透過介面顯示的強度。"
+  },
+  "app.appearance-settings.custom-background.remove": {
+    "message": "移除"
+  },
+  "app.appearance-settings.custom-background.replace": {
+    "message": "更換圖片"
+  },
+  "app.appearance-settings.custom-background.title": {
+    "message": "啟動器背景"
+  },
   "app.appearance-settings.default-landing-page.description": {
     "message": "變更啟動器開啟時的頁面。"
   },
@@ -293,6 +323,9 @@
   "app.instance.modpack-already-installed.body": {
     "message": "這個模組包已經安裝在實例「<bold>{instanceName}</bold>」中了，確定要再次安裝嗎？"
   },
+  "app.instance.offline-installed-only": {
+    "message": "離線模式只能啟動已完整下載的實例。"
+  },
   "app.instance.modpack-already-installed.create": {
     "message": "建立"
   },
@@ -322,9 +355,6 @@
   },
   "app.instance.mods.share-text": {
     "message": "快來看看我在模組包中使用的專案！"
-  },
-  "app.instance.offline-installed-only": {
-    "message": "離線模式只能啟動已完整下載的實例。"
   },
   "app.instance.mods.share-title": {
     "message": "分享模組包內容"
@@ -1010,6 +1040,12 @@
   "minecraft-account.not-signed-in": {
     "message": "未登入"
   },
+  "minecraft-account.offline-mode": {
+    "message": "離線模式"
+  },
+  "minecraft-account.offline-mode.description": {
+    "message": "僅可使用離線帳號，並且只能啟動已完整下載的實例。"
+  },
   "minecraft-account.remove-account": {
     "message": "移除帳號"
   },
@@ -1039,12 +1075,6 @@
   },
   "search.filter.locked.server-game-version.title": {
     "message": "遊戲版本由伺服器提供"
-  },
-  "minecraft-account.offline-mode": {
-    "message": "離線模式"
-  },
-  "minecraft-account.offline-mode.description": {
-    "message": "僅可使用離線帳號，並且只能啟動已完整下載的實例。"
   },
   "search.filter.locked.server-loader.title": {
     "message": "載入器由伺服器提供"

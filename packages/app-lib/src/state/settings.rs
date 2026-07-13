@@ -20,6 +20,9 @@ pub struct Settings {
     pub advanced_rendering: bool,
     pub native_decorations: bool,
     pub toggle_sidebar: bool,
+    pub custom_background_path: Option<String>,
+    pub custom_background_blur: u32,
+    pub custom_background_opacity: u32,
 
     pub telemetry: bool,
     pub discord_rpc: bool,
@@ -87,6 +90,7 @@ impl Settings {
                 hook_pre_launch, hook_wrapper, hook_post_exit,
                 custom_dir, prev_custom_dir, migrated, json(feature_flags) feature_flags, toggle_sidebar,
                 skipped_update, pending_update_toast_for_version, auto_download_updates, accent_color,
+                custom_background_path, custom_background_blur, custom_background_opacity,
                 version
             FROM settings
             "
@@ -106,6 +110,9 @@ impl Settings {
             advanced_rendering: res.advanced_rendering == 1,
             native_decorations: res.native_decorations == 1,
             toggle_sidebar: res.toggle_sidebar == 1,
+            custom_background_path: res.custom_background_path,
+            custom_background_blur: res.custom_background_blur as u32,
+            custom_background_opacity: res.custom_background_opacity as u32,
             telemetry: res.telemetry == 1,
             discord_rpc: res.discord_rpc == 1,
             developer_mode: res.developer_mode == 1,
@@ -163,6 +170,9 @@ impl Settings {
         let extra_launch_args = serde_json::to_string(&self.extra_launch_args)?;
         let custom_env_vars = serde_json::to_string(&self.custom_env_vars)?;
         let feature_flags = serde_json::to_string(&self.feature_flags)?;
+        let custom_background_blur = self.custom_background_blur.min(40) as i32;
+        let custom_background_opacity =
+            self.custom_background_opacity.clamp(10, 100) as i32;
         let version = self.version as i64;
 
         sqlx::query!(
@@ -210,8 +220,11 @@ impl Settings {
                 pending_update_toast_for_version = $31,
                 auto_download_updates = $32,
                 accent_color = $33,
+                custom_background_path = $34,
+                custom_background_blur = $35,
+                custom_background_opacity = $36,
 
-                version = $34
+                version = $37
             ",
             max_concurrent_writes,
             max_concurrent_downloads,
@@ -246,6 +259,9 @@ impl Settings {
             self.pending_update_toast_for_version,
             self.auto_download_updates,
             accent_color,
+            self.custom_background_path,
+            custom_background_blur,
+            custom_background_opacity,
             version,
         )
         .execute(exec)

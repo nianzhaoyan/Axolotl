@@ -33,6 +33,9 @@ export type ThemeStore = {
 	advancedRendering: boolean
 	hideNametagSkinsPage: boolean
 	toggleSidebar: boolean
+	customBackgroundPath: string | null
+	customBackgroundBlur: number
+	customBackgroundOpacity: number
 
 	devMode: boolean
 	featureFlags: FeatureFlags
@@ -44,6 +47,9 @@ export const DEFAULT_THEME_STORE: ThemeStore = {
 	advancedRendering: true,
 	hideNametagSkinsPage: false,
 	toggleSidebar: false,
+	customBackgroundPath: null,
+	customBackgroundBlur: 12,
+	customBackgroundOpacity: 65,
 
 	devMode: false,
 	featureFlags: DEFAULT_FEATURE_FLAGS,

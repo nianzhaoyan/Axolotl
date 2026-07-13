@@ -71,6 +71,12 @@
 			"identifier": "fs:scope",
 			"allow": [
 				{
+					"path": "$APPDATA/backgrounds"
+				},
+				{
+					"path": "$APPDATA/backgrounds/**"
+				},
+				{
 					"path": "$APPDATA/profiles"
 				},
 				{

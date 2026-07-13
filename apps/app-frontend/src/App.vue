@@ -41,7 +41,7 @@ import {
 } from '@modrinth/ui'
 import { useQuery } from '@tanstack/vue-query'
 import { getVersion } from '@tauri-apps/api/app'
-import { invoke } from '@tauri-apps/api/core'
+import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
@@ -132,6 +132,15 @@ const forceSidebar = computed(
 	() => route.path.startsWith('/browse') || route.path.startsWith('/project'),
 )
 const sidebarVisible = computed(() => sidebarToggled.value || forceSidebar.value)
+const customBackgroundStyle = computed(() => {
+	if (!themeStore.customBackgroundPath) return undefined
+
+	return {
+		backgroundImage: `url("${convertFileSrc(themeStore.customBackgroundPath)}")`,
+		filter: `blur(${themeStore.customBackgroundBlur}px)`,
+		opacity: themeStore.customBackgroundOpacity / 100,
+	}
+})
 
 const notificationManager = new AppNotificationManager()
 provideNotificationManager(notificationManager)
@@ -204,6 +213,7 @@ const isMaximized = ref(false)
 const authUnreachableDebug = useDebugLogger('AuthReachableChecker')
 const authServerQuery = useQuery({
 	queryKey: ['authServerReachability'],
+	enabled: computed(() => !browserOffline.value),
 	queryFn: async () => {
 		try {
 			await check_reachable()
@@ -219,7 +229,6 @@ const authServerQuery = useQuery({
 	retry: false,
 	refetchOnWindowFocus: false,
 })
-	enabled: computed(() => !browserOffline.value),
 
 const authUnreachable = computed(() => {
 	if (!offline.value && authServerQuery.isError.value && !authServerQuery.isLoading.value) {
@@ -324,6 +333,9 @@ async function setupApp() {
 		onboarded,
 		default_page,
 		toggle_sidebar,
+		custom_background_path,
+		custom_background_blur,
+		custom_background_opacity,
 		developer_mode,
 		feature_flags,
 		pending_update_toast_for_version,
@@ -362,6 +374,9 @@ async function setupApp() {
 	themeStore.advancedRendering = advanced_rendering
 	themeStore.hideNametagSkinsPage = hide_nametag_skins_page
 	themeStore.toggleSidebar = toggle_sidebar
+	themeStore.customBackgroundPath = custom_background_path
+	themeStore.customBackgroundBlur = custom_background_blur
+	themeStore.customBackgroundOpacity = custom_background_opacity
 	themeStore.devMode = developer_mode
 	themeStore.featureFlags = feature_flags
 	stateInitialized.value = true
@@ -503,6 +518,12 @@ watch(stateInitialized, (ready) => {
 	}
 })
 
+watch(offline, (isOffline) => {
+	if (isOffline && (route.path.startsWith('/browse') || route.path.startsWith('/project'))) {
+		void router.push('/library')
+	}
+})
+
 const error = useError()
 const errorModal = ref()
 const minecraftAuthErrorModal = ref()
@@ -518,12 +539,6 @@ const {
 	preferredLoader: contentInstallPreferredLoader,
 	preferredGameVersion: contentInstallPreferredGameVersion,
 	releaseGameVersions: contentInstallReleaseGameVersions,
-watch(offline, (isOffline) => {
-	if (isOffline && (route.path.startsWith('/browse') || route.path.startsWith('/project'))) {
-		void router.push('/library')
-	}
-})
-
 	projectInfo: contentInstallProjectInfo,
 	handleInstallToInstance,
 	handleCreateAndInstall,
@@ -653,6 +668,10 @@ command_listener(handleCommand)
 
 async function handleCommand(e) {
 	if (!e) return
+	if (offline.value && e.event !== 'LaunchInstance') {
+		await router.push('/library')
+		return
+	}
 
 	if (e.event === 'RunMRPack') {
 		// RunMRPack should directly install a local mrpack given a path
@@ -668,10 +687,6 @@ async function handleCommand(e) {
 				)
 			} else {
 				await install_create_modpack_instance(location).catch(handleError)
-	if (offline.value && e.event !== 'LaunchInstance') {
-		await router.push('/library')
-		return
-	}
 			}
 			trackEvent('InstanceCreate', {
 				source: 'CreationModalFileDrop',
@@ -1050,9 +1065,17 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	<SplashScreen v-if="!stateFailed" ref="splashScreen" data-tauri-drag-region />
 	<div id="teleports"></div>
 	<div
+		v-if="stateInitialized && themeStore.customBackgroundPath"
+		class="launcher-background"
+		:style="customBackgroundStyle"
+	/>
+	<div
 		v-if="stateInitialized"
 		class="app-grid-layout relative"
-		:class="{ 'disable-advanced-rendering': !themeStore.advancedRendering }"
+		:class="{
+			'disable-advanced-rendering': !themeStore.advancedRendering,
+			'has-custom-background': themeStore.customBackgroundPath,
+		}"
 	>
 		<Transition name="fade">
 			<div
@@ -1103,6 +1126,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<NavButton
 				v-tooltip.right="formatMessage(messages.discoverContent)"
 				to="/browse/modpack"
+				:disabled="offline"
 				:is-primary="() => route.path.startsWith('/browse') && !route.query.i"
 				:is-subpage="(route) => route.path.startsWith('/project') && !route.query.i"
 			>
@@ -1126,7 +1150,6 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			</NavButton>
 			<div class="h-px w-6 mx-auto my-2 bg-surface-5"></div>
 			<suspense>
-				:disabled="offline"
 				<QuickInstanceSwitcher />
 			</suspense>
 			<NavButton
@@ -1230,6 +1253,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 		:class="{
 			'sidebar-enabled': sidebarVisible,
 			'disable-advanced-rendering': !themeStore.advancedRendering,
+			'has-custom-background': themeStore.customBackgroundPath,
 		}"
 	>
 		<div class="app-viewport flex-grow router-view">
@@ -1366,6 +1390,29 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	height: 100vh;
 }
 
+.launcher-background {
+	position: fixed;
+	inset: -3rem;
+	z-index: 0;
+	pointer-events: none;
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	transition:
+		filter 180ms ease,
+		opacity 180ms ease;
+}
+
+.app-grid-layout.has-custom-background {
+	background-color: transparent;
+
+	.app-grid-navbar,
+	.app-grid-statusbar {
+		background-color: color-mix(in srgb, var(--color-raised-bg) 82%, transparent) !important;
+		backdrop-filter: blur(18px) saturate(120%);
+	}
+}
+
 .app-grid-navbar {
 	grid-area: nav;
 	position: relative;
@@ -1393,6 +1440,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	height: calc(100vh - var(--top-bar-height));
 	background-color: var(--color-bg);
 	border-top-left-radius: var(--radius-xl);
+	overflow: hidden;
 
 	display: grid;
 	grid-template-columns: 1fr 0px;
@@ -1400,6 +1448,20 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 
 	&.sidebar-enabled {
 		grid-template-columns: 1fr 300px;
+	}
+
+	&.has-custom-background {
+		background-color: color-mix(in srgb, var(--color-bg) 76%, transparent);
+		border-top-left-radius: 0;
+
+		&::before {
+			border: none;
+			box-shadow: none;
+		}
+
+		.loading-indicator-container {
+			border-top-left-radius: 0;
+		}
 	}
 }
 
