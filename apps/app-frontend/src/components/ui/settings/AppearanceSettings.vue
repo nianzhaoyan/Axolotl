@@ -109,6 +109,10 @@ const messages = defineMessages({
 		id: 'app.appearance-settings.default-landing-page.library',
 		defaultMessage: 'Library',
 	},
+	defaultLandingPageDiscoverContent: {
+		id: 'app.appearance-settings.default-landing-page.discover-content',
+		defaultMessage: 'Discover content',
+	},
 	selectOption: {
 		id: 'app.appearance-settings.select-option',
 		defaultMessage: 'Select an option',
@@ -333,17 +337,21 @@ watch(
 			v-model="settings.default_page"
 			name="Opening page dropdown"
 			class="max-w-40"
+			:placeholder="formatMessage(messages.selectOption)"
 			:options="[
 				{
 					value: 'Home',
 					label: formatMessage(messages.defaultLandingPageHome),
 				},
 				{
+					value: 'DiscoverContent',
+					label: formatMessage(messages.defaultLandingPageDiscoverContent),
+				},
+				{
 					value: 'Library',
 					label: formatMessage(messages.defaultLandingPageLibrary),
 				},
 			]"
-			:display-value="settings.default_page ?? 'Select an option'"
 		/>
 	</div>
 

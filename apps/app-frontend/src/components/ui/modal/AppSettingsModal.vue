@@ -3,10 +3,10 @@ import {
 	CoffeeIcon,
 	GameIcon,
 	GaugeIcon,
+	InfoIcon,
 	LanguagesIcon,
 	PaintbrushIcon,
 	SettingsIcon,
-	ShieldIcon,
 	ToggleRightIcon,
 } from '@modrinth/assets'
 import {
@@ -22,12 +22,12 @@ import { getVersion } from '@tauri-apps/api/app'
 import { platform as getOsPlatform, version as getOsVersion } from '@tauri-apps/plugin-os'
 import { ref, watch } from 'vue'
 
+import AboutSettings from '@/components/ui/settings/AboutSettings.vue'
 import AppearanceSettings from '@/components/ui/settings/AppearanceSettings.vue'
 import DefaultInstanceSettings from '@/components/ui/settings/DefaultInstanceSettings.vue'
 import FeatureFlagSettings from '@/components/ui/settings/FeatureFlagSettings.vue'
 import JavaSettings from '@/components/ui/settings/JavaSettings.vue'
 import LanguageSettings from '@/components/ui/settings/LanguageSettings.vue'
-import PrivacySettings from '@/components/ui/settings/PrivacySettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/ResourceManagementSettings.vue'
 import { AxolotlBrandConfig } from '@/config'
 import { get, set } from '@/helpers/settings.ts'
@@ -65,14 +65,6 @@ const tabs = [
 	},
 	{
 		name: defineMessage({
-			id: 'app.settings.tabs.privacy',
-			defaultMessage: 'Privacy',
-		}),
-		icon: ShieldIcon,
-		content: PrivacySettings,
-	},
-	{
-		name: defineMessage({
 			id: 'app.settings.tabs.java-installations',
 			defaultMessage: 'Java installations',
 		}),
@@ -94,6 +86,14 @@ const tabs = [
 		}),
 		icon: GaugeIcon,
 		content: ResourceManagementSettings,
+	},
+	{
+		name: defineMessage({
+			id: 'app.settings.tabs.about',
+			defaultMessage: 'About',
+		}),
+		icon: InfoIcon,
+		content: AboutSettings,
 	},
 	{
 		name: commonSettingsMessages.featureFlags,

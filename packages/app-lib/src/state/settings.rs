@@ -417,6 +417,7 @@ pub struct Hooks {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum DefaultPage {
     Home,
+    DiscoverContent,
     Library,
 }
 
@@ -424,6 +425,7 @@ impl DefaultPage {
     pub fn as_str(&self) -> &'static str {
         match self {
             DefaultPage::Home => "home",
+            DefaultPage::DiscoverContent => "discover_content",
             DefaultPage::Library => "library",
         }
     }
@@ -431,6 +433,7 @@ impl DefaultPage {
     pub fn from_string(string: &str) -> Self {
         match string {
             "home" => Self::Home,
+            "discover_content" => Self::DiscoverContent,
             "library" => Self::Library,
             _ => Self::Home,
         }

@@ -125,6 +125,27 @@
   "browse.selected-projects-leave-modal.header": {
     "defaultMessage": "Selected projects not installed yet"
   },
+  "browse.sort.date-published": {
+    "defaultMessage": "Date published"
+  },
+  "browse.sort.date-updated": {
+    "defaultMessage": "Date updated"
+  },
+  "browse.sort.downloads": {
+    "defaultMessage": "Downloads"
+  },
+  "browse.sort.followers": {
+    "defaultMessage": "Followers"
+  },
+  "browse.sort.players": {
+    "defaultMessage": "Players"
+  },
+  "browse.sort.relevance": {
+    "defaultMessage": "Relevance"
+  },
+  "browse.sort.verified-plays": {
+    "defaultMessage": "Verified plays"
+  },
   "browse.view-prefix": {
     "defaultMessage": "View:"
   },
@@ -5020,6 +5041,9 @@
   },
   "settings.sessions.title": {
     "defaultMessage": "Sessions"
+  },
+  "skin.preview.drag-to-rotate": {
+    "defaultMessage": "Drag to rotate"
   },
   "tag.category.128x": {
     "defaultMessage": "128x"

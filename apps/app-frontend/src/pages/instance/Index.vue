@@ -404,6 +404,10 @@ const messages = defineMessages({
 	updateSelected: { id: 'app.instance.update-selected', defaultMessage: 'Update selected' },
 	updateAll: { id: 'app.instance.update-all', defaultMessage: 'Update all' },
 	selectUpdatable: { id: 'app.instance.select-updatable', defaultMessage: 'Select updatable' },
+	contentTab: { id: 'app.instance.tabs.content', defaultMessage: 'Content' },
+	filesTab: { id: 'app.instance.tabs.files', defaultMessage: 'Files' },
+	worldsTab: { id: 'app.instance.tabs.worlds', defaultMessage: 'Worlds' },
+	logsTab: { id: 'app.instance.tabs.logs', defaultMessage: 'Logs' },
 })
 
 const router = useRouter()
@@ -596,22 +600,22 @@ const contentSubpageProps = computed(() =>
 
 const tabs = computed(() => [
 	{
-		label: 'Content',
+		label: formatMessage(messages.contentTab),
 		href: `${basePath.value}`,
 		icon: BoxesIcon,
 	},
 	{
-		label: 'Files',
+		label: formatMessage(messages.filesTab),
 		href: `${basePath.value}/files`,
 		icon: FolderOpenIcon,
 	},
 	{
-		label: 'Worlds',
+		label: formatMessage(messages.worldsTab),
 		href: `${basePath.value}/worlds`,
 		icon: GlobeIcon,
 	},
 	{
-		label: 'Logs',
+		label: formatMessage(messages.logsTab),
 		href: `${basePath.value}/logs`,
 		icon: TerminalSquareIcon,
 	},

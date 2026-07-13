@@ -30,13 +30,6 @@ const { isStuck: isInstallHeaderStuck } = useStickyObserver(
 	'BrowseInstallHeader',
 )
 
-const sortOptions = computed<ComboboxOption<SortType>[]>(() =>
-	ctx.effectiveSortTypes.value.map((st) => ({
-		value: st,
-		label: st.display,
-	})),
-)
-
 const maxResultsOptions = computed<ComboboxOption<number>[]>(() =>
 	(ctx.maxResultsOptions?.value ?? [5, 10, 15, 20, 50, 100]).map((n) => ({
 		value: n,
@@ -65,7 +58,38 @@ const messages = defineMessages({
 		id: 'browse.no-results',
 		defaultMessage: 'No results found for your query!',
 	},
+	sortRelevance: { id: 'browse.sort.relevance', defaultMessage: 'Relevance' },
+	sortDownloads: { id: 'browse.sort.downloads', defaultMessage: 'Downloads' },
+	sortFollowers: { id: 'browse.sort.followers', defaultMessage: 'Followers' },
+	sortDatePublished: { id: 'browse.sort.date-published', defaultMessage: 'Date published' },
+	sortDateUpdated: { id: 'browse.sort.date-updated', defaultMessage: 'Date updated' },
+	sortVerifiedPlays: { id: 'browse.sort.verified-plays', defaultMessage: 'Verified plays' },
+	sortPlayers: { id: 'browse.sort.players', defaultMessage: 'Players' },
 })
+
+function formatSortType(sortType: SortType): string {
+	const sortMessages = {
+		relevance: messages.sortRelevance,
+		downloads: messages.sortDownloads,
+		follows: messages.sortFollowers,
+		newest: messages.sortDatePublished,
+		updated: messages.sortDateUpdated,
+		'minecraft_java_server.verified_plays_2w': messages.sortVerifiedPlays,
+		'minecraft_java_server.ping.data.players_online': messages.sortPlayers,
+		date_created: messages.sortDatePublished,
+		date_modified: messages.sortDateUpdated,
+	}
+
+	const message = sortMessages[sortType.name as keyof typeof sortMessages]
+	return message ? formatMessage(message) : sortType.display
+}
+
+const sortOptions = computed<ComboboxOption<SortType>[]>(() =>
+	ctx.effectiveSortTypes.value.map((sortType) => ({
+		value: sortType,
+		label: formatSortType(sortType),
+	})),
+)
 </script>
 
 <template>

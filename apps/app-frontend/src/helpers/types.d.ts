@@ -160,7 +160,7 @@ type AppSettings = {
 
 	theme: 'dark' | 'light' | 'oled' | 'system'
 	accent_color: 'pink' | 'orange' | 'green' | 'blue' | 'purple'
-	default_page: 'Home' | 'Library'
+	default_page: 'Home' | 'DiscoverContent' | 'Library'
 	collapsed_navigation: boolean
 	advanced_rendering: boolean
 	native_decorations: boolean

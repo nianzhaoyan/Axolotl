@@ -38,7 +38,7 @@ export type AppSettings = {
 	theme: ColorTheme
 	accent_color: AccentColor
 	locale: string
-	default_page: 'home' | 'library'
+	default_page: 'Home' | 'DiscoverContent' | 'Library'
 	collapsed_navigation: boolean
 	hide_nametag_skins_page: boolean
 	advanced_rendering: boolean

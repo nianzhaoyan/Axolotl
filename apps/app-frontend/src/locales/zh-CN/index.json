@@ -164,11 +164,14 @@
 	"app.appearance-settings.default-landing-page.description": {
 		"message": "更改启动器打开的页面。"
 	},
+	"app.appearance-settings.default-landing-page.discover-content": {
+		"message": "发现内容"
+	},
 	"app.appearance-settings.default-landing-page.home": {
 		"message": "首页"
 	},
 	"app.appearance-settings.default-landing-page.library": {
-		"message": "库"
+		"message": "实例库"
 	},
 	"app.appearance-settings.default-landing-page.title": {
 		"message": "默认起始页"
@@ -623,6 +626,18 @@
 	"app.instance.stopping": {
 		"message": "正在停止……"
 	},
+	"app.instance.tabs.content": {
+		"message": "内容"
+	},
+	"app.instance.tabs.files": {
+		"message": "文件"
+	},
+	"app.instance.tabs.logs": {
+		"message": "日志"
+	},
+	"app.instance.tabs.worlds": {
+		"message": "世界"
+	},
 	"app.instance.toggle-selected": {
 		"message": "切换所选项"
 	},
@@ -1013,6 +1028,24 @@
 	"app.settings.defaults.wrapper-placeholder": {
 		"message": "输入包装器命令……"
 	},
+	"app.settings.about.attribution": {
+		"message": "本程序由 Modrinth 开源项目修改而来。"
+	},
+	"app.settings.about.developer": {
+		"message": "由 {organizationName} 的 {developerName} 开发。"
+	},
+	"app.settings.about.original-source": {
+		"message": "查看 Modrinth 原始源代码"
+	},
+	"app.settings.about.product-title": {
+		"message": "关于 {productName}"
+	},
+	"app.settings.about.project-website": {
+		"message": "访问项目网站"
+	},
+	"app.settings.about.version": {
+		"message": "版本 {version}"
+	},
 	"app.settings.developer-mode-enabled": {
 		"message": "开发者模式已启用。"
 	},
@@ -1024,21 +1057,6 @@
 	},
 	"app.settings.java.location": {
 		"message": "Java {version} 位置"
-	},
-	"app.settings.privacy.diagnostics-description": {
-		"message": "此版本的 {productName} 不会发送界面分析数据。此选项仅为未来由 {organizationShortName} 运营的诊断服务预留，默认关闭。"
-	},
-	"app.settings.privacy.diagnostics-title": {
-		"message": "可选诊断"
-	},
-	"app.settings.privacy.discord-description": {
-		"message": "管理 Discord 动态状态集成。关闭后，{productShortName} 将不会作为游戏或应用显示在你的 Discord 个人资料中。"
-	},
-	"app.settings.privacy.discord-note": {
-		"message": "模组添加的实例专用 Discord 动态状态集成不受影响。重启应用后此设置才会生效。"
-	},
-	"app.settings.privacy.discord-title": {
-		"message": "Discord 动态状态"
 	},
 	"app.settings.resources.app-cache": {
 		"message": "应用缓存"
@@ -1088,6 +1106,9 @@
 	"app.settings.tabs.appearance": {
 		"message": "外观"
 	},
+	"app.settings.tabs.about": {
+		"message": "关于"
+	},
 	"app.settings.tabs.default-instance-options": {
 		"message": "默认实例选项"
 	},
@@ -1096,9 +1117,6 @@
 	},
 	"app.settings.tabs.language": {
 		"message": "语言"
-	},
-	"app.settings.tabs.privacy": {
-		"message": "隐私"
 	},
 	"app.settings.tabs.resource-management": {
 		"message": "资源管理"

@@ -337,9 +337,13 @@ async function setupApp() {
 		await setSettings(initialSettings)
 	}
 
-	if (default_page === 'Library') {
-		await router.push('/library')
+	const defaultPageRoutes = {
+		Home: '/',
+		DiscoverContent: '/browse/modpack',
+		Library: '/library',
 	}
+	const defaultPageRoute = defaultPageRoutes[default_page]
+	if (defaultPageRoute && defaultPageRoute !== '/') await router.push(defaultPageRoute)
 
 	os.value = await getOS()
 	const dev = await isDev()

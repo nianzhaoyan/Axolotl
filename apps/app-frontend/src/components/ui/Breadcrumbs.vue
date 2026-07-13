@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { ChevronRightIcon } from '@modrinth/assets'
+import { defineMessages, useVIntl } from '@modrinth/ui'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -55,6 +56,32 @@ interface Breadcrumb {
 
 const route = useRoute()
 const breadcrumbData = useBreadcrumbs()
+const { formatMessage } = useVIntl()
+
+const messages = defineMessages({
+	home: { id: 'app.navigation.home', defaultMessage: 'Home' },
+	worlds: { id: 'app.navigation.worlds', defaultMessage: 'Worlds' },
+	discoverContent: {
+		id: 'app.navigation.discover-content',
+		defaultMessage: 'Discover content',
+	},
+	skinSelector: { id: 'app.navigation.skin-selector', defaultMessage: 'Skin selector' },
+	library: { id: 'app.navigation.library', defaultMessage: 'Library' },
+	content: { id: 'app.instance.tabs.content', defaultMessage: 'Content' },
+	files: { id: 'app.instance.tabs.files', defaultMessage: 'Files' },
+	logs: { id: 'app.instance.tabs.logs', defaultMessage: 'Logs' },
+})
+
+const staticLabels = {
+	Home: messages.home,
+	Worlds: messages.worlds,
+	'Discover content': messages.discoverContent,
+	'Skin selector': messages.skinSelector,
+	Library: messages.library,
+	Content: messages.content,
+	Files: messages.files,
+	Logs: messages.logs,
+}
 
 const breadcrumbs = computed<Breadcrumb[]>(() => {
 	const additionalContext =
@@ -68,7 +95,10 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
 })
 
 function resolveLabel(name: string): string {
-	return name.charAt(0) === '?' ? breadcrumbData.getName(name.slice(1)) : name
+	if (name.charAt(0) === '?') return breadcrumbData.getName(name.slice(1))
+
+	const label = staticLabels[name as keyof typeof staticLabels]
+	return label ? formatMessage(label) : name
 }
 
 // Overflow detection

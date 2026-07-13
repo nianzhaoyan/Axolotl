@@ -104,6 +104,27 @@
   "browse.search.placeholder": {
     "defaultMessage": "搜索{projectType}……"
   },
+  "browse.sort.date-published": {
+    "defaultMessage": "发布日期"
+  },
+  "browse.sort.date-updated": {
+    "defaultMessage": "更新日期"
+  },
+  "browse.sort.downloads": {
+    "defaultMessage": "下载量"
+  },
+  "browse.sort.followers": {
+    "defaultMessage": "关注者"
+  },
+  "browse.sort.players": {
+    "defaultMessage": "玩家数"
+  },
+  "browse.sort.relevance": {
+    "defaultMessage": "相关性"
+  },
+  "browse.sort.verified-plays": {
+    "defaultMessage": "已验证游玩次数"
+  },
   "browse.selected-projects-floating-bar.aria-label": {
     "defaultMessage": "选定的项目"
   },
@@ -5740,6 +5761,8 @@
   },
   "search.filter_type.advanced.exclude_plugin": {
     "defaultMessage": "排除插件"
+  },
+  "skin.preview.drag-to-rotate": {
+    "defaultMessage": "拖动以旋转"
   }
 }
-
