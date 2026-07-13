@@ -10983,9 +10983,7 @@ dependencies = [
  "url",
  "urlencoding",
  "uuid 1.23.3",
- "webview2-com",
  "windows",
- "windows-core 0.61.2",
 ]
 
 [[package]]

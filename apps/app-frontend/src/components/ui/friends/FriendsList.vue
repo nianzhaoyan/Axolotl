@@ -211,12 +211,28 @@ const messages = defineMessages({
 		id: 'friends.add-friends-to-share',
 		defaultMessage: "<link>Add friends</link> to see what they're playing!",
 	},
+	viewRequests: { id: 'friends.requests.title', defaultMessage: 'View friend requests' },
+	noPendingRequests: {
+		id: 'friends.requests.none',
+		defaultMessage: 'You have no pending friend requests :C',
+	},
+	incomingRequest: {
+		id: 'friends.requests.incoming',
+		defaultMessage: '{username} sent you a friend request',
+	},
+	outgoingRequest: {
+		id: 'friends.requests.outgoing',
+		defaultMessage: 'You sent {username} a friend request',
+	},
+	accept: { id: 'friends.requests.accept', defaultMessage: 'Accept' },
+	ignore: { id: 'friends.requests.ignore', defaultMessage: 'Ignore' },
+	cancel: { id: 'friends.requests.cancel', defaultMessage: 'Cancel' },
 })
 </script>
 
 <template>
-	<ModalWrapper ref="friendInvitesModal" header="View friend requests">
-		<p v-if="incomingRequests.length === 0">You have no pending friend requests :C</p>
+	<ModalWrapper ref="friendInvitesModal" :header="formatMessage(messages.viewRequests)">
+		<p v-if="incomingRequests.length === 0">{{ formatMessage(messages.noPendingRequests) }}</p>
 		<div v-else class="flex flex-col gap-4 min-w-[40rem]">
 			<div v-for="friend in incomingRequests" :key="friend.username" class="flex gap-2">
 				<Avatar :src="friend.avatar" class="w-12 h-12 rounded-full" size="2.25rem" circle />
@@ -224,10 +240,10 @@ const messages = defineMessages({
 					<div>
 						<p class="m-0">
 							<template v-if="friend.id === userCredentials?.user_id">
-								<span class="text-contrast">{{ friend.username }}</span> sent you a friend request
+								{{ formatMessage(messages.incomingRequest, { username: friend.username }) }}
 							</template>
 							<template v-else>
-								You sent <span class="font-bold">{{ friend.username }}</span> a friend request
+								{{ formatMessage(messages.outgoingRequest, { username: friend.username }) }}
 							</template>
 						</p>
 						<p class="m-0 text-sm text-secondary">
@@ -239,13 +255,13 @@ const messages = defineMessages({
 							<ButtonStyled color="brand">
 								<button @click="addFriend(friend)">
 									<UserPlusIcon />
-									Accept
+									{{ formatMessage(messages.accept) }}
 								</button>
 							</ButtonStyled>
 							<ButtonStyled>
 								<button @click="removeFriend(friend)">
 									<XIcon />
-									Ignore
+									{{ formatMessage(messages.ignore) }}
 								</button>
 							</ButtonStyled>
 						</template>
@@ -253,7 +269,7 @@ const messages = defineMessages({
 							<ButtonStyled>
 								<button @click="removeFriend(friend)">
 									<XIcon />
-									Cancel
+									{{ formatMessage(messages.cancel) }}
 								</button>
 							</ButtonStyled>
 						</template>

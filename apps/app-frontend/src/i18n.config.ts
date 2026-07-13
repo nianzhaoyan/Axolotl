@@ -16,4 +16,26 @@ const i18n = createI18n({
 	messages: buildLocaleMessages(localeModules, uiLocaleModulesEager),
 })
 
+export function resolveInitialLocale(preferredLocales: readonly string[]): string {
+	const availableLocales = new Set(i18n.global.availableLocales)
+
+	for (const preferredLocale of preferredLocales) {
+		const normalizedLocale = preferredLocale.replace('_', '-')
+		if (availableLocales.has(normalizedLocale)) return normalizedLocale
+
+		const language = normalizedLocale.split('-')[0].toLowerCase()
+		if (language === 'zh') {
+			const traditionalChinese = /-(tw|hk|mo)|-hant/i.test(normalizedLocale)
+			return traditionalChinese ? 'zh-TW' : 'zh-CN'
+		}
+
+		const languageMatch = i18n.global.availableLocales.find((locale) =>
+			locale.toLowerCase().startsWith(`${language}-`),
+		)
+		if (languageMatch) return languageMatch
+	}
+
+	return 'en-US'
+}
+
 export default i18n

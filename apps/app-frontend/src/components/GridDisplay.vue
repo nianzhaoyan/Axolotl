@@ -11,6 +11,8 @@ import {
 } from '@modrinth/assets'
 import {
 	Accordion,
+	commonMessages,
+	defineMessages,
 	DropdownSelect,
 	formatLoader,
 	injectNotificationManager,
@@ -30,6 +32,41 @@ import { remove } from '@/helpers/instance'
 const { handleError } = injectNotificationManager()
 
 const { formatMessage } = useVIntl()
+
+const messages = defineMessages({
+	search: { id: 'app.instances.search', defaultMessage: 'Search' },
+	select: { id: 'app.instances.select', defaultMessage: 'Select...' },
+	groupBy: { id: 'app.instances.group-by', defaultMessage: 'Group by:' },
+	addContent: { id: 'app.instances.add-content', defaultMessage: 'Add content' },
+	viewInstance: { id: 'app.instances.view-instance', defaultMessage: 'View instance' },
+	duplicateInstance: {
+		id: 'app.instances.duplicate-instance',
+		defaultMessage: 'Duplicate instance',
+	},
+	copyPath: { id: 'app.instances.copy-path', defaultMessage: 'Copy path' },
+	name: { id: 'app.instances.sort.name', defaultMessage: 'Name' },
+	lastPlayed: { id: 'app.instances.sort.last-played', defaultMessage: 'Last played' },
+	dateCreated: { id: 'app.instances.sort.date-created', defaultMessage: 'Date created' },
+	dateModified: { id: 'app.instances.sort.date-modified', defaultMessage: 'Date modified' },
+	gameVersion: { id: 'app.instances.group.game-version', defaultMessage: 'Game version' },
+	group: { id: 'app.instances.group.group', defaultMessage: 'Group' },
+	loader: { id: 'app.instances.group.loader', defaultMessage: 'Loader' },
+	none: { id: 'app.instances.group.none', defaultMessage: 'None' },
+})
+
+const optionMessages = {
+	Name: messages.name,
+	'Last played': messages.lastPlayed,
+	'Date created': messages.dateCreated,
+	'Date modified': messages.dateModified,
+	'Game version': messages.gameVersion,
+	Group: messages.group,
+	Loader: messages.loader,
+	None: messages.none,
+}
+
+const formatOption = (option) =>
+	optionMessages[option] ? formatMessage(optionMessages[option]) : option
 
 const props = defineProps({
 	instances: {
@@ -276,7 +313,7 @@ const filteredResults = computed(() => {
 			v-model="search"
 			:icon="SearchIcon"
 			type="text"
-			placeholder="Search"
+			:placeholder="formatMessage(messages.search)"
 			clearable
 			wrapper-class="flex-1"
 		/>
@@ -286,9 +323,12 @@ const filteredResults = computed(() => {
 			name="Sort Dropdown"
 			class="max-w-[16rem]"
 			:options="['Name', 'Last played', 'Date created', 'Date modified', 'Game version']"
-			placeholder="Select..."
+			:display-name="formatOption"
+			:placeholder="formatMessage(messages.select)"
 		>
-			<span class="font-semibold text-primary">Sort by: </span>
+			<span class="font-semibold text-primary">{{
+				formatMessage(commonMessages.sortByLabel)
+			}}</span>
 			<span class="font-semibold text-secondary">{{ selected }}</span>
 		</DropdownSelect>
 		<DropdownSelect
@@ -297,9 +337,10 @@ const filteredResults = computed(() => {
 			class="max-w-[16rem]"
 			name="Group Dropdown"
 			:options="['Group', 'Loader', 'Game version', 'None']"
-			placeholder="Select..."
+			:display-name="formatOption"
+			:placeholder="formatMessage(messages.select)"
 		>
-			<span class="font-semibold text-primary">Group by: </span>
+			<span class="font-semibold text-primary">{{ formatMessage(messages.groupBy) }} </span>
 			<span class="font-semibold text-secondary">{{ selected }}</span>
 		</DropdownSelect>
 	</div>
@@ -330,14 +371,18 @@ const filteredResults = computed(() => {
 	</Accordion>
 	<ConfirmDeleteInstanceModal ref="confirmModal" @delete="deleteInstance" />
 	<ContextMenu ref="instanceOptions" @option-clicked="handleOptionsClick">
-		<template #play> <PlayIcon /> Play </template>
-		<template #stop> <StopCircleIcon /> Stop </template>
-		<template #add_content> <PlusIcon /> Add content </template>
-		<template #edit> <EyeIcon /> View instance </template>
-		<template #duplicate> <ClipboardCopyIcon /> Duplicate instance</template>
-		<template #delete> <TrashIcon /> Delete </template>
-		<template #open> <FolderOpenIcon /> Open folder </template>
-		<template #copy> <ClipboardCopyIcon /> Copy path </template>
+		<template #play> <PlayIcon /> {{ formatMessage(commonMessages.playButton) }} </template>
+		<template #stop> <StopCircleIcon /> {{ formatMessage(commonMessages.stopButton) }} </template>
+		<template #add_content> <PlusIcon /> {{ formatMessage(messages.addContent) }} </template>
+		<template #edit> <EyeIcon /> {{ formatMessage(messages.viewInstance) }} </template>
+		<template #duplicate>
+			<ClipboardCopyIcon /> {{ formatMessage(messages.duplicateInstance) }}
+		</template>
+		<template #delete> <TrashIcon /> {{ formatMessage(commonMessages.deleteLabel) }} </template>
+		<template #open>
+			<FolderOpenIcon /> {{ formatMessage(commonMessages.openFolderButton) }}
+		</template>
+		<template #copy> <ClipboardCopyIcon /> {{ formatMessage(messages.copyPath) }} </template>
 	</ContextMenu>
 </template>
 <style lang="scss" scoped>

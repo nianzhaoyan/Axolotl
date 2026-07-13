@@ -51,7 +51,7 @@
     "message": "Geavanceerde weergave"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Selecteer je voorkeur kleurenthema voor de Modrinth App."
+    "message": "Selecteer je voorkeur kleurenthema voor de Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Kleurenthema"
@@ -456,10 +456,10 @@
     "message": "Inloggen"
   },
   "app.skins.sign-in.description": {
-    "message": "Log in op je Minecraft-account om de skinbeheerfuncties van de Modrinth-app te gebruiken."
+    "message": "Log in op je Minecraft-account om de skinbeheerfuncties van Axolotl Launcher te gebruiken."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Excited Modrinth Bot"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Log in"
@@ -468,13 +468,13 @@
     "message": "Skinkiezer"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} is klaar met downloaden. Herlaad om nu te updaten, of automatisch wanneer je de Modrinth App afsluit."
+    "message": "Axolotl Launcher v{version} is klaar met downloaden. Herlaad om nu te updaten, of automatisch wanneer je de Axolotl Launcher afsluit."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} is beschikbaar. Gebruik je pakketbeheerder om te updaten voor de laatste functies en oplossingen!"
+    "message": "Axolotl Launcher v{version} is beschikbaar. Gebruik je pakketbeheerder om te updaten voor de laatste functies en oplossingen!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} is nu beschikbaar! Omdat je nu op een netwerk met datalimiet zit, is de download niet automatisch gestart."
+    "message": "Axolotl Launcher v{version} is nu beschikbaar! Omdat je nu op een netwerk met datalimiet zit, is de download niet automatisch gestart."
   },
   "app.update-popup.changelog": {
     "message": "Wijzigingen"

@@ -11,6 +11,7 @@ and launching Modrinth mod packs
 mod util;
 
 mod api;
+pub mod brand;
 mod error;
 mod event;
 pub mod install;
@@ -29,12 +30,5 @@ pub use state::State;
 pub use util::fetch::DownloadReason;
 
 pub fn launcher_user_agent() -> String {
-    const LAUNCHER_BASE_USER_AGENT: &str =
-        concat!("modrinth/theseus/", env!("CARGO_PKG_VERSION"),);
-
-    format!(
-        "{} ({}; support@modrinth.com)",
-        LAUNCHER_BASE_USER_AGENT,
-        std::env::consts::OS
-    )
+    brand::user_agent(env!("CARGO_PKG_VERSION"), std::env::consts::OS)
 }

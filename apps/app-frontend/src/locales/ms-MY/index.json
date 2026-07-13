@@ -42,7 +42,7 @@
     "message": "Pemaparan lanjutan"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Pilih tema warna pilihan anda untuk Modrinth App."
+    "message": "Pilih tema warna pilihan anda untuk Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Tema warna"
@@ -399,10 +399,10 @@
     "message": "Daftar Masuk"
   },
   "app.skins.sign-in.description": {
-    "message": "Sila daftar masuk ke akaun Minecraft anda untuk menggunakan ciri pengurusan kekulit milik Modrinth App."
+    "message": "Sila daftar masuk ke akaun Minecraft anda untuk menggunakan ciri pengurusan kekulit milik Axolotl Launcher."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Bot Modrinth yang Teruja"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Sila daftar masuk"
@@ -411,13 +411,13 @@
     "message": "Pemilih kekulit"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} sudah selesai dimuat turun! Muat semula untuk kemas kini sekarang, atau kemas kini secara automatik apabila anda menutup Modrinth App."
+    "message": "Axolotl Launcher v{version} sudah selesai dimuat turun! Muat semula untuk kemas kini sekarang, atau kemas kini secara automatik apabila anda menutup Axolotl Launcher."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} tersedia. Gunakan pengurus pakej anda untuk mengemas kini dan mendapatkan ciri-ciri dan pembetulan terkini!"
+    "message": "Axolotl Launcher v{version} tersedia. Gunakan pengurus pakej anda untuk mengemas kini dan mendapatkan ciri-ciri dan pembetulan terkini!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} kini tersedia! Memandangkan anda sedang menggunakan rangkaian bermeter, kami tidak memuat turunnya secara automatik."
+    "message": "Axolotl Launcher v{version} kini tersedia! Memandangkan anda sedang menggunakan rangkaian bermeter, kami tidak memuat turunnya secara automatik."
   },
   "app.update-popup.changelog": {
     "message": "Log perubahan"

@@ -57,7 +57,7 @@
     "message": "Fejlett renderelés"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Válaszd ki a Modrinth Apphoz a kívánt színsémát."
+    "message": "Válaszd ki a Axolotl Launcherhoz a kívánt színsémát."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Téma"
@@ -459,10 +459,10 @@
     "message": "Bejelentkezés"
   },
   "app.skins.sign-in.description": {
-    "message": "Kérlek jelentkezz be a Minecraft-fiókodba, hogy használni tudd a Modrinth App kinézetkezelési funkcióit."
+    "message": "Kérlek jelentkezz be a Minecraft-fiókodba, hogy használni tudd a Axolotl Launcher kinézetkezelési funkcióit."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Izgatott Modrinth-bot"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Kérlek jelentkezz be"
@@ -471,13 +471,13 @@
     "message": "Kinézetváltó"
   },
   "app.update-popup.body.download-complete": {
-    "message": "A Modrinth App v{version} letöltése befejeződött. Frissítéshez válaszd ki a Frissítés opciót, vagy az alkalmazás a bezárásakor automatikusan frissül."
+    "message": "A Axolotl Launcher v{version} letöltése befejeződött. Frissítéshez válaszd ki a Frissítés opciót, vagy az alkalmazás a bezárásakor automatikusan frissül."
   },
   "app.update-popup.body.linux": {
-    "message": "A Modrinth App v{version} elérhető. Használd a csomagkezelőt a legújabb funkciók és javítások frissítéséhez!"
+    "message": "A Axolotl Launcher v{version} elérhető. Használd a csomagkezelőt a legújabb funkciók és javítások frissítéséhez!"
   },
   "app.update-popup.body.metered": {
-    "message": "A Modrinth App v{version} már elérhető! Mivel mérhető hálózaton vagy, nem töltöttük le automatikusan."
+    "message": "A Axolotl Launcher v{version} már elérhető! Mivel mérhető hálózaton vagy, nem töltöttük le automatikusan."
   },
   "app.update-popup.changelog": {
     "message": "Változásnapló"

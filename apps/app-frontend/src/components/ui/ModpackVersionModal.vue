@@ -1,6 +1,6 @@
 <script setup>
 import { CheckIcon } from '@modrinth/assets'
-import { Badge, ButtonStyled } from '@modrinth/ui'
+import { Badge, ButtonStyled, defineMessages, useVIntl } from '@modrinth/ui'
 import { computed, ref } from 'vue'
 
 import { SwapIcon } from '@/assets/icons/index.js'
@@ -17,6 +17,15 @@ const props = defineProps({
 		type: Object,
 		default: null,
 	},
+})
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	changeVersion: {
+		id: 'app.modpack.change-version',
+		defaultMessage: 'Change modpack version',
+	},
+	name: { id: 'app.modpack.version-name', defaultMessage: 'Name' },
+	supports: { id: 'app.modpack.version-supports', defaultMessage: 'Supports' },
 })
 
 defineExpose({
@@ -55,7 +64,7 @@ const onHide = () => {
 	<ModalWrapper
 		ref="modpackVersionModal"
 		class="modpack-version-modal"
-		header="Change modpack version"
+		:header="formatMessage(messages.changeVersion)"
 		:on-hide="onHide"
 	>
 		<div class="modal-body">
@@ -63,8 +72,10 @@ const onHide = () => {
 				<div class="table">
 					<div class="table-row with-columns table-head">
 						<div class="table-cell table-text download-cell" />
-						<div class="name-cell table-cell table-text">Name</div>
-						<div class="table-cell table-text">Supports</div>
+						<div class="name-cell table-cell table-text">
+							{{ formatMessage(messages.name) }}
+						</div>
+						<div class="table-cell table-text">{{ formatMessage(messages.supports) }}</div>
 					</div>
 					<div class="scrollable">
 						<div

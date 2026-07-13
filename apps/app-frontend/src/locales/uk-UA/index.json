@@ -51,7 +51,7 @@
     "message": "Розширене промальовування"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Виберіть бажану колірну тему для Modrinth App."
+    "message": "Виберіть бажану колірну тему для Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Колірна тема"
@@ -456,10 +456,10 @@
     "message": "Увійдіть"
   },
   "app.skins.sign-in.description": {
-    "message": "Будь ласка, увійдіть у свій обліковий запис Minecraft, щоб використовувати особливості керування скінами в Modrinth App."
+    "message": "Будь ласка, увійдіть у свій обліковий запис Minecraft, щоб використовувати особливості керування скінами в Axolotl Launcher."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Схвильований бот Modrinth"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Увійдіть"
@@ -468,13 +468,13 @@
     "message": "Вибір скіну"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} завантажено. Перезапустіть, щоб оновити зараз, або це відбудеться автоматично після закриття застосунку."
+    "message": "Axolotl Launcher v{version} завантажено. Перезапустіть, щоб оновити зараз, або це відбудеться автоматично після закриття застосунку."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} вже доступно. Скористайтеся менеджером пакетів, щоб отримати найновіші функції та виправлення!"
+    "message": "Axolotl Launcher v{version} вже доступно. Скористайтеся менеджером пакетів, щоб отримати найновіші функції та виправлення!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} вже доступно! Оскільки ви використовуєте лімітне підключення, ми не завантажили його автоматично."
+    "message": "Axolotl Launcher v{version} вже доступно! Оскільки ви використовуєте лімітне підключення, ми не завантажили його автоматично."
   },
   "app.update-popup.changelog": {
     "message": "Журнал змін"

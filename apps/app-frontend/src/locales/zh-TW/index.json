@@ -66,7 +66,7 @@
     "message": "進階繪製"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "請選擇你偏好的 Modrinth App 色彩主題。"
+    "message": "請選擇你偏好的 Axolotl Launcher 色彩主題。"
   },
   "app.appearance-settings.color-theme.title": {
     "message": "色彩主題"
@@ -564,10 +564,10 @@
     "message": "登入"
   },
   "app.skins.sign-in.description": {
-    "message": "請登入你的 Minecraft 帳號以使用 Modrinth App 的外觀管理功能。"
+    "message": "請登入你的 Minecraft 帳號以使用 Axolotl Launcher 的外觀管理功能。"
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "興奮的 Modrinth 機器人"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "請登入"
@@ -576,13 +576,13 @@
     "message": "外觀選擇工具"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} 已完成下載！立即重新載入以更新，或在關閉 Modrinth App 時自動更新。"
+    "message": "Axolotl Launcher v{version} 已完成下載！立即重新載入以更新，或在關閉 Axolotl Launcher 時自動更新。"
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} 現已推出。請使用軟體包管理員進行更新，以取得最新的功能與修正！"
+    "message": "Axolotl Launcher v{version} 現已推出。請使用軟體包管理員進行更新，以取得最新的功能與修正！"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} 現已推出！由於你目前使用的是計量付費網路，我們並未自動下載更新。"
+    "message": "Axolotl Launcher v{version} 現已推出！由於你目前使用的是計量付費網路，我們並未自動下載更新。"
   },
   "app.update-popup.changelog": {
     "message": "更新日誌"

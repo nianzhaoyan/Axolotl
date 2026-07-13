@@ -22,6 +22,7 @@ pub struct Settings {
 
     pub telemetry: bool,
     pub discord_rpc: bool,
+    #[serde(skip, default)]
     pub personalized_ads: bool,
 
     pub onboarded: bool,

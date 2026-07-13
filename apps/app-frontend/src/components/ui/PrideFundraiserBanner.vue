@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CalendarIcon, UsersIcon, XIcon } from '@modrinth/assets'
-import { injectModrinthClient, ProgressBar } from '@modrinth/ui'
+import { defineMessages, injectModrinthClient, ProgressBar, useVIntl } from '@modrinth/ui'
 import { useQuery } from '@tanstack/vue-query'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { computed, ref } from 'vue'
@@ -9,6 +9,22 @@ const DISMISSED_STORAGE_KEY = 'pride-fundraiser-2026-dismissed'
 
 const client = injectModrinthClient()
 const dismissed = ref(localStorage.getItem(DISMISSED_STORAGE_KEY) === 'true')
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	open: { id: 'app.fundraiser.open', defaultMessage: 'Open Pride fundraiser' },
+	dismiss: { id: 'app.fundraiser.dismiss', defaultMessage: 'Dismiss Pride fundraiser' },
+	title: { id: 'app.fundraiser.title', defaultMessage: 'Pride Fundraiser 2026' },
+	progress: { id: 'app.fundraiser.progress', defaultMessage: '{current} of {target}' },
+	raised: { id: 'app.fundraiser.raised', defaultMessage: '{current} of {target} raised' },
+	supporters: {
+		id: 'app.fundraiser.supporters',
+		defaultMessage: '{count, plural, one {# supporter} other {# supporters}}',
+	},
+	daysLeft: {
+		id: 'app.fundraiser.days-left',
+		defaultMessage: '{count, plural, one {# day left} other {# days left}}',
+	},
+})
 
 const { data: campaignInfo } = useQuery({
 	queryKey: ['campaign', 'pride-26'],
@@ -53,19 +69,19 @@ function daysLeft() {
 			role="link"
 			tabindex="0"
 			class="flex w-full cursor-pointer flex-col gap-3 rounded-xl border border-solid border-surface-5 bg-button-bg p-3 text-primary transition-[border-color,filter] hover:border-surface-6 hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-			aria-label="Open Pride fundraiser"
+			:aria-label="formatMessage(messages.open)"
 			@click="openPrideFundraiser"
 			@keydown.enter="openPrideFundraiser"
 			@keydown.space.prevent="openPrideFundraiser"
 		>
 			<div class="flex w-full items-center justify-between gap-2">
 				<h2 class="m-0 min-w-0 truncate text-base font-semibold text-contrast">
-					Pride Fundraiser 2026
+					{{ formatMessage(messages.title) }}
 				</h2>
 				<button
 					type="button"
 					class="m-0 flex size-5 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-primary transition-colors hover:text-contrast focus-visible:text-contrast"
-					aria-label="Dismiss Pride fundraiser"
+					:aria-label="formatMessage(messages.dismiss)"
 					@click.stop="dismissBanner"
 					@keydown.stop
 				>
@@ -79,7 +95,12 @@ function daysLeft() {
 						{{ formatUsd(campaignInfo.total_donations_usd) }}
 					</span>
 					<span class="text-xs font-medium leading-4">
-						of {{ formatUsd(campaignInfo.target_usd) }}
+						{{
+							formatMessage(messages.progress, {
+								current: formatUsd(campaignInfo.total_donations_usd),
+								target: formatUsd(campaignInfo.target_usd),
+							})
+						}}
 					</span>
 				</div>
 				<ProgressBar
@@ -89,19 +110,21 @@ function daysLeft() {
 					color="purple"
 					full-width
 					:gradient-border="false"
-					:aria-label="`${formatUsd(campaignInfo.total_donations_usd)} of ${formatUsd(
-						campaignInfo.target_usd,
-					)} raised`"
+					:aria-label="
+						formatMessage(messages.raised, {
+							current: formatUsd(campaignInfo.total_donations_usd),
+							target: formatUsd(campaignInfo.target_usd),
+						})
+					"
 				/>
 				<div class="flex flex-wrap items-center gap-2 text-xs font-medium leading-4">
 					<span class="flex items-center gap-1">
 						<UsersIcon aria-hidden="true" class="size-4 shrink-0" />
-						{{ campaignInfo.num_donators.toLocaleString('en-US') }}
-						{{ campaignInfo.num_donators === 1 ? 'supporter' : 'supporters' }}
+						{{ formatMessage(messages.supporters, { count: campaignInfo.num_donators }) }}
 					</span>
 					<span class="flex items-center gap-1">
 						<CalendarIcon aria-hidden="true" class="size-4 shrink-0" />
-						{{ daysLeft() }} {{ daysLeft() === 1 ? 'day left' : 'days left' }}
+						{{ formatMessage(messages.daysLeft, { count: daysLeft() }) }}
 					</span>
 				</div>
 			</div>

@@ -5689,6 +5689,57 @@
   },
   "version.supplementary-resources.type": {
     "defaultMessage": "类型"
+  },
+  "button.open-in-browser": {
+    "defaultMessage": "在浏览器中打开"
+  },
+  "button.switch-to-version": {
+    "defaultMessage": "切换到此版本"
+  },
+  "collection-widget.empty-collection": {
+    "defaultMessage": "此收藏为空。"
+  },
+  "collection-widget.loading-projects": {
+    "defaultMessage": "正在加载项目…"
+  },
+  "collection-widget.no-search-results": {
+    "defaultMessage": "没有项目符合你的搜索条件。"
+  },
+  "collection-widget.project-count": {
+    "defaultMessage": "{count, plural, other {# 个项目}}"
+  },
+  "collection-widget.search-placeholder": {
+    "defaultMessage": "搜索项目"
+  },
+  "external-files.permissions-card.remove-group": {
+    "defaultMessage": "移除组"
+  },
+  "external-files.permissions-card.remove-group-error.title": {
+    "defaultMessage": "无法移除组"
+  },
+  "files.row.parent-folder": {
+    "defaultMessage": "上级文件夹"
+  },
+  "label.server-only": {
+    "defaultMessage": "仅服务端"
+  },
+  "project.versions.filter.toggle-tooltip": {
+    "defaultMessage": "切换 {filter} 筛选条件"
+  },
+  "project.versions.platform.modloader.short": {
+    "defaultMessage": "模组加载器"
+  },
+  "search.filter_type.advanced": {
+    "defaultMessage": "高级"
+  },
+  "search.filter_type.advanced.exclude_datapack": {
+    "defaultMessage": "排除数据包"
+  },
+  "search.filter_type.advanced.exclude_mod": {
+    "defaultMessage": "排除模组"
+  },
+  "search.filter_type.advanced.exclude_plugin": {
+    "defaultMessage": "排除插件"
   }
 }
 

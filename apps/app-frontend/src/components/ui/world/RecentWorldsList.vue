@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { LoaderCircleIcon } from '@modrinth/assets'
 import type { GameVersion } from '@modrinth/ui'
-import { GAME_MODES, HeadingLink, injectNotificationManager } from '@modrinth/ui'
+import {
+	defineMessages,
+	GAME_MODES,
+	HeadingLink,
+	injectNotificationManager,
+	useVIntl,
+} from '@modrinth/ui'
 import { platform } from '@tauri-apps/plugin-os'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
@@ -33,6 +39,10 @@ import { handleSevereError } from '@/store/error'
 import { useTheming } from '@/store/theme.ts'
 
 const { handleError } = injectNotificationManager()
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	jumpBackIn: { id: 'app.home.jump-back-in', defaultMessage: 'Jump back in' },
+})
 
 const props = defineProps<{
 	recentInstances: GameInstance[]
@@ -259,7 +269,7 @@ onUnmounted(() => {
 <template>
 	<div v-if="loading" class="flex flex-col gap-2">
 		<span class="flex mt-1 mb-3 leading-none items-center gap-1 text-primary text-lg font-bold">
-			Jump back in
+			{{ formatMessage(messages.jumpBackIn) }}
 		</span>
 		<div class="text-center py-4">
 			<LoaderCircleIcon class="mx-auto size-8 animate-spin text-contrast" />
@@ -267,13 +277,13 @@ onUnmounted(() => {
 	</div>
 	<div v-else-if="jumpBackInItems.length > 0" class="flex flex-col gap-2">
 		<HeadingLink v-if="theme.getFeatureFlag('worlds_tab')" to="/worlds" class="mt-1">
-			Jump back in
+			{{ formatMessage(messages.jumpBackIn) }}
 		</HeadingLink>
 		<span
 			v-else
 			class="flex mt-1 mb-3 leading-none items-center gap-1 text-primary text-lg font-bold"
 		>
-			Jump back in
+			{{ formatMessage(messages.jumpBackIn) }}
 		</span>
 		<div class="grid-when-huge flex flex-col w-full gap-2">
 			<template

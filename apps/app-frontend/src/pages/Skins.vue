@@ -2,7 +2,6 @@
 import {
 	CheckIcon,
 	EditIcon,
-	ExcitedRinthbot,
 	EyeIcon,
 	LogInIcon,
 	RotateCounterClockwiseIcon,
@@ -165,7 +164,7 @@ const messages = defineMessages({
 	},
 	excitedRinthbotAlt: {
 		id: 'app.skins.sign-in.rinthbot-alt',
-		defaultMessage: 'Excited Modrinth Bot',
+		defaultMessage: 'Axolotl Launcher',
 	},
 	signInTitle: {
 		id: 'app.skins.sign-in.title',
@@ -174,7 +173,7 @@ const messages = defineMessages({
 	signInDescription: {
 		id: 'app.skins.sign-in.description',
 		defaultMessage:
-			'Please sign into your Minecraft account to use the skin management features of the Modrinth app.',
+			'Please sign into your Minecraft account to use the skin management features of Axolotl Launcher.',
 	},
 	signInButton: {
 		id: 'app.skins.sign-in.button',
@@ -1112,9 +1111,9 @@ await loadSkins()
 			class="relative mx-auto flex w-full max-w-xl flex-col gap-5 rounded-lg bg-bg-raised p-7 shadow-lg"
 		>
 			<img
-				:src="ExcitedRinthbot"
+				src="@/assets/axolotl.png"
 				:alt="formatMessage(messages.excitedRinthbotAlt)"
-				class="absolute -top-28 right-8 md:right-20 h-28 w-auto"
+				class="absolute -top-32 right-8 h-36 w-36 object-contain md:right-20"
 			/>
 			<div
 				class="absolute top-0 left-0 w-full h-[1px] opacity-40 bg-gradient-to-r from-transparent via-green-500 to-transparent"

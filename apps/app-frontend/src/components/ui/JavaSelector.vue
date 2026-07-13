@@ -47,25 +47,31 @@
 		<span class="installation-buttons">
 			<ButtonStyled v-if="props.version">
 				<button
-					v-tooltip="testingJavaSuccess === true ? 'Already installed' : undefined"
+					v-tooltip="
+						testingJavaSuccess === true ? formatMessage(messages.alreadyInstalled) : undefined
+					"
 					class="!shadow-none"
 					:disabled="props.disabled || installingJava || testingJavaSuccess === true"
 					@click="reinstallJava"
 				>
 					<DownloadIcon />
-					{{ installingJava ? 'Installing...' : 'Install recommended' }}
+					{{
+						installingJava
+							? formatMessage(commonMessages.installingLabel)
+							: formatMessage(messages.installRecommended)
+					}}
 				</button>
 			</ButtonStyled>
 			<ButtonStyled>
 				<button class="!shadow-none" :disabled="props.disabled" @click="autoDetect">
 					<SearchIcon />
-					Detect
+					{{ formatMessage(messages.detect) }}
 				</button>
 			</ButtonStyled>
 			<ButtonStyled>
 				<button class="!shadow-none" :disabled="props.disabled" @click="handleJavaFileInput()">
 					<FolderSearchIcon />
-					Browse
+					{{ formatMessage(messages.browse) }}
 				</button>
 			</ButtonStyled>
 		</span>
@@ -82,7 +88,14 @@ import {
 	SpinnerIcon,
 	XCircleIcon,
 } from '@modrinth/assets'
-import { ButtonStyled, injectNotificationManager, StyledInput } from '@modrinth/ui'
+import {
+	ButtonStyled,
+	commonMessages,
+	defineMessages,
+	injectNotificationManager,
+	StyledInput,
+	useVIntl,
+} from '@modrinth/ui'
 import { open } from '@tauri-apps/plugin-dialog'
 import { ref, watch } from 'vue'
 
@@ -92,6 +105,17 @@ import { trackEvent } from '@/helpers/analytics'
 import { auto_install_java, find_filtered_jres, get_jre } from '@/helpers/jre.js'
 
 const { handleError } = injectNotificationManager()
+const { formatMessage } = useVIntl()
+
+const messages = defineMessages({
+	alreadyInstalled: { id: 'app.java.already-installed', defaultMessage: 'Already installed' },
+	installRecommended: {
+		id: 'app.java.install-recommended',
+		defaultMessage: 'Install recommended',
+	},
+	detect: { id: 'app.java.detect', defaultMessage: 'Detect' },
+	browse: { id: 'app.java.browse', defaultMessage: 'Browse' },
+})
 
 const props = defineProps({
 	id: {

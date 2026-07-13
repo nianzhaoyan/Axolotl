@@ -4,7 +4,6 @@ import {
 	GameIcon,
 	GaugeIcon,
 	LanguagesIcon,
-	ModrinthIcon,
 	PaintbrushIcon,
 	SettingsIcon,
 	ShieldIcon,
@@ -30,6 +29,7 @@ import JavaSettings from '@/components/ui/settings/JavaSettings.vue'
 import LanguageSettings from '@/components/ui/settings/LanguageSettings.vue'
 import PrivacySettings from '@/components/ui/settings/PrivacySettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/ResourceManagementSettings.vue'
+import { AxolotlBrandConfig } from '@/config'
 import { get, set } from '@/helpers/settings.ts'
 import { injectAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
 import { useTheming } from '@/store/state'
@@ -150,7 +150,7 @@ const messages = defineMessages({
 	<TabbedModal ref="modal" :tabs="tabs.filter((t) => !t.developerOnly || themeStore.devMode)">
 		<template #title>
 			<span class="flex items-center gap-2 text-lg font-extrabold text-contrast">
-				<SettingsIcon /> Settings
+				<SettingsIcon /> {{ formatMessage(commonMessages.settingsLabel) }}
 			</span>
 		</template>
 		<template #footer>
@@ -175,10 +175,10 @@ const messages = defineMessages({
 						}"
 						@click="devModeCount"
 					>
-						<ModrinthIcon class="w-6 h-6" />
+						<img class="h-9 w-9 object-contain" src="@/assets/axolotl.png" alt="" />
 					</button>
 					<div class="max-w-[200px]">
-						<p class="m-0">Modrinth App {{ version }}</p>
+						<p class="m-0">{{ AxolotlBrandConfig.productName }} {{ version }}</p>
 						<p class="m-0">
 							<span v-if="osPlatform === 'macos'">macOS</span>
 							<span v-else class="capitalize">{{ osPlatform }}</span>

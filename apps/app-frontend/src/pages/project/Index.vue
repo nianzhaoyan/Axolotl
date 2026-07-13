@@ -113,13 +113,15 @@
 										link: `https://modrinth.com/report?item=project&itemID=${data.id}`,
 									},
 								]"
-								aria-label="More options"
+								:aria-label="formatMessage(commonMessages.moreOptionsButton)"
 							>
 								<MoreVerticalIcon aria-hidden="true" />
 								<template #open-in-browser>
 									<ExternalIcon /> {{ formatMessage(commonMessages.openInBrowserButton) }}
 								</template>
-								<template #report> <ReportIcon /> Report </template>
+								<template #report>
+									<ReportIcon /> {{ formatMessage(commonMessages.reportButton) }}
+								</template>
 							</OverflowMenu>
 						</ButtonStyled>
 					</template>
@@ -182,13 +184,15 @@
 										link: `https://modrinth.com/report?item=project&itemID=${data.id}`,
 									},
 								]"
-								aria-label="More options"
+								:aria-label="formatMessage(commonMessages.moreOptionsButton)"
 							>
 								<MoreVerticalIcon aria-hidden="true" />
 								<template #open-in-browser>
 									<ExternalIcon /> {{ formatMessage(commonMessages.openInBrowserButton) }}
 								</template>
-								<template #follow> <HeartIcon /> Follow </template>
+								<template #follow>
+									<HeartIcon /> {{ formatMessage(commonMessages.followButton) }}
+								</template>
 								<template #save> <BookmarkIcon /> Save </template>
 								<template #report> <ReportIcon /> Report </template>
 							</OverflowMenu>

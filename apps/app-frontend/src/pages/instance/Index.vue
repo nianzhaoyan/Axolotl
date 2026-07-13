@@ -39,7 +39,7 @@
 									<template v-if="timePlayed > 0">
 										{{ timePlayedHumanized }}
 									</template>
-									<template v-else> Never played </template>
+									<template v-else>{{ formatMessage(messages.neverPlayed) }}</template>
 								</div>
 							</template>
 						</template>
@@ -74,7 +74,7 @@
 								v-if="linkedProjectV3"
 								class="flex gap-1.5 items-center font-medium text-primary"
 							>
-								Linked to
+								{{ formatMessage(messages.linkedTo) }}
 								<Avatar
 									:src="linkedProjectV3.icon_url"
 									:alt="linkedProjectV3.name"
@@ -106,7 +106,7 @@
 							color="brand"
 							size="large"
 						>
-							<button disabled>Installing...</button>
+							<button disabled>{{ formatMessage(commonMessages.installingLabel) }}</button>
 						</ButtonStyled>
 						<ButtonStyled
 							v-else-if="instance.install_stage !== 'installed'"
@@ -115,13 +115,17 @@
 						>
 							<button @click="repairInstance()">
 								<DownloadIcon />
-								Repair
+								{{ formatMessage(commonMessages.repairButton) }}
 							</button>
 						</ButtonStyled>
 						<ButtonStyled v-else-if="playing === true" color="red" size="large">
 							<button :disabled="stopping" @click="stopInstance('InstancePage')">
 								<StopCircleIcon />
-								{{ stopping ? 'Stopping...' : 'Stop' }}
+								{{
+									stopping
+										? formatMessage(messages.stopping)
+										: formatMessage(commonMessages.stopButton)
+								}}
 							</button>
 						</ButtonStyled>
 						<ButtonStyled
@@ -131,7 +135,7 @@
 						>
 							<button @click="startInstance('InstancePage')">
 								<PlayIcon />
-								Play
+								{{ formatMessage(commonMessages.playButton) }}
 							</button>
 						</ButtonStyled>
 						<div
@@ -141,7 +145,7 @@
 							<ButtonStyled color="brand" size="large">
 								<button @click="handlePlayServer()">
 									<PlayIcon />
-									Play
+									{{ formatMessage(commonMessages.playButton) }}
 								</button>
 							</ButtonStyled>
 							<ButtonStyled color="brand" size="large">
@@ -163,11 +167,11 @@
 
 									<template #join_server>
 										<PlayIcon />
-										Join server
+										{{ formatMessage(messages.joinServer) }}
 									</template>
 									<template #launch_instance>
 										<PlayIcon />
-										Launch instance
+										{{ formatMessage(messages.launchInstance) }}
 									</template>
 								</OverflowMenu>
 							</ButtonStyled>
@@ -177,10 +181,13 @@
 							color="brand"
 							size="large"
 						>
-							<button disabled>Starting...</button>
+							<button disabled>{{ formatMessage(messages.starting) }}</button>
 						</ButtonStyled>
 						<ButtonStyled circular size="large">
-							<button v-tooltip="'Instance settings'" @click="settingsModal?.show()">
+							<button
+								v-tooltip="formatMessage(messages.instanceSettings)"
+								@click="settingsModal?.show()"
+							>
 								<SettingsIcon />
 							</button>
 						</ButtonStyled>
@@ -204,11 +211,21 @@
 								]"
 							>
 								<MoreVerticalIcon />
-								<template #share-instance> <UserPlusIcon /> Share instance </template>
-								<template #host-a-server> <ServerIcon /> Create a server </template>
-								<template #open-folder> <FolderOpenIcon /> Open folder </template>
-								<template #export-mrpack> <PackageIcon /> Export modpack </template>
-								<template #create-shortcut> <ExternalIcon /> Create shortcut </template>
+								<template #share-instance>
+									<UserPlusIcon /> {{ formatMessage(messages.shareInstance) }}
+								</template>
+								<template #host-a-server>
+									<ServerIcon /> {{ formatMessage(messages.createServer) }}
+								</template>
+								<template #open-folder>
+									<FolderOpenIcon /> {{ formatMessage(commonMessages.openFolderButton) }}
+								</template>
+								<template #export-mrpack>
+									<PackageIcon /> {{ formatMessage(messages.exportModpack) }}
+								</template>
+								<template #create-shortcut>
+									<ExternalIcon /> {{ formatMessage(messages.createShortcut) }}
+								</template>
 							</OverflowMenu>
 						</ButtonStyled>
 					</div>
@@ -244,25 +261,37 @@
 			</RouterView>
 		</div>
 		<ContextMenu ref="options" @option-clicked="handleOptionsClick">
-			<template #play> <PlayIcon /> Play </template>
-			<template #stop> <StopCircleIcon /> Stop </template>
-			<template #add_content> <PlusIcon /> Add content </template>
-			<template #edit> <EditIcon /> Edit </template>
-			<template #copy_path> <ClipboardCopyIcon /> Copy path </template>
-			<template #open_folder> <FolderOpenIcon /> Open folder </template>
-			<template #copy_link> <ClipboardCopyIcon /> Copy link </template>
-			<template #open_link> <GlobeIcon /> Open in Modrinth <ExternalIcon /> </template>
-			<template #copy_names><EditIcon />Copy names</template>
-			<template #copy_slugs><HashIcon />Copy slugs</template>
-			<template #copy_links><GlobeIcon />Copy links</template>
-			<template #toggle><EditIcon />Toggle selected</template>
-			<template #disable><XIcon />Disable selected</template>
-			<template #enable><CheckCircleIcon />Enable selected</template>
-			<template #hide_show><EyeIcon />Show/Hide unselected</template>
+			<template #play> <PlayIcon /> {{ formatMessage(commonMessages.playButton) }} </template>
+			<template #stop> <StopCircleIcon /> {{ formatMessage(commonMessages.stopButton) }} </template>
+			<template #add_content> <PlusIcon /> {{ formatMessage(messages.addContent) }} </template>
+			<template #edit> <EditIcon /> {{ formatMessage(commonMessages.editButton) }} </template>
+			<template #copy_path> <ClipboardCopyIcon /> {{ formatMessage(messages.copyPath) }} </template>
+			<template #open_folder>
+				<FolderOpenIcon /> {{ formatMessage(commonMessages.openFolderButton) }}
+			</template>
+			<template #copy_link>
+				<ClipboardCopyIcon /> {{ formatMessage(commonMessages.copyLinkButton) }}
+			</template>
+			<template #open_link>
+				<GlobeIcon /> {{ formatMessage(commonMessages.openInModrinthButton) }} <ExternalIcon />
+			</template>
+			<template #copy_names><EditIcon />{{ formatMessage(messages.copyNames) }}</template>
+			<template #copy_slugs><HashIcon />{{ formatMessage(messages.copySlugs) }}</template>
+			<template #copy_links><GlobeIcon />{{ formatMessage(messages.copyLinks) }}</template>
+			<template #toggle><EditIcon />{{ formatMessage(messages.toggleSelected) }}</template>
+			<template #disable><XIcon />{{ formatMessage(messages.disableSelected) }}</template>
+			<template #enable><CheckCircleIcon />{{ formatMessage(messages.enableSelected) }}</template>
+			<template #hide_show><EyeIcon />{{ formatMessage(messages.hideShowUnselected) }}</template>
 			<template #update_all
-				><UpdatedIcon />Update {{ selected.length > 0 ? 'selected' : 'all' }}</template
+				><UpdatedIcon />{{
+					selected.length > 0
+						? formatMessage(messages.updateSelected)
+						: formatMessage(messages.updateAll)
+				}}</template
 			>
-			<template #filter_update><UpdatedIcon />Select Updatable</template>
+			<template #filter_update
+				><UpdatedIcon />{{ formatMessage(messages.selectUpdatable) }}</template
+			>
 		</ContextMenu>
 	</div>
 </template>
@@ -295,7 +324,9 @@ import {
 import {
 	Avatar,
 	ButtonStyled,
+	commonMessages,
 	ContentPageHeader,
+	defineMessages,
 	injectNotificationManager,
 	NavTabs,
 	OverflowMenu,
@@ -304,6 +335,7 @@ import {
 	ServerRecentPlays,
 	ServerRegion,
 	useLoadingBarToken,
+	useVIntl,
 } from '@modrinth/ui'
 import { useQueryClient } from '@tanstack/vue-query'
 import { convertFileSrc } from '@tauri-apps/api/core'
@@ -343,6 +375,36 @@ const { addNotification, handleError } = injectNotificationManager()
 const { playServerProject } = injectServerInstall()
 const queryClient = useQueryClient()
 const route = useRoute()
+const { formatMessage } = useVIntl()
+
+const messages = defineMessages({
+	neverPlayed: { id: 'app.instance.never-played', defaultMessage: 'Never played' },
+	linkedTo: { id: 'app.instance.linked-to', defaultMessage: 'Linked to' },
+	stopping: { id: 'app.instance.stopping', defaultMessage: 'Stopping...' },
+	joinServer: { id: 'app.instance.join-server', defaultMessage: 'Join server' },
+	launchInstance: { id: 'app.instance.launch-instance', defaultMessage: 'Launch instance' },
+	starting: { id: 'app.instance.starting', defaultMessage: 'Starting...' },
+	instanceSettings: { id: 'app.instance.settings', defaultMessage: 'Instance settings' },
+	shareInstance: { id: 'app.instance.share', defaultMessage: 'Share instance' },
+	createServer: { id: 'app.instance.create-server', defaultMessage: 'Create a server' },
+	exportModpack: { id: 'app.instance.export-modpack', defaultMessage: 'Export modpack' },
+	createShortcut: { id: 'app.instance.create-shortcut', defaultMessage: 'Create shortcut' },
+	addContent: { id: 'app.instances.add-content', defaultMessage: 'Add content' },
+	copyPath: { id: 'app.instances.copy-path', defaultMessage: 'Copy path' },
+	copyNames: { id: 'app.instance.copy-names', defaultMessage: 'Copy names' },
+	copySlugs: { id: 'app.instance.copy-slugs', defaultMessage: 'Copy slugs' },
+	copyLinks: { id: 'app.instance.copy-links', defaultMessage: 'Copy links' },
+	toggleSelected: { id: 'app.instance.toggle-selected', defaultMessage: 'Toggle selected' },
+	disableSelected: { id: 'app.instance.disable-selected', defaultMessage: 'Disable selected' },
+	enableSelected: { id: 'app.instance.enable-selected', defaultMessage: 'Enable selected' },
+	hideShowUnselected: {
+		id: 'app.instance.hide-show-unselected',
+		defaultMessage: 'Show/hide unselected',
+	},
+	updateSelected: { id: 'app.instance.update-selected', defaultMessage: 'Update selected' },
+	updateAll: { id: 'app.instance.update-all', defaultMessage: 'Update all' },
+	selectUpdatable: { id: 'app.instance.select-updatable', defaultMessage: 'Select updatable' },
+})
 
 const router = useRouter()
 const displayedInstanceRoute = shallowRef(router.currentRoute.value)

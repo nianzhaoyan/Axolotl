@@ -51,7 +51,7 @@
     "message": "Renderasi tingkat lanjut"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Pilih tema warna pilihan Anda untuk Modrinth App."
+    "message": "Pilih tema warna pilihan Anda untuk Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Tema warna"
@@ -456,10 +456,10 @@
     "message": "Masuk"
   },
   "app.skins.sign-in.description": {
-    "message": "Mohon masuk ke akun Minecraft Anda untuk menggunakan fitur pengelolaan rupa dari Modrinth App."
+    "message": "Mohon masuk ke akun Minecraft Anda untuk menggunakan fitur pengelolaan rupa dari Axolotl Launcher."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Bot Modrinth penuh antusias"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Silakan masuk"
@@ -468,13 +468,13 @@
     "message": "Pemilih rupa"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} telah selesai mengunduh. Muat ulang untuk memperbarui sekarang, atau secara otomatis saat Anda menutup Modrinth App."
+    "message": "Axolotl Launcher v{version} telah selesai mengunduh. Muat ulang untuk memperbarui sekarang, atau secara otomatis saat Anda menutup Axolotl Launcher."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} tersedia. Gunakan pengelola paket Anda untuk memperbarui dan mendapatkan fitur-fitur dan perbaikan terbaru!"
+    "message": "Axolotl Launcher v{version} tersedia. Gunakan pengelola paket Anda untuk memperbarui dan mendapatkan fitur-fitur dan perbaikan terbaru!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} sudah tersedia! Karena Anda saat ini sedang berada dalam jaringan terukur, kami tidak mengunduhnya secara otomatis."
+    "message": "Axolotl Launcher v{version} sudah tersedia! Karena Anda saat ini sedang berada dalam jaringan terukur, kami tidak mengunduhnya secara otomatis."
   },
   "app.update-popup.changelog": {
     "message": "Catatan perubahan"

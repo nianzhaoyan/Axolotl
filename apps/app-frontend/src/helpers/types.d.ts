@@ -168,7 +168,6 @@ type AppSettings = {
 	telemetry: boolean
 	discord_rpc: boolean
 	developer_mode: boolean
-	personalized_ads: boolean
 
 	onboarded: boolean
 

@@ -1,5 +1,3 @@
-import { posthog } from 'posthog-js'
-
 interface InstanceProperties {
 	loader: string
 	game_version: string
@@ -39,34 +37,30 @@ type AnalyticsEventMap = {
 	JavaTest: { path: string; success: boolean }
 	JavaManualSelect: { version: string }
 	JavaAutoDetect: { path: string; version: string }
+	GalleryImageNext: { project_id: string; url: string }
+	GalleryImagePrevious: { project_id: string; url: unknown }
+	GalleryImageExpand: { project_id: string; url: string }
 }
 
 export type AnalyticsEvent = keyof AnalyticsEventMap
 
-let initialized = false
+let optedIn = false
+let debugEnabled = false
 
 export const initAnalytics = () => {
-	if (initialized) return
-	posthog.init('phc_9Iqi6lFs9sr5BSqh9RRNRSJ0mATS9PSgirDiX3iOYJ', {
-		persistence: 'localStorage',
-		api_host: 'https://posthog.modrinth.com',
-	})
-	initialized = true
+	optedIn = true
 }
 
 export const debugAnalytics = () => {
-	if (!initialized) return
-	posthog.debug()
+	debugEnabled = true
 }
 
 export const optOutAnalytics = () => {
-	if (!initialized) return
-	posthog.opt_out_capturing()
+	optedIn = false
 }
 
 export const optInAnalytics = () => {
-	initAnalytics()
-	posthog.opt_in_capturing()
+	optedIn = true
 }
 
 type OptionalArgs<T> = Record<string, never> extends T ? [properties?: T] : [properties: T]
@@ -75,6 +69,7 @@ export const trackEvent = <E extends AnalyticsEvent>(
 	eventName: E,
 	...args: OptionalArgs<AnalyticsEventMap[E]>
 ) => {
-	if (!initialized) return
-	posthog.capture(eventName, args[0])
+	if (optedIn && debugEnabled) {
+		console.debug('[Axolotl telemetry disabled]', eventName, args[0])
+	}
 }

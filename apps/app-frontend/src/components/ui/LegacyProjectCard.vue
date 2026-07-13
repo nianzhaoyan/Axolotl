@@ -65,11 +65,11 @@ const toTransparent = computed(() => {
 			class="w-full aspect-[2/1] bg-cover bg-center bg-no-repeat"
 			:style="{
 				'background-color': (project.featured_gallery ?? project.gallery[0]) ? null : toColor,
-				'background-image': `url(${
-					project.featured_gallery ??
-					project.gallery[0] ??
-					'https://launcher-files.modrinth.com/assets/maze-bg.png'
-				})`,
+				'background-image': project.featured_gallery
+					? `url(${project.featured_gallery})`
+					: project.gallery[0]
+						? `url(${project.gallery[0]})`
+						: null,
 			}"
 		>
 			<div

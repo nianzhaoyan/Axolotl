@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { injectNotificationManager } from '@modrinth/ui'
+import { defineMessages, injectNotificationManager, useVIntl } from '@modrinth/ui'
 import type { SearchResult } from '@modrinth/utils'
 import dayjs from 'dayjs'
 import { computed, onUnmounted, ref } from 'vue'
@@ -16,8 +16,23 @@ import { useBreadcrumbs } from '@/store/breadcrumbs'
 const { handleError } = injectNotificationManager()
 const route = useRoute()
 const breadcrumbs = useBreadcrumbs()
+const { formatMessage } = useVIntl()
 
-breadcrumbs.setRootContext({ name: 'Home', link: route.path })
+const messages = defineMessages({
+	home: { id: 'app.home.breadcrumb', defaultMessage: 'Home' },
+	welcomeBack: { id: 'app.home.welcome-back', defaultMessage: 'Welcome back!' },
+	welcome: {
+		id: 'app.home.welcome',
+		defaultMessage: 'Welcome to Axolotl Launcher!',
+	},
+	discoverModpack: {
+		id: 'app.home.discover-modpack',
+		defaultMessage: 'Discover a modpack',
+	},
+	discoverMods: { id: 'app.home.discover-mods', defaultMessage: 'Discover mods' },
+})
+
+breadcrumbs.setRootContext({ name: formatMessage(messages.home), link: route.path })
 
 const instances = ref<GameInstance[]>([])
 
@@ -102,20 +117,24 @@ onUnmounted(() => {
 
 <template>
 	<div class="p-6 flex flex-col gap-2">
-		<h1 v-if="recentInstances?.length > 0" class="m-0 text-2xl font-extrabold">Welcome back!</h1>
-		<h1 v-else class="m-0 text-2xl font-extrabold">Welcome to Modrinth App!</h1>
+		<h1 v-if="recentInstances?.length > 0" class="m-0 text-2xl font-extrabold">
+			{{ formatMessage(messages.welcomeBack) }}
+		</h1>
+		<h1 v-else class="m-0 text-2xl font-extrabold">
+			{{ formatMessage(messages.welcome) }}
+		</h1>
 		<RecentWorldsList :recent-instances="recentInstances" />
 		<RowDisplay
 			v-if="hasFeaturedProjects"
 			:instances="[
 				{
-					label: 'Discover a modpack',
+					label: formatMessage(messages.discoverModpack),
 					route: '/browse/modpack',
 					instances: featuredModpacks,
 					downloaded: false,
 				},
 				{
-					label: 'Discover mods',
+					label: formatMessage(messages.discoverMods),
 					route: '/browse/mod',
 					instances: featuredMods,
 					downloaded: false,

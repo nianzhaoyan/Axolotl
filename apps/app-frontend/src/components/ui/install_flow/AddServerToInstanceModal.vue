@@ -4,8 +4,11 @@ import {
 	Admonition,
 	Avatar,
 	ButtonStyled,
+	commonMessages,
+	defineMessages,
 	injectNotificationManager,
 	StyledInput,
+	useVIntl,
 } from '@modrinth/ui'
 import { useQueryClient } from '@tanstack/vue-query'
 import { convertFileSrc } from '@tauri-apps/api/core'
@@ -18,6 +21,21 @@ import { add_server_to_instance, get_instance_worlds } from '@/helpers/worlds.ts
 
 const { handleError } = injectNotificationManager()
 const queryClient = useQueryClient()
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	addServer: { id: 'app.server.add-to-instance', defaultMessage: 'Add server to instance' },
+	compatibilityWarning: {
+		id: 'app.server.compatibility-warning',
+		defaultMessage: 'This server may not be compatible with all instances.',
+	},
+	searchInstance: {
+		id: 'app.server.search-instance',
+		defaultMessage: 'Search for an instance',
+	},
+	adding: { id: 'app.server.adding', defaultMessage: 'Adding...' },
+	added: { id: 'app.server.added', defaultMessage: 'Added' },
+	add: { id: 'app.server.add', defaultMessage: 'Add' },
+})
 
 const modal = ref()
 const searchFilter = ref('')
@@ -82,14 +100,14 @@ async function addServer(instance) {
 </script>
 
 <template>
-	<ModalWrapper ref="modal" header="Add server to instance">
+	<ModalWrapper ref="modal" :header="formatMessage(messages.addServer)">
 		<div class="flex flex-col gap-4 min-w-[350px]">
-			<Admonition type="warning" body="This server may not be compatible with all instances." />
+			<Admonition type="warning" :body="formatMessage(messages.compatibilityWarning)" />
 			<StyledInput
 				v-model="searchFilter"
 				:icon="SearchIcon"
 				type="search"
-				placeholder="Search for an instance"
+				:placeholder="formatMessage(messages.searchInstance)"
 				autocomplete="off"
 			/>
 			<div class="max-h-[21rem] overflow-y-auto">
@@ -113,14 +131,20 @@ async function addServer(instance) {
 						<button :disabled="instance.added || instance.adding" @click="addServer(instance)">
 							<PlusIcon v-if="!instance.added && !instance.adding" />
 							<CheckIcon v-else-if="instance.added" />
-							{{ instance.adding ? 'Adding...' : instance.added ? 'Added' : 'Add' }}
+							{{
+								instance.adding
+									? formatMessage(messages.adding)
+									: instance.added
+										? formatMessage(messages.added)
+										: formatMessage(messages.add)
+							}}
 						</button>
 					</ButtonStyled>
 				</div>
 			</div>
 			<div class="input-group push-right">
 				<ButtonStyled>
-					<button @click="modal.hide()">Cancel</button>
+					<button @click="modal.hide()">{{ formatMessage(commonMessages.cancelButton) }}</button>
 				</ButtonStyled>
 			</div>
 		</div>

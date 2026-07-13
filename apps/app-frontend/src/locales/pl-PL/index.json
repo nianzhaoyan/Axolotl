@@ -66,7 +66,7 @@
     "message": "Zaawansowane renderowanie"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Wybierz preferowany motyw w Modrinth app."
+    "message": "Wybierz preferowany motyw w Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Motyw"
@@ -561,10 +561,10 @@
     "message": "Zaloguj się"
   },
   "app.skins.sign-in.description": {
-    "message": "Zaloguj się na konto Minecraft, by móc zarządzać skórkami poprzez Modrinth App."
+    "message": "Zaloguj się na konto Minecraft, by móc zarządzać skórkami poprzez Axolotl Launcher."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Podekscytowany Modrinth Bot"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Zaloguj się"
@@ -573,13 +573,13 @@
     "message": "Wybierz skórkę"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Wersja Modrinth App v{version} została pobrana. Załaduj ponownie, żeby zaktualizować teraz, albo automatycznie, gdy zamkniesz Modrinth App."
+    "message": "Wersja Axolotl Launcher v{version} została pobrana. Załaduj ponownie, żeby zaktualizować teraz, albo automatycznie, gdy zamkniesz Axolotl Launcher."
   },
   "app.update-popup.body.linux": {
-    "message": "Wersja Modrinth App v{version} jest dostępna. Pobierz aktualizację poprzez menedżer pakietów, by uzyskać najnowsze funkcje i poprawki!"
+    "message": "Wersja Axolotl Launcher v{version} jest dostępna. Pobierz aktualizację poprzez menedżer pakietów, by uzyskać najnowsze funkcje i poprawki!"
   },
   "app.update-popup.body.metered": {
-    "message": "Wersja Modrinth App v{version} jest dostępna! Skoro korzystasz z sieci taryfowej, nie pobraliśmy jej automatycznie."
+    "message": "Wersja Axolotl Launcher v{version} jest dostępna! Skoro korzystasz z sieci taryfowej, nie pobraliśmy jej automatycznie."
   },
   "app.update-popup.changelog": {
     "message": "Dziennik zmian"

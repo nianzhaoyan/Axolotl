@@ -179,6 +179,10 @@ async function removeInstance() {
 }
 
 const messages = defineMessages({
+	icon: {
+		id: 'instance.settings.tabs.general.icon',
+		defaultMessage: 'Icon',
+	},
 	name: {
 		id: 'instance.settings.tabs.general.name',
 		defaultMessage: 'Name',
@@ -289,7 +293,9 @@ const messages = defineMessages({
 	<div class="block">
 		<div class="float-end ml-10 relative group w-fit">
 			<div class="flex flex-col gap-1">
-				<span class="text-lg font-semibold text-contrast">Icon</span>
+				<span class="text-lg font-semibold text-contrast">
+					{{ formatMessage(messages.icon) }}
+				</span>
 				<div class="group relative w-fit">
 					<OverflowMenu
 						v-tooltip="formatMessage(messages.editIcon)"

@@ -51,7 +51,7 @@
     "message": "Renderização avançada"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Seleciona a tua cor preferida para a Modrinth App."
+    "message": "Seleciona a tua cor preferida para a Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Cor de tema"
@@ -261,13 +261,13 @@
     "message": "Modrinth"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} acabou de ser transferida. Recarrega para atualizar agora, ou automaticamente quando fechares a Modrinth App."
+    "message": "Axolotl Launcher v{version} acabou de ser transferida. Recarrega para atualizar agora, ou automaticamente quando fechares a Axolotl Launcher."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} está disponível. Usa o teu gestor de pacotes para atualizar e receber as correções e recursos mais recentes!"
+    "message": "Axolotl Launcher v{version} está disponível. Usa o teu gestor de pacotes para atualizar e receber as correções e recursos mais recentes!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} está disponível! Como estás numa rede com tráfego limitado, não a transferimos automaticamente."
+    "message": "Axolotl Launcher v{version} está disponível! Como estás numa rede com tráfego limitado, não a transferimos automaticamente."
   },
   "app.update-popup.changelog": {
     "message": "Lista de alterações"

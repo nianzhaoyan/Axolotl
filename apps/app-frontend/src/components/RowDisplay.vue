@@ -11,7 +11,13 @@ import {
 	StopCircleIcon,
 	TrashIcon,
 } from '@modrinth/assets'
-import { HeadingLink, injectNotificationManager } from '@modrinth/ui'
+import {
+	commonMessages,
+	defineMessages,
+	HeadingLink,
+	injectNotificationManager,
+	useVIntl,
+} from '@modrinth/ui'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -30,6 +36,17 @@ import { handleSevereError } from '@/store/error.js'
 
 const { handleError } = injectNotificationManager()
 const { install: installVersion } = injectContentInstall()
+const { formatMessage } = useVIntl()
+
+const messages = defineMessages({
+	addContent: { id: 'app.instances.add-content', defaultMessage: 'Add content' },
+	viewInstance: { id: 'app.instances.view-instance', defaultMessage: 'View instance' },
+	duplicateInstance: {
+		id: 'app.instances.duplicate-instance',
+		defaultMessage: 'Duplicate instance',
+	},
+	copyPath: { id: 'app.instances.copy-path', defaultMessage: 'Copy path' },
+})
 
 const router = useRouter()
 
@@ -275,17 +292,27 @@ onUnmounted(() => {
 		</div>
 	</div>
 	<ContextMenu ref="instanceOptions" @option-clicked="handleOptionsClick">
-		<template #play> <PlayIcon /> Play </template>
-		<template #stop> <StopCircleIcon /> Stop </template>
-		<template #add_content> <PlusIcon /> Add content </template>
-		<template #edit> <EyeIcon /> View instance </template>
-		<template #delete> <TrashIcon /> Delete </template>
-		<template #open_folder> <FolderOpenIcon /> Open folder </template>
-		<template #duplicate> <ClipboardCopyIcon /> Duplicate instance</template>
-		<template #copy_path> <ClipboardCopyIcon /> Copy path </template>
-		<template #install> <DownloadIcon /> Install </template>
-		<template #open_link> <GlobeIcon /> Open in Modrinth <ExternalIcon /> </template>
-		<template #copy_link> <ClipboardCopyIcon /> Copy link </template>
+		<template #play> <PlayIcon /> {{ formatMessage(commonMessages.playButton) }} </template>
+		<template #stop> <StopCircleIcon /> {{ formatMessage(commonMessages.stopButton) }} </template>
+		<template #add_content> <PlusIcon /> {{ formatMessage(messages.addContent) }} </template>
+		<template #edit> <EyeIcon /> {{ formatMessage(messages.viewInstance) }} </template>
+		<template #delete> <TrashIcon /> {{ formatMessage(commonMessages.deleteLabel) }} </template>
+		<template #open_folder>
+			<FolderOpenIcon /> {{ formatMessage(commonMessages.openFolderButton) }}
+		</template>
+		<template #duplicate>
+			<ClipboardCopyIcon /> {{ formatMessage(messages.duplicateInstance) }}
+		</template>
+		<template #copy_path> <ClipboardCopyIcon /> {{ formatMessage(messages.copyPath) }} </template>
+		<template #install>
+			<DownloadIcon /> {{ formatMessage(commonMessages.installButton) }}
+		</template>
+		<template #open_link>
+			<GlobeIcon /> {{ formatMessage(commonMessages.openInModrinthButton) }} <ExternalIcon />
+		</template>
+		<template #copy_link>
+			<ClipboardCopyIcon /> {{ formatMessage(commonMessages.copyLinkButton) }}
+		</template>
 	</ContextMenu>
 </template>
 <style lang="scss" scoped>

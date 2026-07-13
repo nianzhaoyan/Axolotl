@@ -1,21 +1,7 @@
-# Copying Guidelines
+# Copying guidelines
 
-All packages in this repository are licensed under their respective licenses. For more information, refer to the LICENSE file in each package.
+Packages retain their respective upstream licenses. Axolotl's desktop packages are GPL-3.0-only and include package-level copying notices.
 
-For detailed information, consult each package's COPYING.md, LICENSE.txt, or LICENSE file, if available.
+Modrinth trademarks, logos, cover images, and other restricted branding are not part of the Axolotl Launcher brand and must not be reintroduced by upstream synchronization.
 
-## Modrinth Branding
-
-The use of Modrinth branding elements, including but not limited to the wrench-in-labyrinth logo, the landing image, and any variations thereof, is strictly prohibited without explicit written permission from Rinth, Inc. This includes trademarks, logos, or other branding elements.
-
-> All rights reserved. © 2020-2025 Rinth, Inc.
-
-This includes, but may not be limited to, the following files:
-
-- .idea/icon.svg
-- .github/api_cover.png
-- .github/app_cover.png
-- .github/monorepo_cover.png
-- .github/web_cover.png
-
-If you fork this repository, you must remove all Modrinth branding assets from your fork.
+Axolotl Launcher, its independent brand assets, and Garbage Human Studio attribution are maintained separately from the upstream project.

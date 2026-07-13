@@ -190,6 +190,12 @@ const messages = defineMessages({
 		id: 'instance.settings.tabs.java.hooks',
 		defaultMessage: 'Hooks',
 	},
+	javaVersion: {
+		id: 'instance.settings.tabs.java.version',
+		defaultMessage: 'Java {version}',
+	},
+	detect: { id: 'app.java.detect', defaultMessage: 'Detect' },
+	browse: { id: 'app.java.browse', defaultMessage: 'Browse' },
 })
 </script>
 
@@ -212,9 +218,9 @@ const messages = defineMessages({
 					<CoffeeIcon />
 				</div>
 				<div class="flex flex-col gap-2 flex-1 min-w-0">
-					<span class="font-semibold leading-none mt-2"
-						>Java {{ optimalJava?.parsed_version }}</span
-					>
+					<span class="font-semibold leading-none mt-2">
+						{{ formatMessage(messages.javaVersion, { version: optimalJava?.parsed_version }) }}
+					</span>
 					<div class="flex gap-2 items-center">
 						<StyledInput
 							:model-value="activePath"
@@ -254,13 +260,13 @@ const messages = defineMessages({
 						<ButtonStyled>
 							<button @click="handleDetectJava">
 								<SearchIcon />
-								Detect
+								{{ formatMessage(messages.detect) }}
 							</button>
 						</ButtonStyled>
 						<ButtonStyled>
 							<button @click="handleBrowseJava">
 								<FolderSearchIcon />
-								Browse
+								{{ formatMessage(messages.browse) }}
 							</button>
 						</ButtonStyled>
 					</div>

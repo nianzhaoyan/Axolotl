@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ButtonStyled, Toggle } from '@modrinth/ui'
+import { ButtonStyled, defineMessages, Toggle, useVIntl } from '@modrinth/ui'
 import { ref, watch } from 'vue'
 
 import { get as getSettings, set as setSettings } from '@/helpers/settings.ts'
@@ -7,6 +7,13 @@ import { useTheming } from '@/store/state'
 import { DEFAULT_FEATURE_FLAGS, type FeatureFlag } from '@/store/theme.ts'
 
 const themeStore = useTheming()
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	resetToDefault: {
+		id: 'app.settings.feature-flags.reset-to-default',
+		defaultMessage: 'Reset to default',
+	},
+})
 
 const settings = ref(await getSettings())
 const options = ref<FeatureFlag[]>(Object.keys(DEFAULT_FEATURE_FLAGS))
@@ -38,7 +45,7 @@ watch(
 						:disabled="themeStore.getFeatureFlag(option) === DEFAULT_FEATURE_FLAGS[option]"
 						@click="setFeatureFlag(option, DEFAULT_FEATURE_FLAGS[option])"
 					>
-						Reset to default
+						{{ formatMessage(messages.resetToDefault) }}
 					</button>
 				</ButtonStyled>
 				<Toggle

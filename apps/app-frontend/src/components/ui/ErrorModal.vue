@@ -9,11 +9,19 @@ import {
 	WrenchIcon,
 	XIcon,
 } from '@modrinth/assets'
-import { ButtonStyled, Collapsible, injectNotificationManager } from '@modrinth/ui'
+import {
+	ButtonStyled,
+	Collapsible,
+	commonMessages,
+	defineMessages,
+	injectNotificationManager,
+	useVIntl,
+} from '@modrinth/ui'
 import { computed, ref } from 'vue'
 
 import { ChatIcon } from '@/assets/icons'
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
+import { AxolotlBrandConfig } from '@/config'
 import { trackEvent } from '@/helpers/analytics'
 import { login as login_flow, set_default_user } from '@/helpers/auth.js'
 import { install_existing_instance } from '@/helpers/install'
@@ -21,15 +29,147 @@ import { cancel_directory_change } from '@/helpers/settings.ts'
 import { handleSevereError } from '@/store/error.js'
 
 const { handleError } = injectNotificationManager()
+const { formatMessage } = useVIntl()
+
+const messages = defineMessages({
+	genericTitle: { id: 'app.error.generic-title', defaultMessage: 'An error occurred' },
+	minecraftAuthTitle: {
+		id: 'app.error.minecraft-auth-title',
+		defaultMessage: 'Unable to sign in to Minecraft',
+	},
+	minecraftSignInTitle: {
+		id: 'app.error.minecraft-sign-in-title',
+		defaultMessage: 'Sign in to Minecraft',
+	},
+	directoryTitle: {
+		id: 'app.error.directory-title',
+		defaultMessage: 'Could not change app directory',
+	},
+	loaderTitle: { id: 'app.error.loader-title', defaultMessage: 'No loader selected' },
+	stateTitle: {
+		id: 'app.error.state-title',
+		defaultMessage: 'Error initializing Axolotl Launcher',
+	},
+	networkIssues: { id: 'app.error.network-issues', defaultMessage: 'Network issues' },
+	networkDescription: {
+		id: 'app.error.network-description',
+		defaultMessage:
+			'Axolotl Launcher had trouble connecting to Microsoft services. This is often caused by a poor connection. Try again, and use our support article if the issue persists.',
+	},
+	hostsDescription: {
+		id: 'app.error.hosts-description',
+		defaultMessage:
+			'The connection to Microsoft, Xbox, or Minecraft services was rejected. These services may be blocked by your hosts file. See our support article for steps to fix the issue.',
+	},
+	supportArticle: { id: 'app.error.support-article', defaultMessage: 'Support article' },
+	tryAnotherAccount: {
+		id: 'app.error.try-another-account',
+		defaultMessage: 'Try another Microsoft account',
+	},
+	accountDescription: {
+		id: 'app.error.account-description',
+		defaultMessage:
+			'Check that you signed in with the correct account. You may own Minecraft on another Microsoft account.',
+	},
+	tryAnotherAccountButton: {
+		id: 'app.error.try-another-account-button',
+		defaultMessage: 'Try another account',
+	},
+	officialLauncherTitle: {
+		id: 'app.error.official-launcher-title',
+		defaultMessage: 'Using PC Game Pass, coming from Bedrock, or just bought the game?',
+	},
+	officialLauncherBefore: {
+		id: 'app.error.official-launcher-before',
+		defaultMessage: 'Try signing in with the',
+	},
+	officialLauncher: {
+		id: 'app.error.official-launcher',
+		defaultMessage: 'official Minecraft Launcher',
+	},
+	officialLauncherAfter: {
+		id: 'app.error.official-launcher-after',
+		defaultMessage: 'first. When that is complete, return here and sign in.',
+	},
+	tryAgain: { id: 'app.error.try-sign-in-again', defaultMessage: 'Try signing in again' },
+	permissionsTitle: {
+		id: 'app.error.permissions-title',
+		defaultMessage: 'Change directory permissions',
+	},
+	permissionsDescription: {
+		id: 'app.error.permissions-description',
+		defaultMessage:
+			'Axolotl Launcher cannot write to the selected directory. Adjust its permissions and try again, or cancel the directory change.',
+	},
+	spaceTitle: { id: 'app.error.space-title', defaultMessage: 'Not enough space' },
+	spaceDescription: {
+		id: 'app.error.space-description',
+		defaultMessage:
+			'The disk containing the selected directory does not have enough free space. Free some space and try again, or cancel the directory change.',
+	},
+	directoryDescription: {
+		id: 'app.error.directory-description',
+		defaultMessage:
+			'Axolotl Launcher cannot migrate to the selected directory. Contact support for help or cancel the directory change.',
+	},
+	retryDirectory: {
+		id: 'app.error.retry-directory',
+		defaultMessage: 'Retry directory change',
+	},
+	cancelDirectory: {
+		id: 'app.error.cancel-directory',
+		defaultMessage: 'Cancel directory change',
+	},
+	minecraftRequired: {
+		id: 'app.error.minecraft-required',
+		defaultMessage:
+			'To play this instance, sign in with Microsoft below. If you do not have a Minecraft account, you can purchase the game on the Minecraft website.',
+	},
+	stateDescription: {
+		id: 'app.error.state-description',
+		defaultMessage:
+			'Axolotl Launcher failed to load correctly. A file may be corrupted or an essential file may be missing.',
+	},
+	stateFixIntro: {
+		id: 'app.error.state-fix-intro',
+		defaultMessage: 'Try one of the following:',
+	},
+	stateFixInternet: {
+		id: 'app.error.state-fix-internet',
+		defaultMessage: 'Check your internet connection, then restart the app.',
+	},
+	stateFixRedownload: {
+		id: 'app.error.state-fix-redownload',
+		defaultMessage: 'Download and install the app again.',
+	},
+	loaderDescription: {
+		id: 'app.error.loader-description',
+		defaultMessage: 'Axolotl Launcher could not find a loader version for this instance.',
+	},
+	loaderFix: {
+		id: 'app.error.loader-fix',
+		defaultMessage: 'Repair the instance using the button below.',
+	},
+	repairInstance: { id: 'app.error.repair-instance', defaultMessage: 'Repair instance' },
+	supportDescription: {
+		id: 'app.error.support-description',
+		defaultMessage:
+			'If you still need help, visit our support page and provide the following debug information.',
+	},
+	getSupport: { id: 'app.error.get-support', defaultMessage: 'Get support' },
+	debugInformation: { id: 'app.error.debug-information', defaultMessage: 'Debug information' },
+	copyDebugInfo: { id: 'app.error.copy-debug-info', defaultMessage: 'Copy debug information' },
+	noErrorMessage: { id: 'app.error.no-error-message', defaultMessage: 'No error message.' },
+})
 
 const errorModal = ref()
 const error = ref()
 const closable = ref(true)
 const errorCollapsed = ref(false)
 
-const title = ref('An error occurred')
+const title = ref(formatMessage(messages.genericTitle))
 const errorType = ref('unknown')
-const supportLink = ref('https://support.modrinth.com')
+const supportLink = ref(AxolotlBrandConfig.supportUrl)
 const metadata = ref({})
 
 defineExpose({
@@ -38,10 +178,9 @@ defineExpose({
 		closable.value = canClose
 
 		if (errorVal.message && errorVal.message.includes('Minecraft authentication error:')) {
-			title.value = 'Unable to sign in to Minecraft'
+			title.value = formatMessage(messages.minecraftAuthTitle)
 			errorType.value = 'minecraft_auth'
-			supportLink.value =
-				'https://support.modrinth.com/en/articles/9038231-minecraft-sign-in-issues'
+			supportLink.value = AxolotlBrandConfig.supportUrl
 
 			if (
 				errorVal.message.includes('existing connection was forcibly closed') ||
@@ -53,13 +192,13 @@ defineExpose({
 				metadata.value.hostsFile = true
 			}
 		} else if (errorVal.message && errorVal.message.includes('User is not logged in')) {
-			title.value = 'Sign in to Minecraft'
+			title.value = formatMessage(messages.minecraftSignInTitle)
 			errorType.value = 'minecraft_sign_in'
-			supportLink.value = 'https://support.modrinth.com'
+			supportLink.value = AxolotlBrandConfig.supportUrl
 		} else if (errorVal.message && errorVal.message.includes('Move directory error:')) {
-			title.value = 'Could not change app directory'
+			title.value = formatMessage(messages.directoryTitle)
 			errorType.value = 'directory_move'
-			supportLink.value = 'https://support.modrinth.com'
+			supportLink.value = AxolotlBrandConfig.supportUrl
 
 			if (errorVal.message.includes('directory is not writable')) {
 				metadata.value.readOnly = true
@@ -69,18 +208,18 @@ defineExpose({
 				metadata.value.notEnoughSpace = true
 			}
 		} else if (errorVal.message && errorVal.message.includes('No loader version selected for')) {
-			title.value = 'No loader selected'
+			title.value = formatMessage(messages.loaderTitle)
 			errorType.value = 'no_loader_version'
-			supportLink.value = 'https://support.modrinth.com'
+			supportLink.value = AxolotlBrandConfig.supportUrl
 			metadata.value.instanceId = context.instanceId
 		} else if (source === 'state_init') {
-			title.value = 'Error initializing Modrinth App'
+			title.value = formatMessage(messages.stateTitle)
 			errorType.value = 'state_init'
-			supportLink.value = 'https://support.modrinth.com'
+			supportLink.value = AxolotlBrandConfig.supportUrl
 		} else {
-			title.value = 'An error occurred'
+			title.value = formatMessage(messages.genericTitle)
 			errorType.value = 'unknown'
-			supportLink.value = 'https://support.modrinth.com'
+			supportLink.value = AxolotlBrandConfig.supportUrl
 			metadata.value = {}
 		}
 
@@ -141,7 +280,9 @@ const hasDebugInfo = computed(
 		errorType.value === 'no_loader_version',
 )
 
-const debugInfo = computed(() => error.value.message ?? error.value ?? 'No error message.')
+const debugInfo = computed(
+	() => error.value.message ?? error.value ?? formatMessage(messages.noErrorMessage),
+)
 
 const copied = ref(false)
 
@@ -160,120 +301,102 @@ async function copyToClipboard(text) {
 			<div class="markdown-body">
 				<template v-if="errorType === 'minecraft_auth'">
 					<template v-if="metadata.network">
-						<h3>Network issues</h3>
+						<h3>{{ formatMessage(messages.networkIssues) }}</h3>
 						<p>
-							It looks like there were issues with the Modrinth App connecting to Microsoft's
-							servers. This is often the result of a poor connection, so we recommend trying again
-							to see if it works. If issues continue to persist, follow the steps in
-							<a
-								href="https://support.modrinth.com/en/articles/9038231-minecraft-sign-in-issues#h_e71a5f805f"
-							>
-								our support article
+							{{ formatMessage(messages.networkDescription) }}
+							<a :href="AxolotlBrandConfig.supportUrl">
+								{{ formatMessage(messages.supportArticle) }}
 							</a>
-							to troubleshoot.
 						</p>
 					</template>
 					<template v-else-if="metadata.hostsFile">
-						<h3>Network issues</h3>
+						<h3>{{ formatMessage(messages.networkIssues) }}</h3>
 						<p>
-							The Modrinth App tried to connect to Microsoft / Xbox / Minecraft services, but the
-							remote server rejected the connection. This may indicate that these services are
-							blocked by the hosts file. Please visit
-							<a
-								href="https://support.modrinth.com/en/articles/9038231-minecraft-sign-in-issues#h_d694a29256"
-							>
-								our support article
+							{{ formatMessage(messages.hostsDescription) }}
+							<a :href="AxolotlBrandConfig.supportUrl">
+								{{ formatMessage(messages.supportArticle) }}
 							</a>
-							for steps on how to fix the issue.
 						</p>
 					</template>
 					<template v-else>
-						<h3>Try another Microsoft account</h3>
+						<h3>{{ formatMessage(messages.tryAnotherAccount) }}</h3>
 						<p>
-							Double check you've signed in with the right account. You may own Minecraft on a
-							different Microsoft account.
+							{{ formatMessage(messages.accountDescription) }}
 						</p>
 						<div class="cta-button">
 							<button class="btn btn-primary" :disabled="loadingMinecraft" @click="loginMinecraft">
-								<LogInIcon /> Try another account
+								<LogInIcon /> {{ formatMessage(messages.tryAnotherAccountButton) }}
 							</button>
 						</div>
-						<h3>Using PC Game Pass, coming from Bedrock, or just bought the game?</h3>
+						<h3>{{ formatMessage(messages.officialLauncherTitle) }}</h3>
 						<p>
-							Try signing in with the
-							<a href="https://www.minecraft.net/en-us/download">official Minecraft Launcher</a>
-							first. Once you're done, come back here and sign in!
+							{{ formatMessage(messages.officialLauncherBefore) }}
+							<a href="https://www.minecraft.net/en-us/download">
+								{{ formatMessage(messages.officialLauncher) }}
+							</a>
+							{{ formatMessage(messages.officialLauncherAfter) }}
 						</p>
 					</template>
 					<div class="cta-button">
 						<button class="btn btn-primary" :disabled="loadingMinecraft" @click="loginMinecraft">
-							<LogInIcon /> Try signing in again
+							<LogInIcon /> {{ formatMessage(messages.tryAgain) }}
 						</button>
 					</div>
 				</template>
 				<template v-if="errorType === 'directory_move'">
 					<template v-if="metadata.readOnly">
-						<h3>Change directory permissions</h3>
+						<h3>{{ formatMessage(messages.permissionsTitle) }}</h3>
 						<p>
-							It looks like the Modrinth App is unable to write to the directory you selected.
-							Please adjust the permissions of the directory and try again or cancel the directory
-							change.
+							{{ formatMessage(messages.permissionsDescription) }}
 						</p>
 					</template>
 					<template v-else-if="metadata.notEnoughSpace">
-						<h3>Not enough space</h3>
+						<h3>{{ formatMessage(messages.spaceTitle) }}</h3>
 						<p>
-							It looks like there is not enough space on the disk containing the directory you
-							selected. Please free up some space and try again or cancel the directory change.
+							{{ formatMessage(messages.spaceDescription) }}
 						</p>
 					</template>
 					<template v-else>
 						<p>
-							The Modrinth App is unable to migrate to the new directory you selected. Please
-							contact support for help or cancel the directory change.
+							{{ formatMessage(messages.directoryDescription) }}
 						</p>
 					</template>
 
 					<div class="cta-button">
 						<button class="btn" @click="retryDirectoryChange">
-							<UpdatedIcon /> Retry directory change
+							<UpdatedIcon /> {{ formatMessage(messages.retryDirectory) }}
 						</button>
 						<button class="btn btn-danger" @click="cancelDirectoryChange">
-							<XIcon /> Cancel directory change
+							<XIcon /> {{ formatMessage(messages.cancelDirectory) }}
 						</button>
 					</div>
 				</template>
 				<div v-else-if="errorType === 'minecraft_sign_in'">
 					<p>
-						To play this instance, you must sign in through Microsoft below. If you don't have a
-						Minecraft account, you can purchase the game on the
-						<a href="https://www.minecraft.net/en-us/store/minecraft-java-bedrock-edition-pc"
-							>Minecraft website</a
-						>.
+						{{ formatMessage(messages.minecraftRequired) }}
 					</p>
 					<div class="cta-button">
 						<button class="btn btn-primary" :disabled="loadingMinecraft" @click="loginMinecraft">
-							<LogInIcon /> Sign in to Minecraft
+							<LogInIcon /> {{ formatMessage(messages.minecraftSignInTitle) }}
 						</button>
 					</div>
 				</div>
 				<template v-else-if="errorType === 'state_init'">
 					<p>
-						Modrinth App failed to load correctly. This may be because of a corrupted file, or
-						because the app is missing crucial files.
+						{{ formatMessage(messages.stateDescription) }}
 					</p>
-					<p>You may be able to fix it through one of the following ways:</p>
+					<p>{{ formatMessage(messages.stateFixIntro) }}</p>
 					<ul>
-						<li>Ensuring you are connected to the internet, then try restarting the app.</li>
-						<li>Redownloading the app.</li>
+						<li>{{ formatMessage(messages.stateFixInternet) }}</li>
+						<li>{{ formatMessage(messages.stateFixRedownload) }}</li>
 					</ul>
 				</template>
 				<template v-else-if="errorType === 'no_loader_version'">
-					<p>The Modrinth App failed to find the loader version for this instance.</p>
-					<p>To resolve this, you need to repair the instance. Click the button below to do so.</p>
+					<p>{{ formatMessage(messages.loaderDescription) }}</p>
+					<p>{{ formatMessage(messages.loaderFix) }}</p>
 					<div class="cta-button">
 						<button class="btn btn-primary" :disabled="loadingRepair" @click="repairInstance">
-							<HammerIcon /> Repair instance
+							<HammerIcon /> {{ formatMessage(messages.repairInstance) }}
 						</button>
 					</div>
 				</template>
@@ -283,19 +406,20 @@ async function copyToClipboard(text) {
 				<template v-if="hasDebugInfo">
 					<div class="w-full h-[1px] bg-surface-5 mb-3"></div>
 					<p>
-						If nothing is working and you need help, visit
-						<a :href="supportLink">our support page</a>
-						and start a chat using the widget in the bottom right and we will be more than happy to
-						assist! Make sure to provide the following debug information to the agent:
+						{{ formatMessage(messages.supportDescription) }}
 					</p>
 				</template>
 			</div>
 			<div class="flex items-center gap-2">
 				<ButtonStyled>
-					<a :href="supportLink" @click="errorModal.hide()"><ChatIcon /> Get support</a>
+					<a :href="supportLink" @click="errorModal.hide()">
+						<ChatIcon /> {{ formatMessage(messages.getSupport) }}
+					</a>
 				</ButtonStyled>
 				<ButtonStyled v-if="closable">
-					<button @click="errorModal.hide()"><XIcon /> Close</button>
+					<button @click="errorModal.hide()">
+						<XIcon /> {{ formatMessage(commonMessages.closeButton) }}
+					</button>
 				</ButtonStyled>
 			</div>
 			<template v-if="hasDebugInfo">
@@ -309,7 +433,7 @@ async function copyToClipboard(text) {
 						>
 							<span class="flex items-center gap-2 text-contrast font-extrabold m-0">
 								<WrenchIcon class="h-4 w-4" />
-								Debug information
+								{{ formatMessage(messages.debugInformation) }}
 							</span>
 							<DropdownIcon
 								class="h-5 w-5 text-secondary transition-transform"
@@ -327,7 +451,7 @@ async function copyToClipboard(text) {
 								</div>
 								<ButtonStyled circular>
 									<button
-										v-tooltip="'Copy debug info'"
+										v-tooltip="formatMessage(messages.copyDebugInfo)"
 										:disabled="copied"
 										@click="copyToClipboard(debugInfo)"
 									>

@@ -270,43 +270,12 @@ fn main() {
                     ),
             )
             .plugin(
-                "ads",
-                InlinedPlugin::new()
-                    .commands(&[
-                        "init_ads_window",
-                        "hide_ads_window",
-                        "scroll_ads_window",
-                        "show_ads_window",
-                        "show_ads_consent_overlay",
-                        "hide_ads_consent_overlay",
-                        "record_ads_click",
-                        "open_link",
-                        "get_ads_personalization",
-                    ])
-                    .default_permission(
-                        DefaultPermissionRule::AllowAllCommands,
-                    ),
-            )
-            .plugin(
                 "files",
                 InlinedPlugin::new()
                     .commands(&[
                         "file_extract_zip",
                         "file_save_as",
                         "file_read_dragged_file",
-                    ])
-                    .default_permission(
-                        DefaultPermissionRule::AllowAllCommands,
-                    ),
-            )
-            .plugin(
-                "friends",
-                InlinedPlugin::new()
-                    .commands(&[
-                        "friends",
-                        "friend_statuses",
-                        "add_friend",
-                        "remove_friend",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,

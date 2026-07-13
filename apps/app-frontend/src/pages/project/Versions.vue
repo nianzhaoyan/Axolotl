@@ -46,12 +46,12 @@
 								link: `https://modrinth.com/${project.project_type}/${project.slug}/version/${version.id}`,
 							},
 						]"
-						aria-label="More options"
+						:aria-label="formatMessage(commonMessages.moreOptionsButton)"
 					>
 						<MoreVerticalIcon aria-hidden="true" />
 						<template #install-elsewhere>
 							<DownloadIcon aria-hidden="true" />
-							Add to another instance
+							{{ formatMessage(messages.addToAnotherInstance) }}
 						</template>
 						<template #open-in-browser>
 							<ExternalIcon /> {{ formatMessage(commonMessages.openInBrowserButton) }}
@@ -96,6 +96,10 @@ const messages = defineMessages({
 	alreadyInstalled: {
 		id: 'app.project.versions.already-installed',
 		defaultMessage: 'Already installed',
+	},
+	addToAnotherInstance: {
+		id: 'app.project.versions.add-to-another-instance',
+		defaultMessage: 'Add to another instance',
 	},
 })
 

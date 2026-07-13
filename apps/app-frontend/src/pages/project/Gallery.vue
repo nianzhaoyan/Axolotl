@@ -93,7 +93,6 @@ import {
 import { ButtonStyled, Card, useFormatDateTime } from '@modrinth/ui'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { hide_ads_window, show_ads_window } from '@/helpers/ads.js'
 import { trackEvent } from '@/helpers/analytics'
 
 const MC_SERVER_BANNER_NAME = '__mc_server_banner__'
@@ -121,7 +120,6 @@ const zoomedIn = ref(false)
 
 const hideImage = () => {
 	expandedGalleryItem.value = null
-	show_ads_window()
 }
 
 const nextImage = () => {
@@ -149,7 +147,6 @@ const previousImage = () => {
 }
 
 const expandImage = (item, index) => {
-	hide_ads_window()
 	expandedGalleryItem.value = item
 	expandedGalleryIndex.value = index
 	zoomedIn.value = false

@@ -51,7 +51,7 @@
     "message": "Avanceret rendering"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Vælg dit foretrukne farvetema til Modrinth App."
+    "message": "Vælg dit foretrukne farvetema til Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Farvetema"
@@ -435,10 +435,10 @@
     "message": "Log Ind"
   },
   "app.skins.sign-in.description": {
-    "message": "Venligst log ind til din Minecraft konto for at kunne funktionerne til at administrere dit skin i Modrinth appen."
+    "message": "Venligst log ind på din Minecraft-konto for at bruge funktionerne til administration af skins i Axolotl Launcher."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Overrasket Modrinth Bot"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Venligst log ind"
@@ -447,13 +447,13 @@
     "message": "Skin vælger"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} er færdig med at download. Genindlæs for at opdatere nu, eller automatisk når du lukker Modrinth App."
+    "message": "Axolotl Launcher v{version} er færdig med at download. Genindlæs for at opdatere nu, eller automatisk når du lukker Axolotl Launcher."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} er nu tilgængelig. Brug din pakke-manager til at opdatere for de nyeste features og fejlrettelser!"
+    "message": "Axolotl Launcher v{version} er nu tilgængelig. Brug din pakke-manager til at opdatere for de nyeste features og fejlrettelser!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} er nu tilgængelig! Siden du er på et begrænset netværk, vi downloadede den ikke automatisk."
+    "message": "Axolotl Launcher v{version} er nu tilgængelig! Siden du er på et begrænset netværk, vi downloadede den ikke automatisk."
   },
   "app.update-popup.changelog": {
     "message": "Ændringslog"

@@ -51,7 +51,7 @@
 								external: true,
 							},
 						]"
-						aria-label="More options"
+						:aria-label="formatMessage(commonMessages.moreOptionsButton)"
 					>
 						<MoreVerticalIcon aria-hidden="true" />
 						<template #open-in-browser>

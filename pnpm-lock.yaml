@@ -89,9 +89,6 @@ importers:
       '@modrinth/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@sentry/vue':
-        specifier: ^8.27.0
-        version: 8.55.0(pinia@3.0.4(typescript@5.9.3)(vue@3.5.27(typescript@5.9.3)))(vue@3.5.27(typescript@5.9.3))
       '@sfirew/minecraft-motd-parser':
         specifier: ^1.1.6
         version: 1.1.6
@@ -149,9 +146,6 @@ importers:
       pinia:
         specifier: ^3.0.0
         version: 3.0.4(typescript@5.9.3)(vue@3.5.27(typescript@5.9.3))
-      posthog-js:
-        specifier: ^1.158.2
-        version: 1.337.1
       three:
         specifier: ^0.172.0
         version: 0.172.0

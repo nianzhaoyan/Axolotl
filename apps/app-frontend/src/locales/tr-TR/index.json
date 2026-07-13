@@ -66,7 +66,7 @@
     "message": "Gelişmiş işleme"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Modrinth App için tercih ettiğiniz temayı seçin."
+    "message": "Axolotl Launcher için tercih ettiğiniz temayı seçin."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Tema Rengi"
@@ -564,10 +564,10 @@
     "message": "Giriş Yap"
   },
   "app.skins.sign-in.description": {
-    "message": "Modrinth appdeki skin yönetim özelliklerini kullanmak için lütfen Minecraft hesabınıza giriş yapın."
+    "message": "Axolotl Launcher'daki skin yönetim özelliklerini kullanmak için lütfen Minecraft hesabınıza giriş yapın."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Heyecanlı Modrinth Bot'u"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Lütfen giriş yapın"
@@ -576,13 +576,13 @@
     "message": "Skin seçici"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Modrinth App v{version} indirildi. Güncellemek için yeniden başlatın veya Modrinth App’i kapattığınızda otomatik olarak güncellenecektir."
+    "message": "Axolotl Launcher v{version} indirildi. Güncellemek için yeniden başlatın veya Axolotl Launcher’i kapattığınızda otomatik olarak güncellenecektir."
   },
   "app.update-popup.body.linux": {
-    "message": "Modrinth App v{version} yayımlandı. En yeni özellikler ve hata düzeltmeleri için paket yöneticin üzerinden güncelle!"
+    "message": "Axolotl Launcher v{version} yayımlandı. En yeni özellikler ve hata düzeltmeleri için paket yöneticin üzerinden güncelle!"
   },
   "app.update-popup.body.metered": {
-    "message": "Modrinth App v{version} mevcut! Kısıtlı bağlantıda olduğunuzdan otomatik olarak indirmedik."
+    "message": "Axolotl Launcher v{version} mevcut! Kısıtlı bağlantıda olduğunuzdan otomatik olarak indirmedik."
   },
   "app.update-popup.changelog": {
     "message": "Yama Notları"

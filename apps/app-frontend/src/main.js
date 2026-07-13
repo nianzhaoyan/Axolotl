@@ -1,7 +1,6 @@
 import 'floating-vue/dist/style.css'
 import 'overlayscrollbars/overlayscrollbars.css'
 
-import * as Sentry from '@sentry/vue'
 import { VueScanPlugin } from '@taijased/vue-render-tracker'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import FloatingVue from 'floating-vue'
@@ -23,14 +22,7 @@ const vueScan = new VueScanPlugin({
 
 const pinia = createPinia()
 
-let app = createApp(App)
-
-Sentry.init({
-	app,
-	dsn: 'https://9508775ee5034536bc70433f5f531dd4@o485889.ingest.us.sentry.io/4504579615227904',
-	integrations: [Sentry.browserTracingIntegration({ router })],
-	tracesSampleRate: 0.1,
-})
+const app = createApp(App)
 
 app.use(VueQueryPlugin)
 app.use(vueScan)

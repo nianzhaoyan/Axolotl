@@ -1,9 +1,7 @@
 # Copying
 
-The source code of Modrinth App's backend is licensed under the GNU General Public License, Version 3 only, which is provided in the file [LICENSE](./LICENSE). However, some files listed below are licensed under a different license.
+Axolotl Launcher's backend is a modified version of Modrinth App's backend. It is licensed under the GNU General Public License, Version 3 only, provided in [LICENSE](./LICENSE).
 
-## Modrinth logo
+Copyright for the original work remains with Rinth, Inc. and the original contributors. Axolotl modifications are Copyright © 2026 Garbage Human Studio and were developed by Mystic Stars.
 
-The use of Modrinth branding elements, including but not limited to the wrench-in-labyrinth logo, the landing image, and any variations thereof, is strictly prohibited without explicit written permission from Rinth, Inc. This includes trademarks, logos, or other branding elements.
-
-> All rights reserved. © 2020-2025 Rinth, Inc.
+Axolotl Launcher is an independent, unofficial client. Modrinth is a trademark of Rinth, Inc. and is referenced only to identify API and file-format compatibility. Axolotl Launcher is not affiliated with or endorsed by Rinth, Inc.

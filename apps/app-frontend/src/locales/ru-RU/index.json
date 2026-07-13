@@ -66,7 +66,7 @@
     "message": "Расширенные эффекты"
   },
   "app.appearance-settings.color-theme.description": {
-    "message": "Выберите тему для Modrinth App."
+    "message": "Выберите тему для Axolotl Launcher."
   },
   "app.appearance-settings.color-theme.title": {
     "message": "Тема"
@@ -555,10 +555,10 @@
     "message": "Войти"
   },
   "app.skins.sign-in.description": {
-    "message": "Пожалуйста, войдите в свой аккаунт Minecraft, чтобы воспользоваться функциями управления скинами в приложении Modrinth."
+    "message": "Пожалуйста, войдите в свой аккаунт Minecraft, чтобы воспользоваться функциями управления скинами в Axolotl Launcher."
   },
   "app.skins.sign-in.rinthbot-alt": {
-    "message": "Восторженный Modrinth Bot"
+    "message": "Axolotl Launcher"
   },
   "app.skins.sign-in.title": {
     "message": "Войдите"
@@ -567,13 +567,13 @@
     "message": "Выбор скина"
   },
   "app.update-popup.body.download-complete": {
-    "message": "Скачивание версии Modrinth App {version} завершено. Перезапустите приложение, чтобы обновить его, или оно обновится автоматически после закрытия."
+    "message": "Скачивание версии Axolotl Launcher {version} завершено. Перезапустите приложение, чтобы обновить его, или оно обновится автоматически после закрытия."
   },
   "app.update-popup.body.linux": {
-    "message": "Доступна версия Modrinth App {version}. Обновите приложение через менеджер пакетов, чтобы получить последние улучшения и исправления!"
+    "message": "Доступна версия Axolotl Launcher {version}. Обновите приложение через менеджер пакетов, чтобы получить последние улучшения и исправления!"
   },
   "app.update-popup.body.metered": {
-    "message": "Версия Modrinth App {version} доступна для скачивания! Используется сеть с лимитным тарифным планом, поэтому скачивание не началось автоматически."
+    "message": "Версия Axolotl Launcher {version} доступна для скачивания! Используется сеть с лимитным тарифным планом, поэтому скачивание не началось автоматически."
   },
   "app.update-popup.changelog": {
     "message": "Список изменений"

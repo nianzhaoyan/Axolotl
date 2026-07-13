@@ -20,14 +20,7 @@
 	>
 		<template #title>
 			<div class="flex gap-2 w-full min-w-0">
-				<Avatar
-					size="36px"
-					:src="
-						selectedAccount
-							? avatarUrl
-							: 'https://launcher-files.modrinth.com/assets/steve_head.png'
-					"
-				/>
+				<Avatar size="36px" :src="selectedAccount ? avatarUrl : axolotlLogo" />
 				<div class="flex flex-col items-start w-full min-w-0">
 					<span class="truncate w-full text-left">{{
 						selectedAccount ? selectedAccount.profile.name : formatMessage(messages.selectAccount)
@@ -103,6 +96,7 @@ import {
 import type { Ref } from 'vue'
 import { computed, onUnmounted, ref } from 'vue'
 
+import axolotlLogo from '@/assets/axolotl.png'
 import { trackEvent } from '@/helpers/analytics'
 import {
 	get_default_user,
@@ -202,7 +196,7 @@ const avatarUrl = computed(() => {
 	if (selectedAccount.value?.profile?.id) {
 		return `https://mc-heads.net/avatar/${selectedAccount.value.profile.id}/128`
 	}
-	return 'https://launcher-files.modrinth.com/assets/steve_head.png'
+	return axolotlLogo
 })
 
 function getAccountAvatarUrl(account: MinecraftCredential) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { GameIcon, LeftArrowIcon } from '@modrinth/assets'
-import { Avatar, ButtonStyled, FormattedTag } from '@modrinth/ui'
+import { Avatar, ButtonStyled, defineMessages, FormattedTag, useVIntl } from '@modrinth/ui'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed } from 'vue'
 
@@ -24,6 +24,10 @@ const props = withDefaults(
 const instanceLink = computed(() => {
 	const base = `/instance/${encodeURIComponent(props.instance.id)}`
 	return props.backTab ? `${base}/${props.backTab}` : base
+})
+const { formatMessage } = useVIntl()
+const messages = defineMessages({
+	backToInstance: { id: 'app.instance.back', defaultMessage: 'Back to instance' },
 })
 </script>
 
@@ -49,7 +53,9 @@ const instanceLink = computed(() => {
 			</span>
 		</router-link>
 		<ButtonStyled>
-			<router-link :to="instanceLink"> <LeftArrowIcon /> Back to instance </router-link>
+			<router-link :to="instanceLink">
+				<LeftArrowIcon /> {{ formatMessage(messages.backToInstance) }}
+			</router-link>
 		</ButtonStyled>
 	</div>
 </template>
