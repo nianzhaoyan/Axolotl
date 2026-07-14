@@ -23,6 +23,9 @@ jobs:
           - name: Linux x64
             runner: ubuntu-24.04
             args: --config tauri-release.conf.json
+          - name: Linux arm64
+            runner: ubuntu-24.04-arm
+            args: --config tauri-release.conf.json
           - name: Windows x64
             runner: windows-2025
             args: --config tauri-release.conf.json

@@ -13,7 +13,13 @@ if (manifest.version !== expectedVersion) {
 	throw new Error(`Manifest version ${manifest.version} does not match ${expectedVersion}`)
 }
 
-const requiredPlatforms = ['darwin-aarch64', 'darwin-x86_64', 'linux-x86_64', 'windows-x86_64']
+const requiredPlatforms = [
+	'darwin-aarch64',
+	'darwin-x86_64',
+	'linux-aarch64',
+	'linux-x86_64',
+	'windows-x86_64',
+]
 
 for (const platform of requiredPlatforms) {
 	const update = manifest.platforms?.[platform]
