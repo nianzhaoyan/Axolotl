@@ -16,6 +16,7 @@ const allowedUntranslatedMessages = new Set([
 	'Modrinth',
 	'Striding Hero',
 	'Axolotl Launcher',
+	'Explore high-quality Minecraft content on Modrinth.',
 	'example.modrinth.gg',
 	'{title} - {count}',
 	'Hooks',

@@ -1137,14 +1137,10 @@ mod tests {
         settings.settings.openai_base_url = format!("http://{address}/v1");
         let http = reqwest::Client::builder().no_proxy().build().unwrap();
 
-        let translated = openai_translate_with_fallback(
-            &http,
-            &input,
-            &settings,
-            &request,
-        )
-        .await
-        .unwrap();
+        let translated =
+            openai_translate_with_fallback(&http, &input, &settings, &request)
+                .await
+                .unwrap();
 
         assert_eq!(translated.len(), 2);
         assert_eq!(translated[0].id, "a");
