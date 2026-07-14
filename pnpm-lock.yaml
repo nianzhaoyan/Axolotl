@@ -438,6 +438,58 @@ importers:
 
   apps/labrinth: {}
 
+  apps/website:
+    dependencies:
+      '@modrinth/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
+      '@modrinth/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      intl-messageformat:
+        specifier: ^10.7.7
+        version: 10.7.18
+      lru-cache:
+        specifier: ^11.2.4
+        version: 11.2.5
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.27(typescript@5.9.3)
+      vue-router:
+        specifier: '*'
+        version: 4.6.4(vue@3.5.27(typescript@5.9.3))
+    devDependencies:
+      '@modrinth/tooling-config':
+        specifier: workspace:*
+        version: link:../../packages/tooling-config
+      '@types/node':
+        specifier: ^24
+        version: 24.12.2
+      autoprefixer:
+        specifier: ^10.4.19
+        version: 10.4.24(postcss@8.5.8)
+      nuxt:
+        specifier: '=3.20.2'
+        version: 3.20.2(@parcel/watcher@2.5.6)(@types/node@24.12.2)(@vue/compiler-sfc@3.5.27)(cac@6.7.14)(db0@0.3.4)(eslint@9.39.2(jiti@2.6.1))(ioredis@5.9.2)(lightningcss@1.32.0)(magicast@0.5.1)(optionator@0.9.4)(rolldown@1.0.0-rc.12)(rollup@4.57.1)(sass@1.97.3)(terser@5.46.0)(typescript@5.9.3)(vite@8.0.3(@types/node@24.12.2)(esbuild@0.27.3)(jiti@2.6.1)(sass@1.97.3)(terser@5.46.0)(yaml@2.8.2))(vue-tsc@2.2.12(typescript@5.9.3))(xml2js@0.6.2)(yaml@2.8.2)
+      postcss:
+        specifier: ^8.4.39
+        version: 8.5.8
+      prettier-plugin-tailwindcss:
+        specifier: ^0.6.5
+        version: 0.6.14(prettier@3.8.1)
+      sass:
+        specifier: ^1.58.0
+        version: 1.97.3
+      tailwindcss:
+        specifier: ^3.4.4
+        version: 3.4.19(yaml@2.8.2)
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vite-svg-loader:
+        specifier: ^5.1.0
+        version: 5.1.0(vue@3.5.27(typescript@5.9.3))
+
   packages/api-client:
     dependencies:
       mitt:
