@@ -70,6 +70,13 @@ export interface ContentItem extends Omit<
 	pack_client_retained?: boolean
 	pack_client_depends?: boolean
 	installing?: boolean
+	provider_refs?: Array<{
+		provider: 'modrinth' | 'curseforge'
+		project_id: string
+		version_id?: string | null
+		primary: boolean
+	}>
+	primary_provider?: 'modrinth' | 'curseforge' | null
 }
 
 export type ContentModpackCardProject = Pick<

@@ -308,9 +308,6 @@
   "app.settings.tabs.language": {
     "message": "언어"
   },
-  "app.settings.tabs.privacy": {
-    "message": "개인정보"
-  },
   "app.settings.tabs.resource-management": {
     "message": "리소스 관리"
   },
@@ -826,9 +823,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "사용 중인 세계"
-  },
-  "minecraft-account.add-account": {
-    "message": "계정 추가"
   },
   "minecraft-account.label": {
     "message": "마인크래프트 계정"

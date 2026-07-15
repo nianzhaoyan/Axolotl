@@ -19,6 +19,7 @@ type BaseOption = {
 	formatted_name?: string
 	toggle_group?: string
 	icon?: string | Component
+	icon_url?: string
 	query_value?: string
 	group?: string
 }
@@ -102,7 +103,13 @@ const ALL_PROJECT_TYPES: ProjectType[] = [
 export interface Tags {
 	gameVersions: Labrinth.Tags.v2.GameVersion[]
 	loaders: Labrinth.Tags.v2.Loader[]
-	categories: Labrinth.Tags.v2.Category[]
+	categories: Array<
+		Labrinth.Tags.v2.Category & {
+			display_name?: string
+			icon_url?: string
+			display_index?: number
+		}
+	>
 }
 
 export interface SortType {
@@ -179,7 +186,20 @@ export function useSearch(
 
 	const filters = computed(() => {
 		const categoryFilters: Record<string, FilterType> = {}
-		for (const category of sortedCategories(tags.value, formatCategoryName, locale.value)) {
+		const categories = sortedCategories(tags.value, formatCategoryName, locale.value).sort(
+			(a, b) => {
+				if (
+					a.header === b.header &&
+					a.display_index !== undefined &&
+					b.display_index !== undefined &&
+					a.display_index !== b.display_index
+				) {
+					return a.display_index - b.display_index
+				}
+				return 0
+			},
+		)
+		for (const category of categories) {
 			const filterTypeId = `category_${category.project_type}_${category.header}`
 			if (!categoryFilters[filterTypeId]) {
 				categoryFilters[filterTypeId] = {
@@ -198,8 +218,9 @@ export function useSearch(
 			}
 			categoryFilters[filterTypeId].options.push({
 				id: category.name,
-				formatted_name: formatCategory(formatMessage, category.name),
+				formatted_name: category.display_name ?? formatCategory(formatMessage, category.name),
 				icon: getCategoryIcon(category.name),
+				icon_url: category.icon_url,
 				value: `categories:${category.name}`,
 				method: category.header === 'resolutions' ? 'or' : 'and',
 			})

@@ -422,9 +422,6 @@
   "app.settings.tabs.language": {
     "message": "Kieli"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Yksityisyys"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Resurssien hallinta"
   },
@@ -976,9 +973,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Maailma on käytössä"
-  },
-  "minecraft-account.add-account": {
-    "message": "Lisää tili"
   },
   "minecraft-account.label": {
     "message": "Minecraft tili"

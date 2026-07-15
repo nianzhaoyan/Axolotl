@@ -16,16 +16,48 @@ fn main() {
 }
 
 fn set_env() {
+    let curseforge_api_key = env::var("CURSEFORGE_API_KEY")
+        .ok()
+        .or_else(|| read_dotenv_literal("CURSEFORGE_API_KEY"));
+
     for (var_name, var_value) in
         dotenvy::dotenv_iter().into_iter().flatten().flatten()
     {
-        if var_name == "DATABASE_URL" {
+        if var_name == "DATABASE_URL" || var_name == "CURSEFORGE_API_KEY" {
             // The sqlx database URL is a build-time detail that should not be exposed to the crate
             continue;
         }
 
         println!("cargo::rustc-env={var_name}={var_value}");
     }
+
+    if let Some(curseforge_api_key) = curseforge_api_key {
+        println!("cargo::rustc-env=CURSEFORGE_API_KEY={curseforge_api_key}");
+    }
+}
+
+fn read_dotenv_literal(name: &str) -> Option<String> {
+    let contents = fs::read_to_string(".env").ok()?;
+
+    contents.lines().find_map(|line| {
+        let line = line.trim_start().strip_prefix("export ").unwrap_or(line);
+        let (candidate, value) = line.split_once('=')?;
+        if candidate.trim() != name {
+            return None;
+        }
+
+        let value = value.trim();
+        let value = if value.len() >= 2
+            && ((value.starts_with('\'') && value.ends_with('\''))
+                || (value.starts_with('"') && value.ends_with('"')))
+        {
+            &value[1..value.len() - 1]
+        } else {
+            value
+        };
+
+        (!value.is_empty()).then(|| value.to_string())
+    })
 }
 
 fn build_java_jars() {

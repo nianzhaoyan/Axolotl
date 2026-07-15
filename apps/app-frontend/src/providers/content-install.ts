@@ -15,6 +15,15 @@ import {
 	get_team,
 	get_version_many,
 } from '@/helpers/cache.js'
+import {
+	type CurseForgeFile,
+	type CurseForgeInstallResult,
+	type CurseForgeProject,
+	getCurseForgeFiles,
+	getCurseForgeProject,
+	installCurseForgeFile,
+	installCurseForgeModpack,
+} from '@/helpers/curseforge'
 import { instance_listener } from '@/helpers/events.js'
 import {
 	install_create_instance,
@@ -24,6 +33,7 @@ import {
 import {
 	add_project_from_version,
 	get,
+	get_content_items,
 	get_install_candidates,
 	get_projects,
 	install_project_with_dependencies,
@@ -65,6 +75,7 @@ type ContentInstallInstanceEvent = {
 const LOADER_ORDER = ['vanilla', 'fabric', 'quilt', 'neoforge', 'forge']
 const SUPPORTED_LOADERS: Set<string> = new Set(['vanilla', 'forge', 'fabric', 'quilt', 'neoforge'])
 const VANILLA_COMPATIBLE_LOADERS: Set<string> = new Set(['minecraft', 'datapack'])
+type InstallProvider = 'modrinth' | 'curseforge'
 const noCompatibleVersionsMessage = defineMessage({
 	id: 'app.content-install.no-compatible-versions',
 	defaultMessage:
@@ -124,6 +135,114 @@ function sortLoaders(loaders: string[]): string[] {
 	})
 }
 
+function curseForgeProjectType(classId?: number): Labrinth.Projects.v2.ProjectType {
+	switch (classId) {
+		case 5:
+			return 'plugin'
+		case 12:
+			return 'resourcepack'
+		case 6945:
+			return 'datapack'
+		case 4471:
+			return 'modpack'
+		case 6552:
+			return 'shader'
+		default:
+			return 'mod'
+	}
+}
+
+function curseForgeLoader(value: string): string | null {
+	switch (value.toLowerCase().replaceAll(' ', '')) {
+		case 'forge':
+			return 'forge'
+		case 'fabric':
+		case 'fabricloader':
+			return 'fabric'
+		case 'quilt':
+			return 'quilt'
+		case 'neoforge':
+			return 'neoforge'
+		default:
+			return null
+	}
+}
+
+function curseForgeGameVersions(file: CurseForgeFile): string[] {
+	return file.gameVersions.filter(
+		(value) =>
+			!curseForgeLoader(value) &&
+			(/^(?:\d+\.\d+(?:\.\d+)?(?:-(?:pre|rc)\d+)?|\d{2}w\d{2}[a-z])$/i.test(value) ||
+				value.toLowerCase().includes('snapshot')),
+	)
+}
+
+function mapCurseForgeVersion(
+	file: CurseForgeFile,
+	projectId: number,
+	projectType: Labrinth.Projects.v2.ProjectType,
+): Labrinth.Versions.v2.Version {
+	const loaders = [...new Set(file.gameVersions.map(curseForgeLoader).filter(Boolean))] as string[]
+	return {
+		id: file.id.toString(),
+		project_id: `curseforge:${projectId}`,
+		name: file.displayName,
+		version_number: file.displayName,
+		game_versions: curseForgeGameVersions(file),
+		loaders:
+			loaders.length > 0 && (projectType === 'mod' || projectType === 'modpack')
+				? loaders
+				: ['minecraft'],
+		date_published: file.fileDate,
+		version_type: file.releaseType === 1 ? 'release' : file.releaseType === 2 ? 'beta' : 'alpha',
+		files: [
+			{
+				filename: file.fileName,
+				url: file.downloadUrl ?? '',
+				primary: true,
+				size: file.fileLength,
+				hashes: {},
+			},
+		],
+	} as unknown as Labrinth.Versions.v2.Version
+}
+
+function mapCurseForgeProject(
+	project: CurseForgeProject,
+	files: CurseForgeFile[],
+): Labrinth.Projects.v2.Project {
+	const projectType = curseForgeProjectType(project.classId)
+	const versions = files.map((file) => mapCurseForgeVersion(file, project.id, projectType))
+	return {
+		id: `curseforge:${project.id}`,
+		slug: project.slug,
+		title: project.name,
+		description: project.summary,
+		project_type: projectType,
+		icon_url: project.logo?.thumbnailUrl ?? project.logo?.url ?? null,
+		versions: versions.map((version) => version.id),
+		game_versions: [...new Set(versions.flatMap((version) => version.game_versions))],
+		loaders: [...new Set(versions.flatMap((version) => version.loaders))],
+		organization: null,
+		team: '',
+	} as unknown as Labrinth.Projects.v2.Project
+}
+
+function curseForgeLoaderType(loader: string): number | undefined {
+	switch (loader) {
+		case 'forge':
+			return 1
+		case 'fabric':
+			return 4
+		case 'quilt':
+			return 5
+		case 'neoforge':
+			return 6
+		default:
+			return undefined
+	}
+}
+
 type InstallTargetInstance = Pick<
 	GameInstance,
 	'id' | 'name' | 'icon_path' | 'game_version' | 'loader'
@@ -165,6 +284,15 @@ export interface ContentInstallContext {
 	handleIncompatibilityWarningInstall: (version: Labrinth.Versions.v2.Version) => Promise<void>
 	handleIncompatibilityWarningCancel: () => void
 	install: (
+		projectId: string,
+		versionId?: string | null,
+		instanceId?: string | null,
+		source?: string,
+		callback?: ContentInstallCallback,
+		createInstanceCallback?: (instanceId: string) => void,
+		hints?: { preferredLoader?: string; preferredGameVersion?: string; showProjectInfo?: boolean },
+	) => Promise<void>
+	installCurseForge: (
 		projectId: string,
 		versionId?: string | null,
 		instanceId?: string | null,
@@ -404,8 +532,11 @@ export function createContentInstall(opts: {
 	let modalRef: ModalRef | null = null
 	let modpackAlreadyInstalledModalRef: ModpackAlreadyInstalledModalRef | null = null
 	let incompatibilityWarningModalRef: ModalRef | null = null
+	let currentProvider: InstallProvider = 'modrinth'
 	let currentProject: Labrinth.Projects.v2.Project | null = null
 	let currentVersions: Labrinth.Versions.v2.Version[] = []
+	let currentCurseForgeProject: CurseForgeProject | null = null
+	let currentCurseForgeFiles = new Map<string, CurseForgeFile>()
 	let currentCallback: ContentInstallCallback = () => {}
 	let instanceMap: Record<string, InstallTargetInstance> = {}
 	let incompatibilityWarningInstance: InstallTargetInstance | null = null
@@ -439,9 +570,22 @@ export function createContentInstall(opts: {
 			projectInfo.value = {
 				title: project.title,
 				iconUrl: project.icon_url,
-				link: `/project/${project.slug ?? project.id}`,
+				link:
+					currentProvider === 'curseforge'
+						? `/project/curseforge/${currentCurseForgeProject?.id}`
+						: `/project/${project.slug ?? project.id}`,
 			}
-			if (project.organization) {
+			if (currentProvider === 'curseforge' && currentCurseForgeProject?.authors[0]) {
+				const author = currentCurseForgeProject.authors[0]
+				projectInfo.value = {
+					...projectInfo.value,
+					owner: {
+						name: author.name,
+						circle: true,
+						link: () => openUrl(author.url),
+					},
+				}
+			} else if (project.organization) {
 				get_organization(project.organization)
 					.then((org: { id: string; slug: string; name: string; icon_url?: string }) => {
 						if (projectInfo.value) {
@@ -580,6 +724,75 @@ export function createContentInstall(opts: {
 		return targets
 	}
 
+	async function removeInstalledCurseForgeProject(instanceId: string, projectId: number) {
+		const content = await get_content_items(instanceId).catch(() => [])
+		for (const item of content) {
+			if (
+				item.provider_refs?.some(
+					(reference) =>
+						reference.provider === 'curseforge' && reference.project_id === projectId.toString(),
+				)
+			) {
+				await remove_project(instanceId, item.file_path ?? item.file_name)
+			}
+		}
+	}
+
+	async function openManualCurseForgeDownload(result: CurseForgeInstallResult) {
+		const url = result.manualDownloads[0]?.websiteUrl ?? currentCurseForgeProject?.links.websiteUrl
+		if (url) await openUrl(url)
+	}
+
+	async function installCurrentCurseForgeVersion(
+		instance: InstallTargetInstance,
+		project: Labrinth.Projects.v2.Project,
+		version: Labrinth.Versions.v2.Version,
+		installDependencies: boolean,
+	) {
+		const curseForgeProject = currentCurseForgeProject
+		const file = currentCurseForgeFiles.get(version.id)
+		if (!curseForgeProject || !file) {
+			throw new Error('CurseForge project or file was not loaded')
+		}
+
+		let result: CurseForgeInstallResult
+		if (project.project_type === 'modpack') {
+			result = (
+				await installCurseForgeModpack({
+					instanceId: instance.id,
+					projectId: curseForgeProject.id,
+					fileId: file.id,
+				})
+			).content
+		} else {
+			await removeInstalledCurseForgeProject(instance.id, curseForgeProject.id)
+			result = await installCurseForgeFile({
+				instanceId: instance.id,
+				projectId: curseForgeProject.id,
+				fileId: file.id,
+				projectType: project.project_type,
+				gameVersion: instance.game_version,
+				modLoaderType: curseForgeLoaderType(instance.loader),
+				installDependencies,
+			})
+		}
+
+		await openManualCurseForgeDownload(result)
+		const installedProjectIds = [
+			...new Set(result.installed.map((installed) => `curseforge:${installed.projectId}`)),
+		]
+		const primaryInstalled =
+			project.project_type === 'modpack' ||
+			result.installed.some(
+				(installed) => !installed.dependency && installed.projectId === curseForgeProject.id,
+			)
+		if (primaryInstalled && !installedProjectIds.includes(project.id)) {
+			installedProjectIds.unshift(project.id)
+		}
+		markInstanceContentChanged(instance.id)
+		return { installedProjectIds, primaryInstalled }
+	}
+
 	async function handleInstallToInstance(instance: ContentInstallInstance) {
 		const selectedInstance = instanceMap[instance.id]
 		const storeInstance = instances.value.find((i) => i.id === instance.id)
@@ -617,22 +830,35 @@ export function createContentInstall(opts: {
 		addInstallingItem(instance.id, currentProject, version)
 
 		try {
-			const request = {
-				project_id: currentProject.id,
-				version_id: version.id,
-				content_type: resolveContentType(currentProject.project_type),
+			let primaryInstalled = true
+			if (currentProvider === 'curseforge') {
+				const result = await installCurrentCurseForgeVersion(
+					selectedInstance,
+					currentProject,
+					version,
+					true,
+				)
+				installedProjectIds.splice(0, installedProjectIds.length, ...result.installedProjectIds)
+				primaryInstalled = result.primaryInstalled
+				removeInstallingItems(instance.id, plannedProjectIds)
+			} else {
+				const request = {
+					project_id: currentProject.id,
+					version_id: version.id,
+					content_type: resolveContentType(currentProject.project_type),
+				}
+				const plan = await install_project_with_dependencies(instance.id, request)
+				plannedProjectIds = resolvedProjectIds(plan)
+				await addInstallingItemsForPlan(instance.id, plan, currentProject, version)
+				installedProjectIds.splice(
+					0,
+					installedProjectIds.length,
+					plan.primary.project_id,
+					...plan.dependencies.map((dependency) => dependency.project_id),
+				)
 			}
-			const plan = await install_project_with_dependencies(instance.id, request)
-			plannedProjectIds = resolvedProjectIds(plan)
-			await addInstallingItemsForPlan(instance.id, plan, currentProject, version)
-			installedProjectIds.splice(
-				0,
-				installedProjectIds.length,
-				plan.primary.project_id,
-				...plan.dependencies.map((dependency) => dependency.project_id),
-			)
 			if (storeInstance) {
-				storeInstance.installed = true
+				storeInstance.installed = primaryInstalled
 				storeInstance.installing = false
 			}
 			trackEvent('ProjectInstall', {
@@ -644,7 +870,7 @@ export function createContentInstall(opts: {
 				title: currentProject!.title,
 				source: 'ProjectInstallModal',
 			})
-			currentCallback(version.id, installedProjectIds)
+			currentCallback(primaryInstalled ? version.id : undefined, installedProjectIds)
 		} catch (err) {
 			if (storeInstance) storeInstance.installing = false
 			removeInstallingItems(instance.id, plannedProjectIds)
@@ -691,7 +917,24 @@ export function createContentInstall(opts: {
 		incompatibilityWarningInstalling.value = true
 		addInstallingItem(incompatibilityWarningInstance.id, incompatibilityWarningProject, version)
 		try {
-			await add_project_from_version(incompatibilityWarningInstance.id, version.id, 'standalone')
+			if (currentProvider === 'curseforge') {
+				const result = await installCurrentCurseForgeVersion(
+					incompatibilityWarningInstance,
+					incompatibilityWarningProject,
+					version,
+					false,
+				)
+				if (!result.primaryInstalled) {
+					incompatibilityWarningInstalling.value = false
+					removeInstallingItems(incompatibilityWarningInstance.id, [
+						incompatibilityWarningProject.id,
+					])
+					incompatibilityWarningCallback()
+					return
+				}
+			} else {
+				await add_project_from_version(incompatibilityWarningInstance.id, version.id, 'standalone')
+			}
 		} catch (err) {
 			opts.handleError(err)
 			incompatibilityWarningInstalling.value = false
@@ -755,12 +998,31 @@ export function createContentInstall(opts: {
 			createdInstanceId = id
 			addInstallingItem(id, currentProject!, version)
 
-			const plan = await install_project_with_dependencies(id, {
-				project_id: currentProject!.id,
-				version_id: version.id,
-				content_type: resolveContentType(currentProject!.project_type),
-			})
-			await addInstallingItemsForPlan(id, plan, currentProject!, version)
+			let installedProjectIds: string[]
+			if (currentProvider === 'curseforge') {
+				const result = await installCurrentCurseForgeVersion(
+					{
+						id,
+						name: data.name,
+						icon_path: data.iconPath ?? undefined,
+						game_version: data.gameVersion,
+						loader: data.loader as InstanceLoader,
+					},
+					currentProject!,
+					version,
+					true,
+				)
+				installedProjectIds = result.installedProjectIds
+				removeInstallingItems(id, [currentProject!.id])
+			} else {
+				const plan = await install_project_with_dependencies(id, {
+					project_id: currentProject!.id,
+					version_id: version.id,
+					content_type: resolveContentType(currentProject!.project_type),
+				})
+				await addInstallingItemsForPlan(id, plan, currentProject!, version)
+				installedProjectIds = resolvedProjectIds(plan)
+			}
 			await opts.router.push(`/instance/${encodeURIComponent(id)}`)
 
 			trackEvent('InstanceCreate', {
@@ -776,7 +1038,7 @@ export function createContentInstall(opts: {
 				source: 'ProjectInstallModal',
 			})
 
-			currentCallback(version.id, resolvedProjectIds(plan))
+			currentCallback(version.id, installedProjectIds)
 			modalRef?.hide()
 		} catch (err) {
 			if (createdInstanceId && currentProject) {
@@ -805,6 +1067,9 @@ export function createContentInstall(opts: {
 		createInstanceCallback: (instanceId: string) => void = () => {},
 		hints?: { preferredLoader?: string; preferredGameVersion?: string; showProjectInfo?: boolean },
 	) {
+		currentProvider = 'modrinth'
+		currentCurseForgeProject = null
+		currentCurseForgeFiles = new Map()
 		const project: Labrinth.Projects.v2.Project = await get_project(projectId, 'must_revalidate')
 
 		if (project.project_type === 'modpack') {
@@ -909,6 +1174,122 @@ export function createContentInstall(opts: {
 		}
 	}
 
+	async function installCurseForge(
+		projectId: string,
+		versionId?: string | null,
+		instanceId?: string | null,
+		source: string = 'unknown',
+		callback: ContentInstallCallback = () => {},
+		createInstanceCallback: (instanceId: string) => void = () => {},
+		hints?: { preferredLoader?: string; preferredGameVersion?: string; showProjectInfo?: boolean },
+	) {
+		const numericProjectId = Number(projectId.replace(/^curseforge:/, ''))
+		if (!Number.isFinite(numericProjectId)) {
+			throw new Error('Invalid CurseForge project ID')
+		}
+		const [curseForgeProject, fileResponse] = await Promise.all([
+			getCurseForgeProject(numericProjectId),
+			getCurseForgeFiles(numericProjectId, { index: 0, pageSize: 50 }),
+		])
+		const availableFiles = fileResponse.files.filter((file) => file.isAvailable)
+		const project = mapCurseForgeProject(curseForgeProject, availableFiles)
+		let versions = availableFiles
+			.map((file) => mapCurseForgeVersion(file, numericProjectId, project.project_type))
+			.sort((a, b) => dayjs(b.date_published).valueOf() - dayjs(a.date_published).valueOf())
+		if (versionId) versions = versions.filter((version) => version.id === versionId)
+		if (versions.length === 0) {
+			throw new Error('No CurseForge files are available for this project')
+		}
+
+		currentProvider = 'curseforge'
+		currentProject = project
+		currentVersions = versions
+		currentCurseForgeProject = curseForgeProject
+		currentCurseForgeFiles = new Map(availableFiles.map((file) => [file.id.toString(), file]))
+
+		if (project.project_type === 'modpack') {
+			const version = versions[0]
+			const gameVersion =
+				(hints?.preferredGameVersion &&
+					version.game_versions.includes(hints.preferredGameVersion) &&
+					hints.preferredGameVersion) ||
+				version.game_versions[0]
+			if (!gameVersion) {
+				throw new Error('The CurseForge modpack does not declare a Minecraft version')
+			}
+			const loader =
+				version.loaders.find((candidate) => SUPPORTED_LOADERS.has(candidate)) ?? 'vanilla'
+			const job = await install_create_instance({
+				name: project.title,
+				gameVersion,
+				loader: loader as InstanceLoader,
+				loaderVersion: 'latest',
+				iconPath: null,
+			})
+			const createdInstanceId = installJobInstanceId(job)
+			if (!createdInstanceId) return
+			addInstallingItem(createdInstanceId, project, version)
+			try {
+				const result = await installCurrentCurseForgeVersion(
+					{
+						id: createdInstanceId,
+						name: project.title,
+						game_version: gameVersion,
+						loader: loader as InstanceLoader,
+					},
+					project,
+					version,
+					true,
+				)
+				removeInstallingItems(createdInstanceId, [project.id])
+				createInstanceCallback(createdInstanceId)
+				trackEvent('PackInstall', {
+					id: project.id,
+					version_id: version.id,
+					title: project.title,
+					source,
+				})
+				callback(result.primaryInstalled ? version.id : undefined, result.installedProjectIds)
+			} catch (err) {
+				removeInstallingItems(createdInstanceId, [project.id])
+				markInstanceContentInstallFailed(createdInstanceId)
+				throw err
+			}
+		} else if (instanceId) {
+			const instance = await get(instanceId)
+			if (!instance) return
+			let version = versionId
+				? versions.find((candidate) => candidate.id === versionId)
+				: findPreferredVersion(versions, project, instance)
+			if (!version) version = versions[0]
+			if (isVersionCompatible(version, project, instance)) {
+				addInstallingItem(instance.id, project, version)
+				try {
+					const result = await installCurrentCurseForgeVersion(instance, project, version, true)
+					removeInstallingItems(instance.id, [project.id])
+					trackEvent('ProjectInstall', {
+						loader: instance.loader,
+						game_version: instance.game_version,
+						id: project.id,
+						project_type: project.project_type,
+						version_id: version.id,
+						title: project.title,
+						source,
+					})
+					callback(result.primaryInstalled ? version.id : undefined, result.installedProjectIds)
+				} catch (err) {
+					removeInstallingItems(instance.id, [project.id])
+					markInstanceContentInstallFailed(instance.id)
+					throw err
+				}
+			} else {
+				await showIncompatibilityWarning(instance, project, versions, version, callback)
+			}
+		} else {
+			await showModInstallModal(project, versions, callback, hints)
+		}
+	}
+
 	return {
 		instances,
 		compatibleLoaders,
@@ -970,6 +1351,7 @@ export function createContentInstall(opts: {
 		handleIncompatibilityWarningInstall,
 		handleIncompatibilityWarningCancel,
 		install,
+		installCurseForge,
 		installingItems,
 		installRevisionByInstance,
 		installFailureRevisionByInstance,

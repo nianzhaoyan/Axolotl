@@ -52,6 +52,32 @@ fn main() {
                     ),
             )
             .plugin(
+                "curseforge",
+                InlinedPlugin::new()
+                    .commands(&[
+                        "curseforge_capability",
+                        "curseforge_validate_credentials",
+                        "curseforge_search_projects",
+                        "curseforge_get_project",
+                        "curseforge_get_projects",
+                        "curseforge_get_description",
+                        "curseforge_get_files",
+                        "curseforge_get_file",
+                        "curseforge_get_files_many",
+                        "curseforge_get_changelog",
+                        "curseforge_get_download_url",
+                        "curseforge_get_categories",
+                        "curseforge_match_fingerprints",
+                        "curseforge_install_file",
+                        "curseforge_update_installed_file",
+                        "curseforge_recognize_instance_files",
+                        "curseforge_install_modpack",
+                    ])
+                    .default_permission(
+                        DefaultPermissionRule::AllowAllCommands,
+                    ),
+            )
+            .plugin(
                 "import",
                 InlinedPlugin::new()
                     .commands(&[

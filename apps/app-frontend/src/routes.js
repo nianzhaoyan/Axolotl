@@ -87,6 +87,36 @@ export default new createRouter({
 			},
 		},
 		{
+			path: '/project/curseforge/:id',
+			name: 'CurseForgeProject',
+			component: Project.CurseForge,
+			props: true,
+			meta: {
+				useContext: true,
+				breadcrumb: [{ name: '?Project' }],
+			},
+		},
+		{
+			path: '/project/curseforge/:id/versions',
+			name: 'CurseForgeProjectVersions',
+			component: Project.CurseForge,
+			props: true,
+			meta: {
+				useContext: true,
+				breadcrumb: [{ name: '?Project', link: '/project/curseforge/{id}' }, { name: 'Versions' }],
+			},
+		},
+		{
+			path: '/project/curseforge/:id/gallery',
+			name: 'CurseForgeProjectGallery',
+			component: Project.CurseForge,
+			props: true,
+			meta: {
+				useContext: true,
+				breadcrumb: [{ name: '?Project', link: '/project/curseforge/{id}' }, { name: 'Gallery' }],
+			},
+		},
+		{
 			path: '/project/:id',
 			name: 'Project',
 			component: Project.Index,
@@ -165,10 +195,7 @@ export default new createRouter({
 					component: Instance.Screenshots,
 					meta: {
 						useRootContext: true,
-						breadcrumb: [
-							{ name: '?Instance', link: '/instance/{id}/' },
-							{ name: 'Screenshots' },
-						],
+						breadcrumb: [{ name: '?Instance', link: '/instance/{id}/' }, { name: 'Screenshots' }],
 					},
 				},
 				{

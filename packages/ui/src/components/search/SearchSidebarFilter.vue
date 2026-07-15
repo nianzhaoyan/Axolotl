@@ -135,16 +135,22 @@
 							>
 								<slot name="option" :filter="filterType" :option="option">
 									<span
-										v-if="option.icon"
+										v-if="option.icon || option.icon_url"
 										class="inline-flex items-center justify-center shrink-0 h-4 w-4"
 										:style="iconStyle(option)"
 									>
+										<img
+											v-if="option.icon_url"
+											:src="option.icon_url"
+											alt=""
+											class="h-4 w-4 object-contain"
+										/>
 										<div
-											v-if="typeof option.icon === 'string'"
+											v-else-if="typeof option.icon === 'string'"
 											class="h-4 w-4"
 											v-html="option.icon"
 										/>
-										<component :is="option.icon" v-else class="h-4 w-4" />
+										<component :is="option.icon" v-else-if="option.icon" class="h-4 w-4" />
 									</span>
 									<span class="truncate text-sm" :style="iconStyle(option)">
 										{{ option.formatted_name ?? option.id }}

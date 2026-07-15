@@ -478,6 +478,7 @@ const formatBytes = useFormatBytes()
 
 const MAX_GAME_VERSION_TAGS = 5
 const MAX_PLATFORM_TAGS = 3
+const MOD_LOADER_PROJECT_TYPES = ['mod', 'modpack', 'plugin']
 
 type VersionWithDisplayUrlEnding = Version & {
 	displayUrlEnding: string
@@ -612,7 +613,7 @@ function hasNoModLoader(loaders: string[]): boolean {
 		(props.project.project_type === 'modpack' &&
 			loaders.length === 1 &&
 			loaders[0] === 'minecraft') ||
-		loaders.length === 0
+		(MOD_LOADER_PROJECT_TYPES.includes(props.project.project_type) && loaders.length === 0)
 	)
 }
 

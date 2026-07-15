@@ -314,9 +314,6 @@
   "app.settings.tabs.language": {
     "message": "Bahasa"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Privasi"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Manajemen sumber"
   },
@@ -865,9 +862,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Dunia sedang dimainkan"
-  },
-  "minecraft-account.add-account": {
-    "message": "Tambah akun"
   },
   "minecraft-account.label": {
     "message": "Akun Minecraft"

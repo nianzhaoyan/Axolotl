@@ -314,9 +314,6 @@
   "app.settings.tabs.language": {
     "message": "Ngôn ngữ"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Quyền riêng tư"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Quản lý tài nguyên"
   },
@@ -865,9 +862,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Thế giới đang mở"
-  },
-  "minecraft-account.add-account": {
-    "message": "Thêm tài khoản"
   },
   "minecraft-account.label": {
     "message": "Tài khoản Minecraft"

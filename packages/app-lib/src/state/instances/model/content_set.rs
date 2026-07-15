@@ -8,6 +8,7 @@ use super::unknown_value;
 #[serde(rename_all = "snake_case")]
 pub enum ContentSourceKind {
     Local,
+    CurseForge,
     ModrinthModpack,
     ServerProject,
     ModrinthHosting,
@@ -19,6 +20,7 @@ impl ContentSourceKind {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Local => "local",
+            Self::CurseForge => "curseforge",
             Self::ModrinthModpack => "modrinth_modpack",
             Self::ServerProject => "server_project",
             Self::ModrinthHosting => "modrinth_hosting",
@@ -30,6 +32,7 @@ impl ContentSourceKind {
     pub fn from_str(value: &str) -> crate::Result<Self> {
         match value {
             "local" => Ok(Self::Local),
+            "curseforge" => Ok(Self::CurseForge),
             "modrinth_modpack" => Ok(Self::ModrinthModpack),
             "server_project" => Ok(Self::ServerProject),
             "modrinth_hosting" => Ok(Self::ModrinthHosting),

@@ -1,5 +1,6 @@
 //! API for interacting with Theseus
 pub mod cache;
+pub mod curseforge;
 pub mod friends;
 pub mod handler;
 pub mod instance;
@@ -21,8 +22,9 @@ pub mod data {
     pub use crate::state::{
         AppliedContentSetPatch, CacheBehaviour, CacheValueType, ContentFile,
         ContentItem, ContentItemOwner, ContentItemProject, ContentItemVersion,
-        CreateInstance, Credentials, Dependency, DirectoryInfo, EditInstance,
-        Hooks, InstanceInstallCandidate, InstanceInstallTarget,
+        ContentProvider, ContentProviderRef, CreateInstance, Credentials,
+        Dependency, DirectoryInfo, EditInstance, Hooks,
+        InstanceInstallCandidate, InstanceInstallTarget,
         InstanceLaunchOverridesPatch, InstanceLink, InstanceMetadata,
         JavaVersion, LinkedModpackInfo, MemorySettings, ModLoader,
         ModrinthCredentials, Organization, OwnerType, ProcessMetadata, Project,

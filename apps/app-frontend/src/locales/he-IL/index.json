@@ -194,9 +194,6 @@
   "app.settings.tabs.language": {
     "message": "שפה"
   },
-  "app.settings.tabs.privacy": {
-    "message": "פרטיות"
-  },
   "app.settings.tabs.resource-management": {
     "message": "ניהול משאבים"
   },

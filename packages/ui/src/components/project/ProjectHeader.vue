@@ -61,6 +61,7 @@
 						{{ formatCompactNumber(project.downloads) }}
 					</div>
 					<div
+						v-if="showFollowers"
 						v-tooltip="
 							capitalizeString(
 								formatMessage(commonMessages.projectFollowers, {
@@ -125,6 +126,7 @@ const props = withDefaults(
 		translatedDescription?: string
 		translationMode?: 'bilingual' | 'translation-only'
 		translationStyle?: 'default' | 'weakened' | 'brand' | 'border' | 'background'
+		showFollowers?: boolean
 	}>(),
 	{
 		member: false,
@@ -132,6 +134,7 @@ const props = withDefaults(
 		translatedDescription: undefined,
 		translationMode: 'bilingual',
 		translationStyle: 'default',
+		showFollowers: true,
 	},
 )
 

@@ -1,4 +1,3 @@
-import type { Labrinth } from '@modrinth/api-client'
 import type { ComputedRef, Ref, ShallowRef } from 'vue'
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -10,6 +9,7 @@ import type {
 	FilterValue,
 	ProjectType,
 	SortType,
+	Tags,
 } from '#ui/utils/search'
 import { LOADER_FILTER_TYPES, useSearch } from '#ui/utils/search'
 import { useServerSearch } from '#ui/utils/server-search'
@@ -18,11 +18,7 @@ import type { BrowseSearchResponse } from '../types'
 
 export interface UseBrowseSearchOptions {
 	projectType: Ref<string>
-	tags: Ref<{
-		gameVersions: Labrinth.Tags.v2.GameVersion[]
-		loaders: Labrinth.Tags.v2.Loader[]
-		categories: Labrinth.Tags.v2.Category[]
-	}>
+	tags: Ref<Tags>
 	providedFilters?: ComputedRef<FilterValue[]>
 	environmentOverride?: ComputedRef<EnvironmentSearchOverride | undefined>
 	search: (params: string) => Promise<BrowseSearchResponse>

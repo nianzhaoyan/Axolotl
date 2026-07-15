@@ -323,9 +323,6 @@
   "app.settings.tabs.language": {
     "message": "Nyelv"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Adatvédelem"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Erőforráskezelés"
   },
@@ -868,9 +865,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "A világ használatban van"
-  },
-  "minecraft-account.add-account": {
-    "message": "Fiók hozzáadása"
   },
   "minecraft-account.label": {
     "message": "Minecraft-fiók"

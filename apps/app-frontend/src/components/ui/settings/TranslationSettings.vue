@@ -273,42 +273,26 @@ async function clearCache() {
 		<div class="grid grid-cols-1 gap-5 md:grid-cols-2">
 			<div class="flex flex-col gap-2 font-semibold text-contrast">
 				<span>{{ formatMessage(messages.provider) }}</span>
-				<Combobox
-					v-model="settings.provider"
-					:options="providerOptions"
-				/>
+				<Combobox v-model="settings.provider" :options="providerOptions" />
 			</div>
 			<div class="flex flex-col gap-2 font-semibold text-contrast">
 				<span>{{ formatMessage(messages.targetLanguage) }}</span>
-				<Combobox
-					v-model="targetLanguage"
-					:options="languageOptions"
-					searchable
-				/>
+				<Combobox v-model="targetLanguage" :options="languageOptions" searchable />
 			</div>
 			<div class="flex flex-col gap-2 font-semibold text-contrast">
 				<span>{{ formatMessage(messages.displayMode) }}</span>
-				<Combobox
-					v-model="settings.mode"
-					:options="modeOptions"
-				/>
+				<Combobox v-model="settings.mode" :options="modeOptions" />
 			</div>
 			<div class="flex flex-col gap-2 font-semibold text-contrast">
 				<span>{{ formatMessage(messages.style) }}</span>
-				<Combobox
-					v-model="settings.style"
-					:options="styleOptions"
-				/>
+				<Combobox v-model="settings.style" :options="styleOptions" />
 			</div>
 		</div>
 
 		<div class="flex w-full flex-col gap-2 font-semibold text-contrast">
 			<span>{{ formatMessage(messages.stylePreview) }}</span>
 			<div class="translation-style-preview-container">
-				<p
-					v-if="settings.mode === 'bilingual'"
-					class="translation-style-preview-original m-0"
-				>
+				<p v-if="settings.mode === 'bilingual'" class="translation-style-preview-original m-0">
 					{{ formatMessage(messages.stylePreviewOriginalText) }}
 				</p>
 				<p class="translation-style-preview m-0" :class="stylePreviewClass">
@@ -360,14 +344,10 @@ async function clearCache() {
 			</p>
 			<div class="flex flex-wrap gap-2">
 				<ButtonStyled>
-					<button @click="saveSecret">
-						<CheckIcon />{{ formatMessage(messages.saveKey) }}
-					</button>
+					<button @click="saveSecret"><CheckIcon />{{ formatMessage(messages.saveKey) }}</button>
 				</ButtonStyled>
 				<ButtonStyled v-if="settings.openai_has_api_key" color="red">
-					<button @click="clearSecret">
-						<TrashIcon />{{ formatMessage(messages.clearKey) }}
-					</button>
+					<button @click="clearSecret"><TrashIcon />{{ formatMessage(messages.clearKey) }}</button>
 				</ButtonStyled>
 			</div>
 		</div>

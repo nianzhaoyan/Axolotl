@@ -113,13 +113,13 @@ import {
 	watch,
 } from 'vue'
 
+import { defineMessages, useVIntl } from '#ui/composables/i18n'
 import type {
 	SkinPreviewAnimationConfig,
 	SkinPreviewFitPadding,
 	SkinPreviewFraming,
 	SkinPreviewTuple,
 } from '#ui/composables/skin-rendering'
-import { defineMessages, useVIntl } from '#ui/composables/i18n'
 import {
 	useSkinPreviewAnimation,
 	useSkinPreviewControls,

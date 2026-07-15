@@ -10,16 +10,16 @@ use crate::state::instances::{
 };
 use crate::state::{
     CacheBehaviour, CachedEntry, CachedFile, ContentFile, ContentItem,
-    ContentItemOwner, ContentItemProject, ContentItemVersion, Dependency,
-    LinkedModpackInfo, ModLoader, Organization, OwnerType, Project,
-    ProjectType, ReleaseChannel, TeamMember, Version,
+    ContentItemOwner, ContentItemProject, ContentItemVersion, ContentProvider,
+    ContentProviderRef, Dependency, LinkedModpackInfo, ModLoader, Organization,
+    OwnerType, Project, ProjectType, ReleaseChannel, TeamMember, Version,
 };
 use crate::util::fetch::{
     DownloadMeta, DownloadReason, FetchSemaphore, fetch_mirrors, sha1_async,
 };
 use async_zip::base::read::seek::ZipFileReader;
 use dashmap::DashMap;
-use sqlx::SqlitePool;
+use sqlx::{Row, SqlitePool};
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 
@@ -85,17 +85,43 @@ pub(crate) async fn get_installed_project_ids_for_instance(
     content_set_id: Option<&str>,
     state: &State,
 ) -> crate::Result<Vec<String>> {
+    let resolved = resolve_content_scope_with_instance(
+        instance_id,
+        content_set_id,
+        &state.pool,
+    )
+    .await?;
     let projects =
         get_content_projects(instance_id, content_set_id, None, state).await?;
 
-    Ok(projects
+    let mut project_ids = projects
         .into_iter()
         .filter_map(|(_, file)| {
             file.metadata.map(|metadata| metadata.project_id)
         })
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect())
+        .collect::<HashSet<_>>();
+    let provider_rows = sqlx::query(
+        "SELECT DISTINCT ref.provider, ref.project_id
+         FROM instance_content_entries entry
+         INNER JOIN instance_files file ON file.id = entry.file_id
+         INNER JOIN instance_content_provider_refs ref
+            ON ref.content_entry_id = entry.id
+         WHERE entry.content_set_id = ? AND file.missing = 0",
+    )
+    .bind(&resolved.content_set.id)
+    .fetch_all(&state.pool)
+    .await?;
+    for row in provider_rows {
+        let provider = row.try_get::<String, _>("provider")?;
+        let project_id = row.try_get::<String, _>("project_id")?;
+        if provider == "curseforge" {
+            project_ids.insert(format!("curseforge:{project_id}"));
+        } else {
+            project_ids.insert(project_id);
+        }
+    }
+
+    Ok(project_ids.into_iter().collect())
 }
 
 #[derive(sqlx::FromRow)]
@@ -114,8 +140,7 @@ pub(crate) async fn get_instance_install_candidates(
     targets: &[InstanceInstallTarget],
     pool: &SqlitePool,
 ) -> crate::Result<Vec<InstanceInstallCandidate>> {
-    let rows = sqlx::query_as!(
-        InstanceInstallCandidateRow,
+    let rows = sqlx::query_as::<_, InstanceInstallCandidateRow>(
         r#"
 		SELECT
 			i.id,
@@ -130,7 +155,19 @@ pub(crate) async fn get_instance_install_candidates(
 					INNER JOIN instance_files file
 						ON file.id = entry.file_id
 					WHERE entry.content_set_id = cs.id
-						AND entry.project_id = ?
+						AND (
+							entry.project_id = ?
+							OR (
+								? LIKE 'curseforge:%'
+								AND EXISTS (
+									SELECT 1
+									FROM instance_content_provider_refs ref
+									WHERE ref.content_entry_id = entry.id
+										AND ref.provider = 'curseforge'
+										AND ref.project_id = substr(?, 12)
+								)
+							)
+						)
 						AND file.missing = 0
 				)
 					THEN 1
@@ -147,8 +184,10 @@ pub(crate) async fn get_instance_install_candidates(
 		)
 		ORDER BY i.name ASC
 		"#,
-        project_id,
     )
+    .bind(project_id)
+    .bind(project_id)
+    .bind(project_id)
     .fetch_all(pool)
     .await?;
 
@@ -528,6 +567,13 @@ pub(crate) async fn dependencies_to_content_items(
                 has_update: false,
                 update_version_id: None,
                 date_added: None,
+                provider_refs: vec![ContentProviderRef {
+                    provider: ContentProvider::Modrinth,
+                    project_id: project.id.clone(),
+                    version_id: version.map(|version| version.id.clone()),
+                    primary: true,
+                }],
+                primary_provider: Some(ContentProvider::Modrinth),
             })
         })
         .collect::<Vec<_>>();
@@ -562,7 +608,7 @@ async fn resolve_content_scope_with_instance(
 					"Content set {content_set_id} does not belong to instance {}",
 					instance.id
 				))
-				.into());
+                .into());
             }
 
             content_set
@@ -814,6 +860,58 @@ async fn content_files_to_content_items(
     cache_behaviour: Option<CacheBehaviour>,
     state: &State,
 ) -> crate::Result<Vec<ContentItem>> {
+    let mut provider_refs_by_path =
+        HashMap::<String, Vec<ContentProviderRef>>::new();
+    let provider_rows = sqlx::query(
+        "SELECT file.relative_path, ref.provider, ref.project_id,
+                ref.version_id, ref.primary_ref
+         FROM instance_files file
+         INNER JOIN instance_content_entries entry ON entry.file_id = file.id
+         INNER JOIN instance_content_provider_refs ref
+            ON ref.content_entry_id = entry.id
+         WHERE file.instance_id = ?",
+    )
+    .bind(&instance.id)
+    .fetch_all(&state.pool)
+    .await?;
+    for row in provider_rows {
+        let provider = ContentProvider::from_str(row.try_get("provider")?)?;
+        provider_refs_by_path
+            .entry(row.try_get("relative_path")?)
+            .or_default()
+            .push(ContentProviderRef {
+                provider,
+                project_id: row.try_get("project_id")?,
+                version_id: row.try_get("version_id")?,
+                primary: row.try_get::<i64, _>("primary_ref")? != 0,
+            });
+    }
+    let curseforge_project_ids = provider_refs_by_path
+        .values()
+        .flatten()
+        .filter(|reference| reference.provider == ContentProvider::CurseForge)
+        .filter_map(|reference| reference.project_id.parse::<u32>().ok())
+        .collect::<HashSet<_>>();
+    let curseforge_projects = if curseforge_project_ids.is_empty()
+        || crate::api::curseforge::capability().status
+            != crate::api::curseforge::CurseForgeCapabilityStatus::Ready
+    {
+        HashMap::new()
+    } else {
+        crate::api::curseforge::get_projects(
+            curseforge_project_ids.into_iter().collect(),
+        )
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|project| (project.id.to_string(), project))
+        .collect::<HashMap<_, _>>()
+    };
+    let content_set = sqlite::content_rows::get_applied_content_set(
+        &instance.id,
+        &state.pool,
+    )
+    .await?;
     let project_ids = files
         .iter()
         .filter_map(|(_, file)| {
@@ -863,6 +961,61 @@ async fn content_files_to_content_items(
         .iter()
         .enumerate()
         .map(|(index, (path, file))| {
+            let provider_refs = provider_refs_by_path
+                .get(path)
+                .cloned()
+                .or_else(|| {
+                    file.metadata.as_ref().map(|metadata| {
+                        vec![ContentProviderRef {
+                            provider: ContentProvider::Modrinth,
+                            project_id: metadata.project_id.clone(),
+                            version_id: Some(metadata.version_id.clone()),
+                            primary: true,
+                        }]
+                    })
+                })
+                .unwrap_or_default();
+            let primary_provider = provider_refs
+                .iter()
+                .find(|reference| reference.primary)
+                .or_else(|| provider_refs.first())
+                .map(|reference| reference.provider);
+            let curseforge_ref = provider_refs.iter().find(|reference| {
+                reference.provider == ContentProvider::CurseForge
+            });
+            let curseforge_project = curseforge_ref.and_then(|reference| {
+                curseforge_projects.get(&reference.project_id)
+            });
+            let curseforge_file = curseforge_ref.and_then(|reference| {
+                let file_id =
+                    reference.version_id.as_deref()?.parse::<u32>().ok()?;
+                curseforge_project?
+                    .latest_files
+                    .iter()
+                    .find(|file| file.id == file_id)
+            });
+            let curseforge_update_id = curseforge_ref.and_then(|reference| {
+                let current_file_id =
+                    reference.version_id.as_deref()?.parse::<u32>().ok()?;
+                let content_set = content_set.as_ref()?;
+                let loader_type = match content_set.loader.as_str() {
+                    "forge" => Some(1),
+                    "fabric" => Some(4),
+                    "quilt" => Some(5),
+                    "neoforge" => Some(6),
+                    _ => None,
+                };
+                let index = curseforge_project?
+                    .latest_files_indexes
+                    .iter()
+                    .find(|index| {
+                        index.game_version == content_set.game_version
+                            && (file.project_type != ProjectType::Mod
+                                || index.mod_loader == loader_type)
+                    })?;
+                (index.file_id != current_file_id)
+                    .then(|| index.file_id.to_string())
+            });
             let project = file.metadata.as_ref().and_then(|metadata| {
                 meta.projects
                     .iter()
@@ -884,22 +1037,60 @@ async fn content_files_to_content_items(
                 size: file.size,
                 enabled: file.enabled,
                 project_type: file.project_type,
-                project: project.map(|project| ContentItemProject {
-                    id: project.id.clone(),
-                    slug: project.slug.clone(),
-                    title: project.title.clone(),
-                    icon_url: project.icon_url.clone(),
+                project: project
+                    .map(|project| ContentItemProject {
+                        id: project.id.clone(),
+                        slug: project.slug.clone(),
+                        title: project.title.clone(),
+                        icon_url: project.icon_url.clone(),
+                    })
+                    .or_else(|| {
+                        curseforge_project.map(|project| ContentItemProject {
+                            id: project.id.to_string(),
+                            slug: Some(project.slug.clone()),
+                            title: project.name.clone(),
+                            icon_url: project
+                                .logo
+                                .as_ref()
+                                .map(|logo| logo.thumbnail_url.clone()),
+                        })
+                    }),
+                version: version
+                    .map(|version| ContentItemVersion {
+                        id: version.id.clone(),
+                        version_number: version.version_number.clone(),
+                        file_name: file.file_name.clone(),
+                        date_published: Some(
+                            version.date_published.to_rfc3339(),
+                        ),
+                    })
+                    .or_else(|| {
+                        curseforge_file.map(|version| ContentItemVersion {
+                            id: version.id.to_string(),
+                            version_number: version.display_name.clone(),
+                            file_name: version.file_name.clone(),
+                            date_published: Some(version.file_date.clone()),
+                        })
+                    }),
+                owner: owner.or_else(|| {
+                    curseforge_project
+                        .and_then(|project| project.authors.first())
+                        .map(|author| ContentItemOwner {
+                            id: author.id.to_string(),
+                            name: author.name.clone(),
+                            avatar_url: None,
+                            owner_type: OwnerType::User,
+                        })
                 }),
-                version: version.map(|version| ContentItemVersion {
-                    id: version.id.clone(),
-                    version_number: version.version_number.clone(),
-                    file_name: file.file_name.clone(),
-                    date_published: Some(version.date_published.to_rfc3339()),
-                }),
-                owner,
-                has_update: file.update_version_id.is_some(),
-                update_version_id: file.update_version_id.clone(),
+                has_update: file.update_version_id.is_some()
+                    || curseforge_update_id.is_some(),
+                update_version_id: file
+                    .update_version_id
+                    .clone()
+                    .or(curseforge_update_id),
                 date_added: modification_times[index].clone(),
+                provider_refs,
+                primary_provider,
             }
         })
         .collect::<Vec<_>>();

@@ -1,4 +1,6 @@
-use crate::state::{Project, ProjectType, Version};
+use crate::state::{
+    ContentProvider, ContentProviderRef, Project, ProjectType, Version,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -15,6 +17,10 @@ pub struct ContentItem {
     pub has_update: bool,
     pub update_version_id: Option<String>,
     pub date_added: Option<String>,
+    #[serde(default)]
+    pub provider_refs: Vec<ContentProviderRef>,
+    #[serde(default)]
+    pub primary_provider: Option<ContentProvider>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

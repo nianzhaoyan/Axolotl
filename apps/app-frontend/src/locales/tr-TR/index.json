@@ -422,9 +422,6 @@
   "app.settings.tabs.language": {
     "message": "Dil"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Gizlilik"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Kaynak yönetimi"
   },
@@ -976,9 +973,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Dünya şu anda kullanımda"
-  },
-  "minecraft-account.add-account": {
-    "message": "Hesap ekle"
   },
   "minecraft-account.label": {
     "message": "Minecraft hesabı"

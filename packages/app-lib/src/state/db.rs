@@ -1,10 +1,25 @@
 use crate::state::DirectoryInfo;
+use sha2::{Digest, Sha384};
+use sqlx::migrate::{Migration, Migrator};
 use sqlx::sqlite::{
     SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions,
 };
 use sqlx::{Pool, Sqlite};
 use std::path::Path;
 use std::time::Duration;
+
+static MIGRATOR: Migrator = sqlx::migrate!();
+
+const INITIAL_MIGRATION_VERSION: i64 = 20240711194701;
+
+// This migration was changed by the launcher rebrand after it had already
+// shipped. Keep the checksums of the original LF and CRLF variants so existing
+// installations can move to the current canonical migration without losing
+// their database.
+const LEGACY_INITIAL_MIGRATION_CHECKSUMS: &[&str] = &[
+    "49364b3e1b0d0169579ed93eb1f8e215216b84300a816891d0d922d3e03c69101e17e2bbe91ac1f54234c77cbd6b8bc3",
+    "d95bfef1c3b2b530d2efd810202c85f93a9342ab40497b15653eea9b129806333cf610eebcecfa91accaa53a14bfc5df",
+];
 
 pub(crate) async fn connect(
     app_identifier: &str,
@@ -35,7 +50,8 @@ async fn open_migrated_app_db(db_path: &Path) -> crate::Result<Pool<Sqlite>> {
         );
     }
 
-    sqlx::migrate!().run(&pool).await?;
+    reconcile_compatible_migration_checksums(&pool).await?;
+    MIGRATOR.run(&pool).await?;
     record_current_app_version(&pool).await?;
 
     if let Err(err) = stale_data_cleanup(&pool).await {
@@ -45,6 +61,104 @@ async fn open_migrated_app_db(db_path: &Path) -> crate::Result<Pool<Sqlite>> {
     }
 
     Ok(pool)
+}
+
+/// Reconciles historical migration checksums that differ only because of line
+/// endings, plus the known pre-rebrand form of the initial migration.
+///
+/// SQLx hashes the raw migration bytes, so an otherwise identical migration
+/// built with LF, CRLF, or mixed line endings receives a different checksum.
+/// Unknown checksums are deliberately left untouched for SQLx to reject.
+async fn reconcile_compatible_migration_checksums(
+    pool: &Pool<Sqlite>,
+) -> crate::Result<()> {
+    let has_migrations_table: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_sqlx_migrations')",
+    )
+    .fetch_one(pool)
+    .await?;
+
+    if !has_migrations_table {
+        return Ok(());
+    }
+
+    let applied_migrations: Vec<(i64, Vec<u8>)> =
+        sqlx::query_as("SELECT version, checksum FROM _sqlx_migrations")
+            .fetch_all(pool)
+            .await?;
+
+    for (version, applied_checksum) in applied_migrations {
+        let Some(migration) = MIGRATOR
+            .iter()
+            .find(|migration| migration.version == version)
+        else {
+            continue;
+        };
+        let current_checksum: &[u8] = migration.checksum.as_ref();
+
+        if applied_checksum.as_slice() == current_checksum {
+            continue;
+        }
+
+        if !is_compatible_migration_checksum(
+            version,
+            &applied_checksum,
+            migration,
+        ) {
+            continue;
+        }
+
+        sqlx::query(
+            "UPDATE _sqlx_migrations SET checksum = ? WHERE version = ?",
+        )
+        .bind(current_checksum)
+        .bind(version)
+        .execute(pool)
+        .await?;
+
+        tracing::warn!(
+            version,
+            "Reconciled a compatible historical migration checksum"
+        );
+    }
+
+    Ok(())
+}
+
+fn is_compatible_migration_checksum(
+    version: i64,
+    applied_checksum: &[u8],
+    migration: &Migration,
+) -> bool {
+    let normalized_lf = migration.sql.replace("\r\n", "\n").replace('\r', "\n");
+    let normalized_crlf = normalized_lf.replace('\n', "\r\n");
+
+    if checksum_matches(applied_checksum, normalized_lf.as_bytes())
+        || checksum_matches(applied_checksum, normalized_crlf.as_bytes())
+    {
+        return true;
+    }
+
+    version == INITIAL_MIGRATION_VERSION
+        && LEGACY_INITIAL_MIGRATION_CHECKSUMS
+            .contains(&checksum_as_hex(applied_checksum).as_str())
+}
+
+fn checksum_matches(checksum: &[u8], contents: &[u8]) -> bool {
+    let calculated: [u8; 48] = Sha384::digest(contents).into();
+    checksum == calculated
+}
+
+fn checksum_as_hex(checksum: &[u8]) -> String {
+    use std::fmt::Write;
+
+    checksum.iter().fold(
+        String::with_capacity(checksum.len() * 2),
+        |mut output, byte| {
+            let _ = write!(output, "{byte:02x}");
+            output
+        },
+    )
 }
 
 async fn open_app_db_pool(db_path: &Path) -> crate::Result<Pool<Sqlite>> {
@@ -102,4 +216,80 @@ async fn stale_data_cleanup(pool: &Pool<Sqlite>) -> crate::Result<()> {
     tx.commit().await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn initial_migration() -> &'static Migration {
+        MIGRATOR
+            .iter()
+            .find(|migration| migration.version == INITIAL_MIGRATION_VERSION)
+            .expect("initial migration should be embedded")
+    }
+
+    fn checksum(contents: &[u8]) -> Vec<u8> {
+        Sha384::digest(contents).to_vec()
+    }
+
+    fn decode_hex(value: &str) -> Vec<u8> {
+        value
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let pair = std::str::from_utf8(pair).expect("ASCII hex");
+                u8::from_str_radix(pair, 16).expect("valid hex")
+            })
+            .collect()
+    }
+
+    #[test]
+    fn accepts_lf_and_crlf_variants_of_the_same_migration() {
+        let migration = initial_migration();
+        let lf = migration.sql.replace("\r\n", "\n").replace('\r', "\n");
+        let crlf = lf.replace('\n', "\r\n");
+
+        assert!(is_compatible_migration_checksum(
+            migration.version,
+            &checksum(lf.as_bytes()),
+            migration,
+        ));
+        assert!(is_compatible_migration_checksum(
+            migration.version,
+            &checksum(crlf.as_bytes()),
+            migration,
+        ));
+    }
+
+    #[test]
+    fn accepts_only_the_known_legacy_initial_migration() {
+        let migration = initial_migration();
+        let legacy_checksum = decode_hex(LEGACY_INITIAL_MIGRATION_CHECKSUMS[0]);
+
+        assert!(is_compatible_migration_checksum(
+            INITIAL_MIGRATION_VERSION,
+            &legacy_checksum,
+            migration,
+        ));
+        assert!(!is_compatible_migration_checksum(
+            INITIAL_MIGRATION_VERSION + 1,
+            &legacy_checksum,
+            migration,
+        ));
+    }
+
+    #[test]
+    fn rejects_an_unknown_content_change() {
+        let migration = initial_migration();
+        let changed_checksum = checksum(
+            format!("{}\n-- unknown change", migration.sql).as_bytes(),
+        );
+
+        assert!(!is_compatible_migration_checksum(
+            migration.version,
+            &changed_checksum,
+            migration,
+        ));
+    }
 }

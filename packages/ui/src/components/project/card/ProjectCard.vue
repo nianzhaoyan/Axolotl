@@ -34,6 +34,12 @@
 							<div class="flex flex-col gap-1">
 								<div class="flex gap-2 items-center">
 									<ProjectCardTitle :title="title" compact />
+									<span
+										v-if="provider"
+										class="rounded-full bg-surface-5 px-2 py-0.5 text-xs font-semibold text-secondary"
+									>
+										{{ provider === 'curseforge' ? 'CurseForge' : 'Modrinth' }}
+									</span>
 									<ProjectCardAuthor v-if="author" :author="author" />
 									<ProjectStatusBadge v-if="status" :status="status" class="text-sm" />
 								</div>
@@ -118,6 +124,12 @@
 			<div class="flex flex-col gap-2 grid-project-card-list__info">
 				<div class="flex gap-2 items-center">
 					<ProjectCardTitle :title="title" />
+					<span
+						v-if="provider"
+						class="rounded-full bg-surface-5 px-2 py-0.5 text-xs font-semibold text-secondary"
+					>
+						{{ provider === 'curseforge' ? 'CurseForge' : 'Modrinth' }}
+					</span>
 					<ProjectCardAuthor v-if="author" :author="author" />
 					<ProjectStatusBadge v-if="status" :status="status" />
 				</div>
@@ -260,6 +272,7 @@ const props = defineProps<{
 	environment?: ProjectCardEnvironmentProps
 	status?: ProjectStatus
 	maxTags?: number
+	provider?: 'modrinth' | 'curseforge'
 }>()
 
 const baseCardStyle =

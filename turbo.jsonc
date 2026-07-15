@@ -47,7 +47,13 @@
 				"BUILD_ENV",
 				"PREVIEW"
 			],
-			"passThroughEnv": ["SCCACHE_*", "RUSTC_WRAPPER", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
+			"passThroughEnv": [
+				"SCCACHE_*",
+				"RUSTC_WRAPPER",
+				"AWS_ACCESS_KEY_ID",
+				"AWS_SECRET_ACCESS_KEY",
+				"CURSEFORGE_API_KEY"
+			]
 		},
 		"@modrinth/app#build": {
 			"cache": false
@@ -70,7 +76,14 @@
 			"persistent": true,
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"env": ["CARGO_*", "RUST_*", "RUSTFLAGS", "FORCE_COLOR", "NEXTEST_*"],
-			"passThroughEnv": ["DISPLAY", "WEBKIT_DISABLE_DMABUF_RENDERER", "JAVA_HOME"]
+			"passThroughEnv": [
+				"DISPLAY",
+				"WEBKIT_DISABLE_DMABUF_RENDERER",
+				"JAVA_HOME",
+				"CURSEFORGE_API_KEY",
+				"AXOLOTL_CURSEFORGE_API_KEY",
+				"AXOLOTL_CURSEFORGE_API_BASE_URL"
+			]
 		},
 		"test": {
 			"env": [

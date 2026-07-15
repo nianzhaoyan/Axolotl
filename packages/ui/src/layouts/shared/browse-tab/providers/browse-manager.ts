@@ -3,7 +3,7 @@ import type { Component, ComputedRef, MaybeRef, Ref, ShallowRef } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 
 import { createContext } from '#ui/providers/create-context'
-import type { FilterType, FilterValue, SortType } from '#ui/utils/search'
+import type { FilterType, FilterValue, SortType, Tags } from '#ui/utils/search'
 
 import type {
 	BrowseInstallContext,
@@ -13,11 +13,7 @@ import type {
 } from '../types'
 
 export interface BrowseManagerContext {
-	tags: Ref<{
-		gameVersions: Labrinth.Tags.v2.GameVersion[]
-		loaders: Labrinth.Tags.v2.Loader[]
-		categories: Labrinth.Tags.v2.Category[]
-	}>
+	tags: Ref<Tags>
 	projectType: Ref<string>
 
 	query: Ref<string>

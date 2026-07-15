@@ -103,6 +103,7 @@ import ExportModal from '@/components/ui/ExportModal.vue'
 import ShareModalWrapper from '@/components/ui/modal/ShareModalWrapper.vue'
 import { trackEvent } from '@/helpers/analytics'
 import { get_project_versions, get_version, get_version_many } from '@/helpers/cache.js'
+import { updateCurseForgeFile } from '@/helpers/curseforge'
 import {
 	instance_bulk_update_progress_listener,
 	instance_listener,
@@ -677,6 +678,12 @@ async function bulkUpdateAllProjects(onProgress?: (status: BulkOperationStatus) 
 		}
 
 		await update_all(props.instance.id)
+		const curseForgeUpdates = projects.value.filter(
+			(item) => item.primary_provider === 'curseforge' && item.has_update && item.file_path,
+		)
+		for (const item of curseForgeUpdates) {
+			await updateCurseForgeFile(props.instance.id, item.file_path!)
+		}
 		await refreshContentState('must_revalidate')
 	} catch (err) {
 		handleError(err as Error)
@@ -692,12 +699,16 @@ async function updateProject(mod: ContentItem) {
 	if (!operation) return
 
 	try {
-		const updateVersionId = mod.update_version_id!
-		await switch_project_version_with_dependencies(
-			props.instance.id,
-			mod.file_path,
-			updateVersionId,
-		)
+		if (mod.primary_provider === 'curseforge') {
+			await updateCurseForgeFile(props.instance.id, mod.file_path ?? '')
+		} else {
+			const updateVersionId = mod.update_version_id!
+			await switch_project_version_with_dependencies(
+				props.instance.id,
+				mod.file_path,
+				updateVersionId,
+			)
+		}
 
 		trackEvent('InstanceProjectUpdate', {
 			loader: props.instance.loader,
@@ -743,6 +754,10 @@ async function switchProjectVersion(mod: ContentItem, version: Labrinth.Versions
 async function handleUpdate(id: string) {
 	const item = projects.value.find((p) => getContentItemId(p) === id)
 	if (!item || !canUpdateProject(item) || !item.project?.id || !item.version?.id) return
+	if (item.primary_provider === 'curseforge') {
+		await updateProject(item)
+		return
+	}
 
 	const requestId = beginUpdateRequest()
 	const itemId = getContentItemId(item)
@@ -1352,7 +1367,13 @@ provideContentManager({
 			icon_url: null,
 		},
 		projectLink: item.project?.id
-			? { path: `/project/${item.project.id}`, query: { i: props.instance.id } }
+			? {
+					path:
+						item.primary_provider === 'curseforge'
+							? `/project/curseforge/${item.project.id}`
+							: `/project/${item.project.id}`,
+					query: { i: props.instance.id },
+				}
 			: undefined,
 		version: item.version ?? {
 			id: item.file_name,
@@ -1360,7 +1381,7 @@ provideContentManager({
 			file_name: item.file_name,
 		},
 		versionLink:
-			item.project?.id && item.version?.id
+			item.primary_provider !== 'curseforge' && item.project?.id && item.version?.id
 				? {
 						path: `/project/${item.project.id}/version/${item.version.id}`,
 						query: { i: props.instance.id },
@@ -1369,7 +1390,10 @@ provideContentManager({
 		owner: item.owner
 			? {
 					...item.owner,
-					link: () => openUrl(`https://modrinth.com/${item.owner!.type}/${item.owner!.id}`),
+					link:
+						item.primary_provider === 'curseforge'
+							? undefined
+							: () => openUrl(`https://modrinth.com/${item.owner!.type}/${item.owner!.id}`),
 				}
 			: undefined,
 		enabled: item.enabled,

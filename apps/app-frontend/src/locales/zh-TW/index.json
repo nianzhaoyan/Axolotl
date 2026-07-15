@@ -476,9 +476,6 @@
   "app.settings.tabs.language": {
     "message": "語言"
   },
-  "app.settings.tabs.privacy": {
-    "message": "隱私"
-  },
   "app.settings.tabs.resource-management": {
     "message": "資源管理"
   },
@@ -1030,9 +1027,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "世界正在使用中"
-  },
-  "minecraft-account.add-account": {
-    "message": "新增帳號"
   },
   "minecraft-account.label": {
     "message": "Minecraft 帳號"

@@ -314,9 +314,6 @@
   "app.settings.tabs.language": {
     "message": "Taal"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Privacy"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Bronnenbeheer"
   },
@@ -865,9 +862,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Wereld wordt gebruikt"
-  },
-  "minecraft-account.add-account": {
-    "message": "Voeg account toe"
   },
   "minecraft-account.label": {
     "message": "Minecraft account"

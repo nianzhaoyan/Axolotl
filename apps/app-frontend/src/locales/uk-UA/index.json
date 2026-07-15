@@ -314,9 +314,6 @@
   "app.settings.tabs.language": {
     "message": "Мова"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Конфіденційність"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Керування ресурсами"
   },
@@ -865,9 +862,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Світ наразі використовується"
-  },
-  "minecraft-account.add-account": {
-    "message": "Додати обліковий запис"
   },
   "minecraft-account.label": {
     "message": "Обліковий запис Minecraft"

@@ -6,6 +6,7 @@ export type TranslationProvider = 'microsoft' | 'google' | 'openai-compatible'
 export type TranslationMode = 'bilingual' | 'translation-only'
 export type TranslationStyle = 'default' | 'weakened' | 'brand' | 'border' | 'background'
 export type TranslationTextFormat = 'plain' | 'html'
+export type DescriptionSourceFormat = 'markdown' | 'html'
 
 export interface TranslationSettings {
 	provider: TranslationProvider
@@ -126,9 +127,16 @@ function protectElementAttributes(
 	return protectedElements
 }
 
-export function prepareDescription(description: string): PreparedDescription {
+export function prepareDescription(
+	description: string,
+	sourceFormat: DescriptionSourceFormat = 'markdown',
+): PreparedDescription {
+	const renderedDescription =
+		sourceFormat === 'html'
+			? configuredXss.process(description ?? '')
+			: renderHighlightedString(description ?? '')
 	const document = new DOMParser().parseFromString(
-		`<body>${renderHighlightedString(description ?? '')}</body>`,
+		`<body>${renderedDescription}</body>`,
 		'text/html',
 	)
 	const blocks: PreparedDescriptionBlock[] = []

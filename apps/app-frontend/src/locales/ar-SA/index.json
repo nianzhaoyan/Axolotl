@@ -257,9 +257,6 @@
   "app.settings.tabs.language": {
     "message": "اللغة"
   },
-  "app.settings.tabs.privacy": {
-    "message": "الخصوصية"
-  },
   "app.settings.tabs.resource-management": {
     "message": "إدارة الموارد"
   },
@@ -685,9 +682,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "العالم قيد الاستخدام"
-  },
-  "minecraft-account.add-account": {
-    "message": "إضافة حساب"
   },
   "minecraft-account.label": {
     "message": "حساب ماينكرافت"

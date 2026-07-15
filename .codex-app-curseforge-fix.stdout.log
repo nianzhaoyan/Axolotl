@@ -1,0 +1,147 @@
+ WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+
+> @modrinth/monorepo@0.0.0 app:dev D:\Code\Minecraft\axolotl-launcher
+> turbo run dev --filter=@modrinth/app
+
+• Packages in scope: @modrinth/app
+• Running dev in 1 packages
+• Remote caching disabled
+@modrinth/app:dev: cache bypass, force executing fcf6efea0e8c2d9f
+@modrinth/app:dev: 
+@modrinth/app:dev: > @modrinth/app@ dev D:\Code\Minecraft\axolotl-launcher\apps\app
+@modrinth/app:dev: > tauri dev
+@modrinth/app:dev: 
+@modrinth/app:dev:         Info `tauri-build` dependency has workspace inheritance enabled. The features array won't be automatically rewritten. Expected features: []
+@modrinth/app:dev:         Info `tauri` dependency has workspace inheritance enabled. The features array won't be automatically rewritten. Expected features: [macos-private-api, protocol-asset]
+@modrinth/app:dev:      Running BeforeDevCommand (`pnpm turbo run dev --filter=@modrinth/app-frontend`)
+@modrinth/app:dev: ../..                                    |  WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+@modrinth/app:dev: ../..                                    |  WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+@modrinth/app:dev: • turbo 2.8.2
+@modrinth/app:dev: • Packages in scope: @modrinth/app-frontend
+@modrinth/app:dev: • Running dev in 1 packages
+@modrinth/app:dev: • Remote caching disabled
+@modrinth/app:dev: @modrinth/app-frontend:dev: cache bypass, force executing bb6b4ef2d6ce0d94
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev: > @modrinth/app-frontend@1.0.0-local dev D:\Code\Minecraft\axolotl-launcher\apps\app-frontend
+@modrinth/app:dev: @modrinth/app-frontend:dev: > vite
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev:   [32m[1mVITE[22m v8.0.3[39m  [2mready in [0m[1m1035[22m[2m[0m ms[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev:   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m1420[22m/[39m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app-playground for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\daedalus_client for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\labrinth for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\app-lib for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\ariadne for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\daedalus for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\labrinth-derive for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-content-management for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-log for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-maxmind for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-util for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\path-util for changes...
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 55.97s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: @modrinth/app-frontend:dev: Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+@modrinth/app:dev: @modrinth/app-frontend:dev:   npx update-browserslist-db@latest
+@modrinth/app:dev: @modrinth/app-frontend:dev:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+@modrinth/app:dev: [2m2026-07-14T13:41:16.437972Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:41:16.452097Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:41:16.790189Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:41:16.791965Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:41:41.642533Z[0m [33m WARN[0m [2mtao::platform_impl::platform::event_loop::runner[0m[2m:[0m NewEvents emitted without explicit RedrawEventsCleared
+@modrinth/app:dev: [2m2026-07-14T13:41:41.642777Z[0m [33m WARN[0m [2mtao::platform_impl::platform::event_loop::runner[0m[2m:[0m RedrawEventsCleared emitted without explicit MainEventsCleared
+@modrinth/app:dev: [2m2026-07-14T13:41:48.043651Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request failed with HTTP 503: Service Unavailable [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:42:38.004980Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request failed with HTTP 503: Service Unavailable [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:43:57.900330Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request failed with HTTP 503: Service Unavailable [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:43:59.919788Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request failed with HTTP 503: Service Unavailable [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\api\curseforge.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 33s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: [2m2026-07-14T13:46:35.485602Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:46:35.485937Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:46:35.856748Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:46:35.858018Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:46:59.605347Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to http://127.0.0.1:18081/v1/mods/search failed with HTTP 503: Service Unavailable [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:47:04.441777Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to http://127.0.0.1:18081/v1/mods/search failed with HTTP 503: Service Unavailable [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\api\curseforge.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 33s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: [2m2026-07-14T13:49:16.060132Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:49:16.064315Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:49:16.375333Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:49:16.383930Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:51:59.795850Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: unexpected end of file [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:52:02.562484Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of modrinth.mc-complex.com:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:52:02.875822Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: 不知道这样的主机。 (os error 11001) [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T13:52:07.568521Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of brassworks.opnsoc.org:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\state\instances\commands\list_content.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:00:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:01:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue[22m
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:01:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:02:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue[22m
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 2m 14s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: [2m2026-07-14T14:02:36.870315Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:02:36.872419Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:02:37.213754Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:02:37.219543Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:02:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue[22m
+@modrinth/app:dev: [2m2026-07-14T14:02:42.595369Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:02:42.595777Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:02:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue[22m
+@modrinth/app:dev: [2m2026-07-14T14:02:48.409769Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:02:48.412442Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:03:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Browse.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:03:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Browse.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:04:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/project/CurseForge.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:04:50[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/project/CurseForge.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:05:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/project/CurseForge.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:06:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/project/CurseForge.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:07:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.vue, /src/pages/instance/Mods.vue, /src/pages/Browse.vue, /src/pages/project/Index.vue, /src/components/RowDisplay.vue, /src/pages/project/CurseForge.vue[22m
+@modrinth/app:dev: [2m2026-07-14T14:07:02.777380Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:07:02.780550Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:07:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Browse.vue, /src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m22:07:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/stylesheets/global.scss?direct[22m
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\state\instances\commands\list_content.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\state\instances\commands\list_content.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 28s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: [2m2026-07-14T14:08:42.405937Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:08:42.410500Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:08:42.897263Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:08:42.897679Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:10:44.691438Z[0m [33m WARN[0m [2mtao::platform_impl::platform::event_loop::runner[0m[2m:[0m NewEvents emitted without explicit RedrawEventsCleared
+@modrinth/app:dev: [2m2026-07-14T14:10:44.691763Z[0m [33m WARN[0m [2mtao::platform_impl::platform::event_loop::runner[0m[2m:[0m RedrawEventsCleared emitted without explicit MainEventsCleared
+@modrinth/app:dev: [2m2026-07-14T14:14:24.701496Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge download failed with HTTP 503 [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\api\curseforge.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 23s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: [2m2026-07-14T14:16:37.470270Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:16:37.470377Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:16:37.982642Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:16:37.988736Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:        Error The "beforeDevCommand" terminated with a non-zero status code.

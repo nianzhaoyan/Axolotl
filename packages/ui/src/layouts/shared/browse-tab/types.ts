@@ -6,6 +6,9 @@ export interface BrowseSearchResponse {
 	projectHits: (Labrinth.Search.v2.ResultSearchProject & {
 		installed?: boolean
 		installing?: boolean
+		provider?: 'modrinth' | 'curseforge'
+		provider_project_id?: string
+		author_url?: string
 	})[]
 	serverHits: Labrinth.Search.v3.ResultSearchProject[]
 	total_hits: number

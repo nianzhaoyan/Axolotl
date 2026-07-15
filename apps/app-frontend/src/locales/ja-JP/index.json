@@ -284,9 +284,6 @@
   "app.settings.tabs.language": {
     "message": "言語"
   },
-  "app.settings.tabs.privacy": {
-    "message": "プライバシー設定"
-  },
   "app.settings.tabs.resource-management": {
     "message": "リソース管理"
   },
@@ -703,9 +700,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "ワールドは使用中"
-  },
-  "minecraft-account.add-account": {
-    "message": "アカウントを追加"
   },
   "minecraft-account.label": {
     "message": "Minecraftアカウント"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { renderHighlightedString } from '@modrinth/utils'
+import { configuredXss, renderHighlightedString } from '@modrinth/utils'
 import { computed } from 'vue'
 
 import {
@@ -15,12 +15,17 @@ const props = defineProps<{
 	translations: Record<string, string>
 	mode: TranslationMode
 	style: TranslationStyle
+	format?: 'markdown' | 'html'
 }>()
 
 const renderedDescription = computed(() => {
-	if (!props.active) return renderHighlightedString(props.description ?? '')
+	if (!props.active) {
+		return props.format === 'html'
+			? configuredXss.process(props.description ?? '')
+			: renderHighlightedString(props.description ?? '')
+	}
 	return renderTranslatedDescription(
-		prepareDescription(props.description),
+		prepareDescription(props.description, props.format),
 		props.translations,
 		props.mode,
 		props.style,

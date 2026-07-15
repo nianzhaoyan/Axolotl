@@ -305,9 +305,6 @@
   "app.settings.tabs.language": {
     "message": "Wika"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Pribasiya"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Pamamahala ng paglalaan"
   },
@@ -697,9 +694,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Ginagamit ang mundo"
-  },
-  "minecraft-account.add-account": {
-    "message": "Maglagay ng account"
   },
   "minecraft-account.label": {
     "message": "Minecraft account"

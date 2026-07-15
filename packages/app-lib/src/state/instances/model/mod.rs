@@ -3,6 +3,9 @@
 mod content_entry;
 pub use self::content_entry::*;
 
+mod content_provider;
+pub use self::content_provider::*;
+
 mod content_set;
 pub use self::content_set::*;
 

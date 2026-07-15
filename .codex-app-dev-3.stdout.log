@@ -1,0 +1,146 @@
+ WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+
+> @modrinth/monorepo@0.0.0 app:dev D:\Code\Minecraft\axolotl-launcher
+> turbo run dev --filter=@modrinth/app
+
+• Packages in scope: @modrinth/app
+• Running dev in 1 packages
+• Remote caching disabled
+@modrinth/app:dev: cache bypass, force executing 4b302b5bdea6420d
+@modrinth/app:dev: 
+@modrinth/app:dev: > @modrinth/app@ dev D:\Code\Minecraft\axolotl-launcher\apps\app
+@modrinth/app:dev: > tauri dev
+@modrinth/app:dev: 
+@modrinth/app:dev:         Info `tauri-build` dependency has workspace inheritance enabled. The features array won't be automatically rewritten. Expected features: []
+@modrinth/app:dev:         Info `tauri` dependency has workspace inheritance enabled. The features array won't be automatically rewritten. Expected features: [macos-private-api, protocol-asset]
+@modrinth/app:dev:      Running BeforeDevCommand (`pnpm turbo run dev --filter=@modrinth/app-frontend`)
+@modrinth/app:dev: ../..                                    |  WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+@modrinth/app:dev: ../..                                    |  WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+@modrinth/app:dev: • turbo 2.8.2
+@modrinth/app:dev: • Packages in scope: @modrinth/app-frontend
+@modrinth/app:dev: • Running dev in 1 packages
+@modrinth/app:dev: • Remote caching disabled
+@modrinth/app:dev: @modrinth/app-frontend:dev: cache bypass, force executing 93b4c20d33abfa8a
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev: > @modrinth/app-frontend@1.0.0-local dev D:\Code\Minecraft\axolotl-launcher\apps\app-frontend
+@modrinth/app:dev: @modrinth/app-frontend:dev: > vite
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev:   [32m[1mVITE[22m v8.0.3[39m  [2mready in [0m[1m1309[22m[2m[0m ms[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev:   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m1420[22m/[39m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app-playground for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\daedalus_client for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\labrinth for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\app-lib for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\ariadne for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\daedalus for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\labrinth-derive for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-content-management for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-log for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-maxmind for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-util for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\path-util for changes...
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 03s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: @modrinth/app-frontend:dev: Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+@modrinth/app:dev: @modrinth/app-frontend:dev:   npx update-browserslist-db@latest
+@modrinth/app:dev: @modrinth/app-frontend:dev:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+@modrinth/app:dev: [2m2026-07-14T13:07:48.450691Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:07:48.450691Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T13:07:48.578528Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError while applying migrations: migration 20240711194701 was previously applied but has been modified [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\state\db.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[91merror[E0283][0m[1m[97m: type annotations needed[0m
+@modrinth/app:dev:   [1m[96m--> [0mpackages\app-lib\src\state\db.rs:98:29
+@modrinth/app:dev:    [1m[96m|[0m
+@modrinth/app:dev: [1m[96m98[0m [1m[96m|[0m         if applied_checksum == migration.checksum.as_ref() {
+@modrinth/app:dev:    [1m[96m|[0m                             [1m[91m^^[0m [1m[91mcannot infer type for reference `&_`[0m
+@modrinth/app:dev:    [1m[96m|[0m
+@modrinth/app:dev:    [1m[96m= [0m[1m[97mnote[0m: multiple `impl`s satisfying `Vec<u8>: PartialEq<&_>` found in the following crates: `alloc`, `typed_path`:
+@modrinth/app:dev:            - impl<'a, T> PartialEq<&'a typed_path::common::non_utf8::path::Path<T>> for Vec<u8>
+@modrinth/app:dev:              where T: typed_path::common::non_utf8::Encoding;
+@modrinth/app:dev:            - impl<T, U, A, N> PartialEq<&[U; N]> for Vec<T, A>
+@modrinth/app:dev:              where the constant `N` has type `usize`, A: Allocator, T: PartialEq<U>;
+@modrinth/app:dev:            - impl<T, U, A> PartialEq<&[U]> for Vec<T, A>
+@modrinth/app:dev:              where A: Allocator, T: PartialEq<U>;
+@modrinth/app:dev: 
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[91merror[E0283][0m[1m[97m: type annotations needed[0m
+@modrinth/app:dev:   [1m[96m--> [0mpackages\app-lib\src\state\db.rs:98:51
+@modrinth/app:dev:    [1m[96m|[0m
+@modrinth/app:dev: [1m[96m98[0m [1m[96m|[0m         if applied_checksum == migration.checksum.as_ref() {
+@modrinth/app:dev:    [1m[96m|[0m                                                   [1m[91m^^^^^^[0m
+@modrinth/app:dev:    [1m[96m|[0m
+@modrinth/app:dev:    [1m[96m= [0m[1m[97mnote[0m: multiple `impl`s satisfying `Cow<'_, [u8]>: AsRef<_>` found in the following crates: `alloc`, `typed_path`:
+@modrinth/app:dev:            - impl<T> AsRef<T> for Cow<'_, T>
+@modrinth/app:dev:              where T: ToOwned, T: ?Sized;
+@modrinth/app:dev:            - impl<T> AsRef<typed_path::common::non_utf8::path::Path<T>> for Cow<'_, [u8]>
+@modrinth/app:dev:              where T: typed_path::common::non_utf8::Encoding;
+@modrinth/app:dev: [1m[96mhelp[0m: try using a fully qualified path to specify the expected types
+@modrinth/app:dev:    [1m[96m|[0m
+@modrinth/app:dev: [1m[96m98[0m [91m- [0m        if applied_checksum == migration.checksum[91m.as_ref()[0m {
+@modrinth/app:dev: [1m[96m98[0m [92m+ [0m        if applied_checksum == [92m<Cow<'_, [u8]> as AsRef<T>>::as_ref(&[0mmigration.checksum[92m)[0m {
+@modrinth/app:dev:    [1m[96m|[0m
+@modrinth/app:dev: 
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[91merror[E0283][0m[1m[97m: type annotations needed[0m
+@modrinth/app:dev:    [1m[96m--> [0mpackages\app-lib\src\state\db.rs:113:10
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev: [1m[96m113[0m [1m[96m|[0m         .bind(migration.checksum.as_ref())
+@modrinth/app:dev:     [1m[96m|[0m          [1m[91m^^^^[0m [1m[91mcannot infer type of the type parameter `T` declared on the method `bind`[0m
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev:     [1m[96m= [0m[1m[97mnote[0m: multiple `impl`s satisfying `&_: sqlx::Encode<'_, Sqlite>` found in the following crates: `sqlx_core`, `sqlx_sqlite`:
+@modrinth/app:dev:             - impl<'q, T, DB> sqlx::Encode<'q, DB> for &T
+@modrinth/app:dev:               where DB: sqlx::Database, T: sqlx::Encode<'q, DB>;
+@modrinth/app:dev:             - impl<'q> sqlx::Encode<'q, Sqlite> for &'q [u8];
+@modrinth/app:dev:             - impl<'q> sqlx::Encode<'q, Sqlite> for &'q str;
+@modrinth/app:dev: [1m[92mnote[0m: required by a bound in `sqlx::query::Query::<'q, DB, <DB as sqlx::Database>::Arguments<'q>>::bind`
+@modrinth/app:dev:    [1m[96m--> [0mC:\Users\12783\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\sqlx-core-0.8.6\src\query.rs:86:25
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev: [1m[96m 86[0m [1m[96m|[0m     pub fn bind<T: 'q + Encode<'q, DB> + Type<DB>>(mut self, value: T) -> Self {
+@modrinth/app:dev:     [1m[96m|[0m                         [1m[92m^^^^^^^^^^^^^^[0m [1m[92mrequired by this bound in `Query::<'q, DB, <DB as Database>::Arguments<'q>>::bind`[0m
+@modrinth/app:dev: [1m[96mhelp[0m: consider specifying the generic argument
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev: [1m[96m113[0m [1m[96m| [0m        .bind[92m::<&T>[0m(migration.checksum.as_ref())
+@modrinth/app:dev:     [1m[96m|[0m              [92m++++++[0m
+@modrinth/app:dev: 
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[91merror[E0283][0m[1m[97m: type annotations needed[0m
+@modrinth/app:dev:    [1m[96m--> [0mpackages\app-lib\src\state\db.rs:113:10
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev: [1m[96m113[0m [1m[96m|[0m         .bind(migration.checksum.as_ref())
+@modrinth/app:dev:     [1m[96m|[0m          [1m[91m^^^^[0m                    [1m[96m------[0m [1m[96mtype must be known at this point[0m
+@modrinth/app:dev:     [1m[96m|[0m          [1m[91m|[0m
+@modrinth/app:dev:     [1m[96m|[0m          [1m[91mcannot infer type of the type parameter `T` declared on the method `bind`[0m
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev:     [1m[96m= [0m[1m[97mnote[0m: multiple `impl`s satisfying `Cow<'_, [u8]>: AsRef<_>` found in the following crates: `alloc`, `typed_path`:
+@modrinth/app:dev:             - impl<T> AsRef<T> for Cow<'_, T>
+@modrinth/app:dev:               where T: ToOwned, T: ?Sized;
+@modrinth/app:dev:             - impl<T> AsRef<typed_path::common::non_utf8::path::Path<T>> for Cow<'_, [u8]>
+@modrinth/app:dev:               where T: typed_path::common::non_utf8::Encoding;
+@modrinth/app:dev: [1m[96mhelp[0m: consider specifying the generic argument
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev: [1m[96m113[0m [1m[96m| [0m        .bind[92m::<&T>[0m(migration.checksum.as_ref())
+@modrinth/app:dev:     [1m[96m|[0m              [92m++++++[0m
+@modrinth/app:dev: 
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[93mwarning[0m[1m[97m: use of deprecated method `sha2::digest::generic_array::GenericArray::<T, N>::as_slice`: please upgrade to generic-array 1.x[0m
+@modrinth/app:dev:    [1m[96m--> [0mpackages\app-lib\src\state\db.rs:147:42
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev: [1m[96m147[0m [1m[96m|[0m     checksum == Sha384::digest(contents).as_slice()
+@modrinth/app:dev:     [1m[96m|[0m                                          [1m[93m^^^^^^^^[0m
+@modrinth/app:dev:     [1m[96m|[0m
+@modrinth/app:dev:     [1m[96m= [0m[1m[97mnote[0m: `#[warn(deprecated)]` on by default
+@modrinth/app:dev: 
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[97mFor more information about this error, try `rustc --explain E0283`.[0m
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[93mwarning[0m: `theseus` (lib) generated 1 warning
+@modrinth/app:dev: [1m[91merror[0m: could not compile `theseus` (lib) due to 4 previous errors; 1 warning emitted
+@modrinth/app:dev:         Info File D:\Code\Minecraft\axolotl-launcher\packages\app-lib\src\state\db.rs changed. Rebuilding application...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+ ELIFECYCLE  Command failed with exit code 4294967295.

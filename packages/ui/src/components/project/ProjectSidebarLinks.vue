@@ -56,8 +56,8 @@
 				<ExternalIcon aria-hidden="true" class="external-icon" />
 			</a>
 			<a
-				v-if="projectV3?.link_urls.site?.url"
-				:href="projectV3?.link_urls.site?.url"
+				v-if="projectV3?.link_urls.site?.url || project.site_url"
+				:href="projectV3?.link_urls.site?.url || project.site_url"
 				:target="linkTarget"
 				rel="noopener nofollow ugc"
 			>
@@ -82,6 +82,7 @@
 						project.wiki_url ||
 						project.discord_url ||
 						projectV3?.link_urls.site?.url ||
+						project.site_url ||
 						projectV3?.link_urls.store?.url) &&
 					project.donation_urls.length > 0
 				"

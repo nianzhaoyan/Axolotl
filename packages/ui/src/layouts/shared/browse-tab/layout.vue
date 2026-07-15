@@ -269,20 +269,22 @@ const sortOptions = computed<ComboboxOption<SortType>[]>(() =>
 			<template v-else>
 				<ProjectCard
 					v-for="result in ctx.projectHits.value"
-					:key="result.project_id"
+					:key="`${result.provider ?? 'modrinth'}:${result.project_id}`"
 					:link="ctx.getProjectLink(result)"
 					:title="result.title"
 					:icon-url="result.icon_url"
 					:author="{
 						name: result.organization == null ? result.author : result.organization,
 						link:
-							result.organization_id == null
-								? ctx.variant === 'web'
-									? `/user/${result.author_id ?? result.author}`
-									: `https://modrinth.com/user/${result.author_id ?? result.author}`
-								: ctx.variant === 'web'
-									? `/organization/${result.organization_id}`
-									: `https://modrinth.com/organization/${result.organization_id}`,
+							result.provider === 'curseforge'
+								? result.author_url
+								: result.organization_id == null
+									? ctx.variant === 'web'
+										? `/user/${result.author_id ?? result.author}`
+										: `https://modrinth.com/user/${result.author_id ?? result.author}`
+									: ctx.variant === 'web'
+										? `/organization/${result.organization_id}`
+										: `https://modrinth.com/organization/${result.organization_id}`,
 					}"
 					:date-updated="result.date_modified"
 					:date-published="result.date_created"
@@ -298,6 +300,7 @@ const sortOptions = computed<ComboboxOption<SortType>[]>(() =>
 					:followers="result.follows"
 					:banner="result.featured_gallery ?? undefined"
 					:color="result.color ?? undefined"
+					:provider="result.provider"
 					:environment="
 						['mod', 'modpack'].includes(ctx.projectType.value)
 							? {

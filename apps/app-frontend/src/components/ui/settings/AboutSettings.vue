@@ -23,8 +23,7 @@ const messages = defineMessages({
 	},
 	attribution: {
 		id: 'app.settings.about.attribution',
-		defaultMessage:
-			'This application is a modified version of the open-source Modrinth project.',
+		defaultMessage: 'This application is a modified version of the open-source Modrinth project.',
 	},
 	originalSource: {
 		id: 'app.settings.about.original-source',

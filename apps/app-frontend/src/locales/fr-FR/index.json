@@ -422,9 +422,6 @@
   "app.settings.tabs.language": {
     "message": "Langue"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Confidentialité"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Gestion des ressources"
   },
@@ -973,9 +970,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Le monde en cours d'utilisation"
-  },
-  "minecraft-account.add-account": {
-    "message": "Ajouter un compte"
   },
   "minecraft-account.label": {
     "message": "Compte Minecraft"

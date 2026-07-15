@@ -413,9 +413,6 @@
   "app.settings.tabs.language": {
     "message": "Язык"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Конфиденциальность"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Управление ресурсами"
   },
@@ -964,9 +961,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "Мир используется"
-  },
-  "minecraft-account.add-account": {
-    "message": "Добавить"
   },
   "minecraft-account.label": {
     "message": "Учётная запись Minecraft"

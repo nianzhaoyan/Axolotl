@@ -12,6 +12,7 @@ import type { BrowseInstallContentType, CardAction, ProjectType, Tags } from '@m
 import {
 	BrowsePageLayout,
 	BrowseSidebar,
+	ButtonStyled,
 	commonMessages,
 	CreationFlowModal,
 	defineMessages,
@@ -44,6 +45,14 @@ import {
 	get_search_results_v3,
 	get_version_many,
 } from '@/helpers/cache.js'
+import {
+	type CurseForgeCategory,
+	getCurseForgeCapability,
+	getCurseForgeCategories,
+	getCurseForgeImageUrl,
+	searchCurseForgeProjects,
+	type UnifiedSearchHit,
+} from '@/helpers/curseforge'
 import { instance_listener } from '@/helpers/events.js'
 import {
 	get as getInstance,
@@ -66,12 +75,54 @@ const { handleError } = injectNotificationManager()
 const { formatMessage } = useVIntl()
 const { installingServerProjects, playServerProject, showAddServerToInstanceModal } =
 	injectServerInstall()
-const { install: installVersion } = injectContentInstall()
+const { install: installVersion, installCurseForge } = injectContentInstall()
 const queryClient = useQueryClient()
 const debugLog = useDebugLogger('Browse')
-
 const router = useRouter()
 const route = useRoute()
+const projectType = ref<ProjectType>(route.params.projectType as ProjectType)
+
+const curseForgeClassIds: Partial<Record<ProjectType, number>> = {
+	mod: 6,
+	plugin: 5,
+	resourcepack: 12,
+	datapack: 6945,
+	shader: 6552,
+	modpack: 4471,
+}
+
+const curseForgeCapability = ref(
+	await getCurseForgeCapability().catch(() => ({
+		status: 'missing_key' as const,
+		configured: false,
+	})),
+)
+const contentSource = ref<'all' | 'modrinth' | 'curseforge'>(
+	curseForgeCapability.value.configured && route.query.source === 'curseforge'
+		? 'curseforge'
+		: route.query.source === 'modrinth'
+			? 'modrinth'
+			: curseForgeCapability.value.configured
+				? 'all'
+				: 'modrinth',
+)
+const curseForgeCategoriesByClass = ref<Record<number, CurseForgeCategory[]>>({})
+
+async function ensureCurseForgeCategories(projectTypeValue: ProjectType) {
+	const classId = curseForgeClassIds[projectTypeValue]
+	if (!classId || curseForgeCategoriesByClass.value[classId]) return
+
+	const classCategories = await getCurseForgeCategories(classId)
+	curseForgeCategoriesByClass.value = {
+		...curseForgeCategoriesByClass.value,
+		[classId]: classCategories,
+	}
+}
+
+if (contentSource.value === 'curseforge') {
+	await ensureCurseForgeCategories(projectType.value).catch(handleError)
+}
+
 const themeStore = useTheming()
 const serverSetupModalRef = ref<InstanceType<typeof CreationFlowModal> | null>(null)
 const serverInstallContent = createServerInstallContent({ serverSetupModalRef })
@@ -124,10 +175,40 @@ const [categories, loaders, availableGameVersions] = await Promise.all([
 		.then(ref<Labrinth.Tags.v2.GameVersion[]>),
 ])
 
+const curseForgeCategoryTags = computed(() => {
+	const classId = curseForgeClassIds[projectType.value]
+	if (!classId) return []
+
+	const classCategories = curseForgeCategoriesByClass.value[classId] ?? []
+	const categoriesById = new Map(classCategories.map((category) => [category.id, category]))
+	return classCategories
+		.filter((category) => !category.isClass)
+		.map((category) => {
+			const parent = category.parentCategoryId
+				? categoriesById.get(category.parentCategoryId)
+				: undefined
+			const isResolution =
+				classId === 12 && category.displayIndex != null && category.displayIndex < 0
+			return {
+				icon: getCurseForgeImageUrl(category.iconUrl, 32) ?? '',
+				icon_url: getCurseForgeImageUrl(category.iconUrl, 32),
+				name: category.slug,
+				display_index: category.displayIndex,
+				project_type: projectType.value,
+				header: isResolution
+					? 'resolutions'
+					: parent && parent.id !== classId
+						? parent.slug
+						: 'categories',
+			}
+		})
+})
+
 const tags: Ref<Tags> = computed(() => ({
 	gameVersions: availableGameVersions.value ?? [],
 	loaders: loaders.value ?? [],
-	categories: categories.value ?? [],
+	categories:
+		contentSource.value === 'curseforge' ? curseForgeCategoryTags.value : (categories.value ?? []),
 }))
 
 type Instance = {
@@ -438,6 +519,18 @@ const messages = defineMessages({
 		id: 'search.filter.locked.instance.sync',
 		defaultMessage: 'Sync with instance',
 	},
+	allSources: {
+		id: 'app.browse.source.all',
+		defaultMessage: 'All sources',
+	},
+	modrinthSource: {
+		id: 'app.browse.source.modrinth',
+		defaultMessage: 'Modrinth',
+	},
+	curseForgeSource: {
+		id: 'app.browse.source.curseforge',
+		defaultMessage: 'CurseForge',
+	},
 })
 
 const breadcrumbs = useBreadcrumbs()
@@ -462,8 +555,6 @@ onBeforeRouteLeave(() => {
 		query: route.query,
 	})
 })
-
-const projectType = ref<ProjectType>(route.params.projectType as ProjectType)
 
 function resetInstanceContext() {
 	if (!instance.value) return
@@ -698,6 +789,8 @@ function getCardActions(
 		Labrinth.Search.v3.ResultSearchProject) & {
 		installed?: boolean
 		installing?: boolean
+		provider?: 'modrinth' | 'curseforge'
+		provider_project_id?: string
 	}
 	const isInstalled =
 		projectResult.installed ||
@@ -708,6 +801,7 @@ function getCardActions(
 
 	if (
 		isServerContext.value &&
+		projectResult.provider !== 'curseforge' &&
 		['modpack', 'mod', 'plugin', 'datapack'].includes(currentProjectType)
 	) {
 		const isQueued = queuedServerInstallProjectIds.value.has(projectResult.project_id)
@@ -790,7 +884,8 @@ function getCardActions(
 		]
 	}
 
-	const isModpack = projectResult.project_types?.includes('modpack')
+	const isModpack =
+		projectResult.project_types?.includes('modpack') || projectResult.project_type === 'modpack'
 	const shouldUseInstallIcon = !!instance.value || isModpack
 
 	return [
@@ -813,16 +908,19 @@ function getCardActions(
 			onClick: async () => {
 				setProjectInstalling(projectResult.project_id, true)
 				try {
-					const selectedInstall = instance.value
-						? await chooseInstanceInstallVersion(projectResult, currentProjectType)
-						: { versionId: null as string | null }
+					const selectedInstall =
+						instance.value && projectResult.provider !== 'curseforge'
+							? await chooseInstanceInstallVersion(projectResult, currentProjectType)
+							: { versionId: null as string | null }
 					if (selectedInstall === null) {
 						setProjectInstalling(projectResult.project_id, false)
 						return
 					}
 					const selectedPreferences = getCurrentSelectedInstallPreferences(currentProjectType)
-					await installVersion(
-						projectResult.project_id,
+					const installContent =
+						projectResult.provider === 'curseforge' ? installCurseForge : installVersion
+					await installContent(
+						projectResult.provider_project_id ?? projectResult.project_id,
 						selectedInstall.versionId,
 						instance.value ? instance.value.id : null,
 						'SearchCard',
@@ -870,31 +968,169 @@ function onSearchResultsInstalled(ids: string[]) {
 	newlyInstalled.value = Array.from(new Set([...newlyInstalled.value, ...ids]))
 }
 
+const curseForgeLoaderTypes: Record<string, number> = {
+	forge: 1,
+	fabric: 4,
+	quilt: 5,
+	neoforge: 6,
+}
+
+function getFirstSearchFilter(filters: string, field: string) {
+	return new RegExp(`${field}\\s*(?:=|IN\\s*\\[)\\s*"([^"]+)`).exec(filters)?.[1]
+}
+
+function getSearchFilterValues(filters: string, field: string) {
+	const values: string[] = []
+	const pattern = new RegExp(`${field}\\s*(?:=\\s*"([^"]+)"|IN\\s*\\[([^\\]]+)\\])`, 'g')
+	for (const match of filters.matchAll(pattern)) {
+		if (match[1]) {
+			values.push(match[1])
+		} else if (match[2]) {
+			values.push(...[...match[2].matchAll(/"([^"]+)"/g)].map((value) => value[1]))
+		}
+	}
+	return values
+}
+
+function getCurseForgeCategoryIds(filters: string) {
+	const classId = curseForgeClassIds[projectType.value]
+	if (!classId || contentSource.value !== 'curseforge') return []
+
+	const idsBySlug = new Map(
+		(curseForgeCategoriesByClass.value[classId] ?? []).map((category) => [
+			category.slug,
+			category.id,
+		]),
+	)
+	return getSearchFilterValues(filters, 'categories')
+		.map((slug) => idsBySlug.get(slug))
+		.filter((id): id is number => id !== undefined)
+}
+
+function getCurseForgeSortField(sort: string | null) {
+	switch (sort) {
+		case 'downloads':
+			return 6
+		case 'newest':
+			return 11
+		case 'updated':
+			return 3
+		case 'follows':
+			return 12
+		default:
+			return undefined
+	}
+}
+
+function mapCurseForgeHit(hit: UnifiedSearchHit) {
+	return {
+		project_id: `curseforge:${hit.project_id}`,
+		provider_project_id: hit.project_id,
+		provider: 'curseforge' as const,
+		project_type: hit.project_type,
+		slug: hit.slug,
+		author: hit.author,
+		author_url: hit.author_url,
+		title: hit.title,
+		description: hit.description,
+		categories: hit.categories,
+		display_categories: hit.categories,
+		versions: hit.versions,
+		downloads: hit.downloads,
+		icon_url: getCurseForgeImageUrl(hit.icon_url),
+		date_created: hit.date_created,
+		date_modified: hit.date_modified,
+		latest_version: hit.latest_version ?? '',
+		license: '',
+		client_side: 'unknown',
+		server_side: 'unknown',
+		gallery: hit.gallery,
+		featured_gallery: hit.gallery[0] ?? null,
+		color: null,
+		website_url: hit.website_url,
+		source_url: hit.source_url,
+		allow_mod_distribution: hit.allow_mod_distribution,
+	}
+}
+
+function fuseProviderResults<
+	TModrinth extends { provider?: string; project_id: string },
+	TCurseForge extends { provider?: string; project_id: string },
+>(modrinthHits: TModrinth[], curseForgeHits: TCurseForge[], limit: number) {
+	const ranked = new Map<string, { hit: TModrinth | TCurseForge; score: number }>()
+	for (const hits of [modrinthHits, curseForgeHits]) {
+		hits.forEach((hit, index) => {
+			const key = `${hit.provider ?? 'modrinth'}:${hit.project_id}`
+			ranked.set(key, { hit, score: 1 / (60 + index + 1) })
+		})
+	}
+	return [...ranked.values()]
+		.sort((left, right) => right.score - left.score)
+		.slice(0, limit)
+		.map(({ hit }) => hit)
+}
+
 async function search(requestParams: string) {
 	debugLog('searching v3', requestParams)
 	const isServer = projectType.value === 'server'
+	const params = new URLSearchParams(requestParams)
+	const limit = Math.min(Number(params.get('limit') ?? 20), 50)
+	const includeModrinth = contentSource.value !== 'curseforge' || isServer
+	const includeCurseForge =
+		!isServer &&
+		contentSource.value !== 'modrinth' &&
+		curseForgeCapability.value.configured &&
+		curseForgeClassIds[projectType.value] !== undefined
 
-	const rawResults = await queryClient.fetchQuery({
-		queryKey: ['search', 'v3', requestParams],
-		queryFn: () =>
-			get_search_results_v3(requestParams, 'must_revalidate') as Promise<{
-				result: Labrinth.Search.v3.SearchResults & {
-					hits: (Labrinth.Search.v3.ResultSearchProject & { installed?: boolean })[]
-				}
-			} | null>,
-		staleTime: 30_000,
-	})
+	const modrinthRequest = includeModrinth
+		? queryClient.fetchQuery({
+				queryKey: ['search', 'v3', requestParams],
+				queryFn: () =>
+					get_search_results_v3(requestParams, 'must_revalidate') as Promise<{
+						result: Labrinth.Search.v3.SearchResults & {
+							hits: (Labrinth.Search.v3.ResultSearchProject & { installed?: boolean })[]
+						}
+					} | null>,
+				staleTime: 30_000,
+			})
+		: Promise.resolve(null)
+	const filters = params.get('new_filters') ?? ''
+	const gameVersion = getFirstSearchFilter(filters, 'game_versions')
+	const loader = getSearchFilterValues(filters, 'categories').find(
+		(value) => curseForgeLoaderTypes[value] !== undefined,
+	)
+	const curseForgeRequest = includeCurseForge
+		? searchCurseForgeProjects({
+				classId: curseForgeClassIds[projectType.value]!,
+				categoryIds: getCurseForgeCategoryIds(filters),
+				searchFilter: params.get('query') ?? undefined,
+				gameVersion,
+				modLoaderType: loader && gameVersion ? curseForgeLoaderTypes[loader] : undefined,
+				sortField: getCurseForgeSortField(params.get('index')),
+				sortOrder: 'desc',
+				index: Number(params.get('offset') ?? 0),
+				pageSize: limit,
+			})
+		: Promise.resolve(null)
+	const [modrinthResult, curseForgeResult] = await Promise.allSettled([
+		modrinthRequest,
+		curseForgeRequest,
+	])
+	const rawResults = modrinthResult.status === 'fulfilled' ? modrinthResult.value : null
+	const rawCurseForge = curseForgeResult.status === 'fulfilled' ? curseForgeResult.value : null
 
-	if (!rawResults) {
-		return {
-			projectHits: [],
-			serverHits: [],
-			total_hits: 0,
-			per_page: 20,
-		}
+	if (!rawResults && !rawCurseForge) {
+		const error =
+			modrinthResult.status === 'rejected'
+				? modrinthResult.reason
+				: curseForgeResult.status === 'rejected'
+					? curseForgeResult.reason
+					: new Error('No content providers are available')
+		throw error
 	}
 
 	if (isServer) {
+		if (!rawResults) throw new Error('The server project provider is unavailable')
 		const hits = rawResults.result.hits ?? []
 		updateServerHits(hits)
 		return {
@@ -905,11 +1141,12 @@ async function search(requestParams: string) {
 		}
 	}
 
-	const hits = rawResults.result.hits.map((hit) => {
+	const hits = (rawResults?.result.hits ?? []).map((hit) => {
 		const mapped = {
 			...hit,
 			title: hit.name,
 			description: hit.summary,
+			provider: 'modrinth' as const,
 		} as unknown as Labrinth.Search.v2.ResultSearchProject & { installed?: boolean }
 
 		if (instance.value || isServerContext.value) {
@@ -922,11 +1159,22 @@ async function search(requestParams: string) {
 		return mapped
 	})
 
+	const curseForgeHits = (rawCurseForge?.hits ?? []).map(mapCurseForgeHit)
 	return {
-		projectHits: hits,
+		projectHits:
+			contentSource.value === 'all'
+				? fuseProviderResults(hits, curseForgeHits, limit)
+				: contentSource.value === 'curseforge'
+					? curseForgeHits
+					: hits,
 		serverHits: [],
-		total_hits: rawResults.result.total_hits,
-		per_page: rawResults.result.hits_per_page,
+		total_hits:
+			contentSource.value === 'all'
+				? (rawResults?.result.total_hits ?? 0) + (rawCurseForge?.total_hits ?? 0)
+				: contentSource.value === 'curseforge'
+					? (rawCurseForge?.total_hits ?? 0)
+					: (rawResults?.result.total_hits ?? 0),
+		per_page: limit,
 	}
 }
 
@@ -955,14 +1203,40 @@ const searchState = useBrowseSearch({
 	tags,
 	providedFilters: combinedProvidedFilters,
 	search,
-	persistentQueryParams: ['i', 'ai', 'shi', 'sid', 'wid', 'from'],
+	persistentQueryParams: ['i', 'ai', 'shi', 'sid', 'wid', 'from', 'source'],
 	getExtraQueryParams: () => ({
 		sid: serverIdQuery.value || undefined,
 		wid: effectiveServerWorldId.value || undefined,
 		ai: instanceHideInstalled.value ? 'true' : undefined,
 		shi: serverHideInstalled.value ? 'true' : undefined,
+		source: contentSource.value === 'all' ? undefined : contentSource.value,
 	}),
 })
+
+watch(contentSource, async (source) => {
+	searchState.projectHits.value = []
+	searchState.totalHits.value = 0
+	searchState.loading.value = true
+	searchState.currentFilters.value = searchState.currentFilters.value.filter(
+		(filter) => !filter.type.startsWith('category_'),
+	)
+	if (source === 'curseforge') {
+		await ensureCurseForgeCategories(projectType.value).catch(handleError)
+	}
+	await searchState.refreshSearch()
+})
+
+watch(projectType, async (type) => {
+	if (contentSource.value === 'curseforge') {
+		await ensureCurseForgeCategories(type).catch(handleError)
+	}
+})
+
+function selectContentSource(source: string) {
+	if (source === 'all' || source === 'modrinth' || source === 'curseforge') {
+		contentSource.value = source
+	}
+}
 
 watch(
 	[
@@ -1053,8 +1327,16 @@ provideBrowseManager({
 	projectType,
 	...searchState,
 	advancedFiltersCollapsed,
-	getProjectLink: (result: Labrinth.Search.v2.ResultSearchProject) => ({
-		path: `/project/${result.project_id ?? result.slug}`,
+	getProjectLink: (
+		result: Labrinth.Search.v2.ResultSearchProject & {
+			provider?: 'modrinth' | 'curseforge'
+			provider_project_id?: string
+		},
+	) => ({
+		path:
+			result.provider === 'curseforge'
+				? `/project/curseforge/${result.provider_project_id}`
+				: `/project/${result.project_id ?? result.slug}`,
 		query: getProjectBrowseQuery(),
 	}),
 	getServerProjectLink: (result: Labrinth.Search.v3.ResultSearchProject) => ({
@@ -1098,7 +1380,10 @@ provideBrowseManager({
 	onInstalled: onSearchResultInstalled,
 	serverPings,
 	getServerModpackContent,
-	onContextMenu: handleRightClick,
+	onContextMenu: (event, result) => {
+		if ('provider' in result && result.provider === 'curseforge') return
+		handleRightClick(event, result)
+	},
 	offline,
 	lockedFilterMessages,
 })
@@ -1106,6 +1391,21 @@ provideBrowseManager({
 
 <template>
 	<div class="flex flex-col gap-3 p-6">
+		<div v-if="curseForgeCapability.configured && projectType !== 'server'" class="flex gap-2">
+			<ButtonStyled
+				v-for="source in [
+					{ id: 'all', label: messages.allSources },
+					{ id: 'modrinth', label: messages.modrinthSource },
+					{ id: 'curseforge', label: messages.curseForgeSource },
+				]"
+				:key="source.id"
+				:type="contentSource === source.id ? 'outlined' : 'transparent'"
+			>
+				<button @click="selectContentSource(source.id)">
+					{{ formatMessage(source.label) }}
+				</button>
+			</ButtonStyled>
+		</div>
 		<BrowsePageLayout>
 			<template #after>
 				<ContextMenu ref="contextMenuRef" @option-clicked="handleOptionsClick">

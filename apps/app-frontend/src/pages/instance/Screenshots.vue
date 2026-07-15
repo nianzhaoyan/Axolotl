@@ -3,8 +3,8 @@ import {
 	ClipboardCopyIcon,
 	ContractIcon,
 	DownloadIcon,
-	EyeIcon,
 	ExpandIcon,
+	EyeIcon,
 	FolderOpenIcon,
 	LeftArrowIcon,
 	RefreshCwIcon,
@@ -353,13 +353,7 @@ function showScreenshotContextMenu(event: MouseEvent, screenshot: Screenshot) {
 	screenshotContextMenu.value?.showMenu(event, screenshot, screenshotContextMenuOptions)
 }
 
-async function handleScreenshotContextMenu({
-	item,
-	option,
-}: {
-	item: Screenshot
-	option: string
-}) {
+async function handleScreenshotContextMenu({ item, option }: { item: Screenshot; option: string }) {
 	switch (option) {
 		case 'view_screenshot':
 			viewScreenshot(item)
@@ -498,9 +492,7 @@ await initialize(props.instance.id)
 					v-for="screenshot in filteredScreenshots"
 					:key="screenshot.path"
 					class="group overflow-hidden rounded-2xl border border-solid border-surface-5 bg-surface-2 transition-colors hover:border-brand"
-					@contextmenu.prevent.stop="
-						(event) => showScreenshotContextMenu(event, screenshot)
-					"
+					@contextmenu.prevent.stop="(event) => showScreenshotContextMenu(event, screenshot)"
 				>
 					<button
 						class="relative block aspect-video w-full cursor-zoom-in overflow-hidden border-0 bg-surface-1 p-0"
@@ -594,12 +586,14 @@ await initialize(props.instance.id)
 			<img
 				:src="selectedScreenshot.url"
 				:alt="selectedScreenshot.name"
-				:class="zoomedIn ? 'max-w-none cursor-zoom-out' : 'max-h-[calc(100vh-15rem)] max-w-full cursor-zoom-in'"
+				:class="
+					zoomedIn
+						? 'max-w-none cursor-zoom-out'
+						: 'max-h-[calc(100vh-15rem)] max-w-full cursor-zoom-in'
+				"
 				@click="zoomedIn = !zoomedIn"
 				@error="loadScreenshotPreview(selectedScreenshot)"
-				@contextmenu.prevent.stop="
-					(event) => showScreenshotContextMenu(event, selectedScreenshot)
-				"
+				@contextmenu.prevent.stop="(event) => showScreenshotContextMenu(event, selectedScreenshot)"
 			/>
 			<ButtonStyled v-if="screenshots.length > 1" class="absolute left-4" circular>
 				<button
@@ -610,10 +604,7 @@ await initialize(props.instance.id)
 				</button>
 			</ButtonStyled>
 			<ButtonStyled v-if="screenshots.length > 1" class="absolute right-4" circular>
-				<button
-					:aria-label="formatMessage(commonMessages.nextButton)"
-					@click="changeScreenshot(1)"
-				>
+				<button :aria-label="formatMessage(commonMessages.nextButton)" @click="changeScreenshot(1)">
 					<RightArrowIcon />
 				</button>
 			</ButtonStyled>

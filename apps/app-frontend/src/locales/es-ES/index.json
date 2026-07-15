@@ -317,9 +317,6 @@
   "app.settings.tabs.language": {
     "message": "Idioma"
   },
-  "app.settings.tabs.privacy": {
-    "message": "Privacidad"
-  },
   "app.settings.tabs.resource-management": {
     "message": "Gestión de recursos"
   },
@@ -868,9 +865,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "El mundo está en uso"
-  },
-  "minecraft-account.add-account": {
-    "message": "Añadir cuenta"
   },
   "minecraft-account.label": {
     "message": "Cuenta de Minecraft"

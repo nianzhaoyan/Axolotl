@@ -1,0 +1,108 @@
+ WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+
+> @modrinth/monorepo@0.0.0 app:dev D:\Code\Minecraft\axolotl-launcher
+> turbo run dev --filter=@modrinth/app
+
+• Packages in scope: @modrinth/app
+• Running dev in 1 packages
+• Remote caching disabled
+@modrinth/app:dev: cache bypass, force executing c3edca5ca3e6dc0f
+@modrinth/app:dev: 
+@modrinth/app:dev: > @modrinth/app@ dev D:\Code\Minecraft\axolotl-launcher\apps\app
+@modrinth/app:dev: > tauri dev
+@modrinth/app:dev: 
+@modrinth/app:dev:         Info `tauri-build` dependency has workspace inheritance enabled. The features array won't be automatically rewritten. Expected features: []
+@modrinth/app:dev:         Info `tauri` dependency has workspace inheritance enabled. The features array won't be automatically rewritten. Expected features: [protocol-asset, macos-private-api]
+@modrinth/app:dev:      Running BeforeDevCommand (`pnpm turbo run dev --filter=@modrinth/app-frontend`)
+@modrinth/app:dev: ../..                                    |  WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+@modrinth/app:dev: ../..                                    |  WARN  Unsupported engine: wanted: {"node":">=24.15.0"} (current: {"node":"v24.14.0","pnpm":"10.33.2"})
+@modrinth/app:dev: • turbo 2.8.2
+@modrinth/app:dev: • Packages in scope: @modrinth/app-frontend
+@modrinth/app:dev: • Running dev in 1 packages
+@modrinth/app:dev: • Remote caching disabled
+@modrinth/app:dev: @modrinth/app-frontend:dev: cache bypass, force executing ddf58594a68ce6dd
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev: > @modrinth/app-frontend@1.0.0-local dev D:\Code\Minecraft\axolotl-launcher\apps\app-frontend
+@modrinth/app:dev: @modrinth/app-frontend:dev: > vite
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev:   [32m[1mVITE[22m v8.0.3[39m  [2mready in [0m[1m3047[22m[2m[0m ms[22m
+@modrinth/app:dev: @modrinth/app-frontend:dev: 
+@modrinth/app:dev: @modrinth/app-frontend:dev:   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m1420[22m/[39m
+@modrinth/app:dev: @modrinth/app-frontend:dev: [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+@modrinth/app:dev:         Warn Waiting for your frontend dev server to start on http://localhost:1420/...
+@modrinth/app:dev:      Running DevCommand (`cargo  run --no-default-features --color always --`)
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\app-playground for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\daedalus_client for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\apps\labrinth for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\app-lib for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\ariadne for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\daedalus for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\labrinth-derive for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-content-management for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-log for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-maxmind for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\modrinth-util for changes...
+@modrinth/app:dev:         Info Watching D:\Code\Minecraft\axolotl-launcher\packages\path-util for changes...
+@modrinth/app:dev: [1m[96m       Fetch[0m [========>                        ] 0 comple…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\packages\app-lib)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 778/781: theseus…@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 779/781: theseus @modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m   Compiling[0m theseus_gui v1.0.0-local (D:\Code\Minecraft\axolotl-launcher\apps\app)
+@modrinth/app:dev: [1m[96m    Building[0m [=======================> ] 780/781: theseus…@modrinth/app:dev:                                                             @modrinth/app:dev: [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 16s
+@modrinth/app:dev: [1m[92m     Running[0m `D:\Code\Minecraft\axolotl-launcher\target\debug\theseus_gui.exe`
+@modrinth/app:dev: @modrinth/app-frontend:dev: Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+@modrinth/app:dev: @modrinth/app-frontend:dev:   npx update-browserslist-db@latest
+@modrinth/app:dev: @modrinth/app-frontend:dev:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+@modrinth/app:dev: [2m2026-07-14T14:22:29.417869Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:22:29.418105Z[0m [31mERROR[0m [2mtheseus::state[0m[2m:[0m Attempted to get state before it is initialized - this should never happen!
+@modrinth/app:dev: [2m2026-07-14T14:22:29.777400Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:29.778426Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:34.074890Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:34.074890Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:38.086805Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:39.042580Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:40.336303Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:41.774012Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: 不知道这样的主机。 (os error 11001) [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:43.777417Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: unexpected end of file [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:22:46.505210Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of brassworks.opnsoc.org:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:23:03.178113Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:23:04.202346Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:23:05.314897Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:24:56.527842Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:24:57.846468Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:24:59.247519Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:00.468106Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:02.252292Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:45.400587Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:47.119273Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:47.906955Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:49.612850Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:50.667191Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:52.203126Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:57.623048Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:57.638361Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mUser is not logged in, no credentials available! [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:25:58.959167Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:03.462681Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:07.353555Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: 不知道这样的主机。 (os error 11001) [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:09.411999Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: unexpected end of file [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:12.227199Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of brassworks.opnsoc.org:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:15.364352Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: unexpected end of file [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:15.392507Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mI/O (std) error: unexpected end of file [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.896016Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of Ottonien.com:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.896016Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of mc.mineberry.org:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.896107Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of play.cobbletwo.com:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.912039Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of play.8char.me:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.913061Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of auroracobbleserver.modrinth.gg:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.926663Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of playunstable.net:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:26:17.926671Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: Ping of kubabin.dev:25565 timed out [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:34:22.858131Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:34:22.858184Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:34:26.816264Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev: [2m2026-07-14T14:34:27.119088Z[0m [31mERROR[0m [2mtheseus_gui::error[0m[2m:[0m [3merror[0m[2m=[0mError: CurseForge request to https://api.curseforge.com/v1/mods/search failed with HTTP 403: Forbidden [3mspan_trace[0m[2m=[0m
+@modrinth/app:dev:  ELIFECYCLE  Command failed with exit code 1073807364.
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    39m51.648s 
+Failed:    @modrinth/app#dev
+

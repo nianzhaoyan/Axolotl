@@ -314,9 +314,6 @@
   "app.settings.tabs.language": {
     "message": "ภาษา"
   },
-  "app.settings.tabs.privacy": {
-    "message": "ความเป็นส่วนตัว"
-  },
   "app.settings.tabs.resource-management": {
     "message": "การจัดการทรัพยากร"
   },
@@ -814,9 +811,6 @@
   },
   "instance.worlds.world_in_use": {
     "message": "โลกนี้กำลังถูกใช้งานอยู่"
-  },
-  "minecraft-account.add-account": {
-    "message": "เพิ่มบัญชี"
   },
   "minecraft-account.label": {
     "message": "บัญชี Minecraft"
