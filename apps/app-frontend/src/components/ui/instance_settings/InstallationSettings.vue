@@ -18,6 +18,7 @@ import { computed, ref } from 'vue'
 
 import { trackEvent } from '@/helpers/analytics'
 import { get_project_versions, get_version } from '@/helpers/cache'
+import { updateManagedCurseForgeModpack } from '@/helpers/curseforge'
 import {
 	install_duplicate_instance,
 	install_existing_instance,
@@ -113,12 +114,16 @@ const isModrinthLinkedModpack = computed(
 		instance.value.link?.type === 'modrinth_modpack' ||
 		instance.value.link?.type === 'server_project_modpack',
 )
+const isCurseForgeLinkedModpack = computed(() => instance.value.link?.type === 'curseforge_modpack')
+const isLinkedManagedModpack = computed(
+	() => isModrinthLinkedModpack.value || isCurseForgeLinkedModpack.value,
+)
 const isImportedModpack = computed(() => instance.value.link?.type === 'imported_modpack')
 
 const modpackInfoQuery = useQuery({
 	queryKey: computed(() => ['linkedModpackInfo', instance.value.id]),
 	queryFn: () => get_linked_modpack_info(instance.value.id, 'must_revalidate'),
-	enabled: computed(() => isModrinthLinkedModpack.value && !offline),
+	enabled: computed(() => isLinkedManagedModpack.value && !offline),
 })
 const modpackInfo = modpackInfoQuery.data
 
@@ -208,7 +213,7 @@ provideInstallationSettings({
 		}
 		return rows
 	}),
-	isLinked: computed(() => isModrinthLinkedModpack.value || isImportedModpack.value),
+	isLinked: computed(() => isLinkedManagedModpack.value || isImportedModpack.value),
 	isBusy: computed(
 		() =>
 			instance.value.install_stage !== 'installed' ||
@@ -226,13 +231,44 @@ provideInstallationSettings({
 				filename: instance.value.link.filename ?? undefined,
 			}
 		}
-		if (!modpackInfo.value) return null
-		return {
-			iconUrl: modpackInfo.value.project.icon_url,
-			title: modpackInfo.value.project.title,
-			link: `/project/${modpackInfo.value.project.slug ?? modpackInfo.value.project.id}`,
-			versionNumber: modpackInfo.value.version?.version_number,
+		if (modpackInfo.value) {
+			return {
+				iconUrl: modpackInfo.value.project.icon_url,
+				title: modpackInfo.value.project.title,
+				link: isCurseForgeLinkedModpack.value
+					? `/project/curseforge/${String(modpackInfo.value.project.id).replace(/^curseforge:/, '')}`
+					: `/project/${modpackInfo.value.project.slug ?? modpackInfo.value.project.id}`,
+				versionNumber: modpackInfo.value.version?.version_number,
+			}
 		}
+		// Fallback when linked metadata is temporarily unavailable so the
+		// association controls still match Modrinth-linked packs.
+		if (isCurseForgeLinkedModpack.value && instance.value.link?.type === 'curseforge_modpack') {
+			return {
+				iconUrl: instance.value.icon_path,
+				title: instance.value.name,
+				link: `/project/curseforge/${instance.value.link.project_id}`,
+				versionNumber: instance.value.link.version_id,
+			}
+		}
+		if (isModrinthLinkedModpack.value && instance.value.link) {
+			const projectId =
+				instance.value.link.type === 'server_project_modpack'
+					? (instance.value.link.content_project_id ?? instance.value.link.project_id)
+					: instance.value.link.project_id
+			const versionId =
+				instance.value.link.type === 'server_project_modpack'
+					? instance.value.link.content_version_id
+					: instance.value.link.version_id
+			if (!projectId) return null
+			return {
+				iconUrl: instance.value.icon_path,
+				title: instance.value.name,
+				link: `/project/${projectId}`,
+				versionNumber: versionId ?? undefined,
+			}
+		}
+		return null
 	}),
 	currentPlatform: computed(() => instance.value.loader),
 	currentGameVersion: computed(() => instance.value.game_version),
@@ -366,6 +402,13 @@ provideInstallationSettings({
 		try {
 			if (isImportedModpack.value) {
 				shouldTrack = await installLocalModpackFromPicker()
+			} else if (isCurseForgeLinkedModpack.value) {
+				const fileId = Number(instance.value.link?.version_id)
+				if (!Number.isFinite(fileId)) {
+					throw new Error('Invalid CurseForge file ID')
+				}
+				await updateManagedCurseForgeModpack(instance.value.id, fileId).catch(handleError)
+				shouldTrack = true
 			} else {
 				await update_repair_modrinth(instance.value.id).catch(handleError)
 				shouldTrack = true
@@ -416,6 +459,72 @@ provideInstallationSettings({
 		debug('fetchModpackVersions: called', {
 			projectId: instance.value.link?.project_id,
 		})
+		if (isCurseForgeLinkedModpack.value) {
+			const rawProjectId = instance.value.link?.project_id
+			if (!rawProjectId) return []
+			const projectId = Number(
+				rawProjectId.startsWith('curseforge:')
+					? rawProjectId.slice('curseforge:'.length)
+					: rawProjectId,
+			)
+			if (!Number.isFinite(projectId)) return []
+			const { getCurseForgeFiles } = await import('@/helpers/curseforge')
+			const response = await getCurseForgeFiles(projectId, {
+				index: 0,
+				pageSize: 50,
+			}).catch(handleError)
+			const versions = (response?.files ?? [])
+				.filter((file) => file.isAvailable)
+				.map((file) => {
+					const loaders = [
+						...new Set(
+							file.gameVersions
+								.map((value) => {
+									switch (value.toLowerCase().replaceAll(' ', '')) {
+										case 'forge':
+											return 'forge'
+										case 'fabric':
+										case 'fabricloader':
+											return 'fabric'
+										case 'quilt':
+											return 'quilt'
+										case 'neoforge':
+											return 'neoforge'
+										default:
+											return null
+									}
+								})
+								.filter(Boolean),
+						),
+					] as string[]
+					const gameVersions = file.gameVersions.filter((value) => {
+						const normalized = value.toLowerCase().replaceAll(' ', '')
+						return !['forge', 'fabric', 'fabricloader', 'quilt', 'neoforge'].includes(normalized)
+					})
+					return {
+						id: file.id.toString(),
+						project_id: `curseforge:${projectId}`,
+						name: file.displayName,
+						version_number: file.displayName,
+						game_versions: gameVersions,
+						loaders: loaders.length > 0 ? loaders : ['minecraft'],
+						date_published: file.fileDate,
+						version_type:
+							file.releaseType === 1 ? 'release' : file.releaseType === 2 ? 'beta' : 'alpha',
+						files: [
+							{
+								filename: file.fileName,
+								url: file.downloadUrl ?? '',
+								primary: true,
+								size: file.fileLength,
+								hashes: {},
+							},
+						],
+					} as unknown as Labrinth.Versions.v2.Version
+				})
+			debug('fetchModpackVersions: done', { count: versions.length })
+			return versions
+		}
 		const versions = await get_project_versions(instance.value.link!.project_id!).catch(handleError)
 		debug('fetchModpackVersions: done', { count: versions?.length ?? 0 })
 		return (versions ?? []) as Labrinth.Versions.v2.Version[]
@@ -433,7 +542,15 @@ provideInstallationSettings({
 			versionId: version.id,
 			instanceId: instance.value.id,
 		})
-		await update_managed_modrinth_version(instance.value.id, version.id)
+		if (isCurseForgeLinkedModpack.value) {
+			const fileId = Number(version.id)
+			if (!Number.isFinite(fileId)) {
+				throw new Error('Invalid CurseForge file ID')
+			}
+			await updateManagedCurseForgeModpack(instance.value.id, fileId)
+		} else {
+			await update_managed_modrinth_version(instance.value.id, version.id)
+		}
 		await queryClient.invalidateQueries({
 			queryKey: ['linkedModpackInfo', instance.value.id],
 		})
@@ -452,7 +569,7 @@ provideInstallationSettings({
 	isServer: false,
 	isApp: true,
 	showModpackVersionActions: computed(
-		() => isModrinthLinkedModpack.value && !isMinecraftServer.value,
+		() => isLinkedManagedModpack.value && !isMinecraftServer.value,
 	),
 	isLocalFile: isImportedModpack,
 	repairing,

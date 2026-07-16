@@ -183,6 +183,14 @@ export interface CurseForgeModpackInstallResult {
 	loader?: string
 }
 
+export function summarizeCurseForgeInstall(result: CurseForgeInstallResult) {
+	const installed = result.installed?.length ?? 0
+	const manual = result.manualDownloads?.length ?? 0
+	const optional = result.optionalDependencies?.length ?? 0
+	const incompatible = result.incompatibleDependencies?.length ?? 0
+	return { installed, manual, optional, incompatible }
+}
+
 export function getCurseForgeCapability() {
 	return invoke<CurseForgeCapability>('plugin:curseforge|curseforge_capability')
 }
@@ -259,4 +267,14 @@ export function installCurseForgeModpack(request: {
 	return invoke<CurseForgeModpackInstallResult>('plugin:curseforge|curseforge_install_modpack', {
 		request,
 	})
+}
+
+export function updateManagedCurseForgeModpack(instanceId: string, fileId: number) {
+	return invoke<CurseForgeModpackInstallResult>(
+		'plugin:curseforge|curseforge_update_managed_modpack',
+		{
+			instanceId,
+			fileId,
+		},
+	)
 }

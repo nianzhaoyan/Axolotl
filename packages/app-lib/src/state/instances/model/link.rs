@@ -9,6 +9,11 @@ pub enum InstanceLink {
         project_id: String,
         version_id: String,
     },
+    /// A CurseForge modpack managed by project/file IDs.
+    CurseForgeModpack {
+        project_id: String,
+        version_id: String,
+    },
     ServerProject {
         project_id: String,
     },

@@ -323,6 +323,45 @@
   "app.content.install-content": {
     "message": "Install content"
   },
+  "app.curseforge.manual-downloads.body": {
+    "message": "Installed {installed, number} files automatically, but {manual, number} could not be downloaded by the launcher. Open each page on CurseForge, download the file, then put it into this instance."
+  },
+  "app.curseforge.manual-downloads.files-count": {
+    "message": "{count, number} files"
+  },
+  "app.curseforge.manual-downloads.header": {
+    "message": "Manual CurseForge downloads needed"
+  },
+  "app.curseforge.manual-downloads.list-and-more": {
+    "message": "{list}, and {count, number} more"
+  },
+  "app.curseforge.manual-downloads.notification-failed": {
+    "message": "{manual, number} CurseForge files could not be downloaded automatically ({list}). Open the download list to install them manually."
+  },
+  "app.curseforge.manual-downloads.notification-partial": {
+    "message": "Installed {installed, number} files automatically, but {manual, number} could not be downloaded ({list}). Open the download list to finish those files."
+  },
+  "app.curseforge.manual-downloads.notification-title": {
+    "message": "Some CurseForge files need manual download"
+  },
+  "app.curseforge.manual-downloads.open": {
+    "message": "Open"
+  },
+  "app.curseforge.manual-downloads.open-all": {
+    "message": "Open all"
+  },
+  "app.curseforge.manual-downloads.project-file": {
+    "message": "Project {projectId} · File {fileId}"
+  },
+  "app.curseforge.manual-downloads.view-instance": {
+    "message": "View instance"
+  },
+  "app.curseforge.modpack-installed.body": {
+    "message": "Installed {count, number} content files from CurseForge."
+  },
+  "app.curseforge.modpack-installed.title": {
+    "message": "CurseForge modpack installed"
+  },
   "app.error.account-description": {
     "message": "Check that you signed in with the correct account. You may own Minecraft on another Microsoft account."
   },

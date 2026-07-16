@@ -328,17 +328,21 @@ function removeNotification(): void {
 function buildDownloadItems(): PopupNotificationProgressItem[] {
 	return [
 		...installJobNotifications.progressItems.value,
-		...currentLoadingBars.value.map((bar) => ({
-			id: getLoadingBarKey(bar),
-			title: bar.title ?? '',
-			text: getLoadingText(bar),
-			iconUrl: currentLoadingBarIconUrls.value[getLoadingBarKey(bar)] ?? null,
-			progress: getLoadingProgress(bar),
-			waiting: !bar.total || bar.total <= 0,
-			progressType: 'percentage',
-			progressCurrent: bar.current,
-			progressTotal: bar.total,
-		})),
+		...currentLoadingBars.value.map((bar) => {
+			const isPackDownload = bar.bar_type?.type === 'pack_download'
+			return {
+				id: getLoadingBarKey(bar),
+				title: bar.title ?? '',
+				text: getLoadingText(bar),
+				iconUrl: currentLoadingBarIconUrls.value[getLoadingBarKey(bar)] ?? null,
+				progress: getLoadingProgress(bar),
+				waiting: !bar.total || bar.total <= 0,
+				// Pack downloads report file counts, so prefer count UI over raw percentage.
+				progressType: isPackDownload ? 'count' : 'percentage',
+				progressCurrent: bar.current,
+				progressTotal: bar.total,
+			}
+		}),
 	]
 }
 

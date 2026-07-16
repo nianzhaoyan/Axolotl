@@ -1,7 +1,14 @@
+use crate::event::LoadingBarType;
+use crate::event::emit::{
+    emit_loading, init_loading, loading_try_for_each_concurrent,
+};
 use crate::state::ContentProvider;
-use crate::state::{ContentSourceKind, ProjectType};
+use crate::state::{
+    ContentSourceKind, EditInstance, InstanceLink, ProjectType,
+};
 use crate::{ErrorKind, State};
 use bytes::Bytes;
+use futures::stream;
 use reqwest::{Method, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -9,14 +16,15 @@ use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read};
 use std::path::{Component, Path};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{LazyLock, RwLock};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, LazyLock, Mutex, RwLock};
 use std::time::Duration;
 
 const API_BASE_URL: &str = "https://api.curseforge.com";
 const API_MIRROR_BASE_URL: &str = "https://mod.mcimirror.top/curseforge";
 const MINECRAFT_GAME_ID: u32 = 432;
 const MAX_PAGE_SIZE: u32 = 50;
+const MODPACK_CONTENT_DOWNLOAD_CONCURRENCY: usize = 8;
 
 static UNAUTHORIZED: AtomicBool = AtomicBool::new(false);
 static CATEGORY_CACHE: LazyLock<RwLock<Option<Vec<CurseForgeCategory>>>> =
@@ -418,10 +426,13 @@ struct CurseForgeManifestLoader {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct CurseForgeManifestFile {
+    // CurseForge modpack manifests use projectID/fileID (capital ID), not projectId.
+    #[serde(alias = "projectID", alias = "projectId")]
     project_id: u32,
+    #[serde(alias = "fileID", alias = "fileId")]
     file_id: u32,
+    #[serde(default = "default_true")]
     required: bool,
 }
 
@@ -813,6 +824,17 @@ pub async fn install_modpack(
 ) -> crate::Result<CurseForgeModpackInstallResult> {
     let pack_file = get_file(request.project_id, request.file_id).await?;
     let project = get_project(request.project_id).await?;
+    let icon_url = project
+        .logo
+        .as_ref()
+        .map(|logo| {
+            if !logo.thumbnail_url.is_empty() {
+                logo.thumbnail_url.clone()
+            } else {
+                logo.url.clone()
+            }
+        })
+        .filter(|url| !url.is_empty());
     let download_url = if project.allow_mod_distribution == Some(false) {
         None
     } else {
@@ -837,6 +859,54 @@ pub async fn install_modpack(
             ..Default::default()
         });
     };
+
+    let cached_icon_path = if let Some(icon_url) = icon_url.as_ref() {
+        match cache_instance_icon_from_url(icon_url).await {
+            Ok(path) => {
+                let _ = crate::api::instance::edit_icon(
+                    &request.instance_id,
+                    Some(path.as_path()),
+                )
+                .await;
+                Some(path)
+            }
+            Err(err) => {
+                tracing::warn!(
+                    "Failed to cache CurseForge modpack icon: {err}"
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    // Persist the managed-pack association as early as possible so the instance
+    // settings UI can treat this like a Modrinth-linked pack even if later
+    // content downloads partially fail.
+    crate::api::instance::edit(
+        &request.instance_id,
+        EditInstance {
+            name: Some(project.name.clone()),
+            icon_path: cached_icon_path
+                .as_ref()
+                .map(|path| Some(path.to_string_lossy().to_string())),
+            link: Some(InstanceLink::CurseForgeModpack {
+                project_id: request.project_id.to_string(),
+                version_id: request.file_id.to_string(),
+            }),
+            content_set_patch: Some(crate::state::AppliedContentSetPatch {
+                source_kind: Some(ContentSourceKind::CurseForge),
+                game_version: None,
+                protocol_version: None,
+                loader: None,
+                loader_version: None,
+            }),
+            ..EditInstance::default()
+        },
+    )
+    .await?;
+
     let pack_bytes = download_cdn_file(&download_url).await?;
     verify_file(&pack_file, &pack_bytes)?;
     let (manifest, overrides) =
@@ -886,6 +956,28 @@ pub async fn install_modpack(
         .into());
     }
 
+    // Keep the linked pack metadata in sync with the resolved pack target.
+    crate::api::instance::edit(
+        &request.instance_id,
+        EditInstance {
+            link: Some(InstanceLink::CurseForgeModpack {
+                project_id: request.project_id.to_string(),
+                version_id: request.file_id.to_string(),
+            }),
+            content_set_patch: Some(crate::state::AppliedContentSetPatch {
+                source_kind: Some(ContentSourceKind::CurseForge),
+                game_version: Some(manifest.minecraft.version.clone()),
+                protocol_version: Some(None),
+                loader: loader
+                    .as_deref()
+                    .map(crate::data::ModLoader::from_string),
+                loader_version: None,
+            }),
+            ..EditInstance::default()
+        },
+    )
+    .await?;
+
     let selected_files = manifest
         .files
         .into_iter()
@@ -901,39 +993,186 @@ pub async fn install_modpack(
             projects.insert(project.id, project);
         }
     }
-    let mut content = CurseForgeInstallResult::default();
-    for manifest_file in selected_files {
-        let project_type = projects
-            .get(&manifest_file.project_id)
-            .map(|project| project_type_for_class(project.class_id))
-            .unwrap_or("mod");
-        if managed_project_type(project_type).is_err() {
-            let file =
-                get_file(manifest_file.project_id, manifest_file.file_id)
-                    .await?;
-            content.manual_downloads.push(CurseForgeManualDownload {
-                project_id: manifest_file.project_id,
-                file_id: manifest_file.file_id,
-                file_name: file.file_name,
-                website_url: projects
-                    .get(&manifest_file.project_id)
-                    .and_then(|project| project.links.website_url.clone()),
-            });
-            continue;
+
+    let instance_name = crate::api::instance::get(&request.instance_id)
+        .await?
+        .map(|metadata| metadata.instance.name)
+        .unwrap_or_else(|| project.name.clone());
+    let total_files = selected_files.len().max(1);
+    // Prefetch file metadata so we can report both file-count and byte progress.
+    let mut file_ids = selected_files
+        .iter()
+        .map(|file| file.file_id)
+        .collect::<Vec<_>>();
+    file_ids.sort_unstable();
+    file_ids.dedup();
+    let mut file_meta = HashMap::<u32, CurseForgeFile>::new();
+    for chunk in file_ids.chunks(50) {
+        for file in get_files_many(chunk.to_vec()).await? {
+            file_meta.insert(file.id, file);
         }
-        let item_result = install_file(CurseForgeInstallRequest {
-            instance_id: request.instance_id.clone(),
-            project_id: manifest_file.project_id,
-            file_id: manifest_file.file_id,
-            project_type: project_type.to_string(),
-            game_version: Some(manifest.minecraft.version.clone()),
-            mod_loader_type: loader.as_deref().and_then(loader_type),
-            world_name: None,
-            install_dependencies: false,
-        })
-        .await?;
-        merge_install_result(&mut content, item_result);
     }
+    let content_total_bytes = selected_files
+        .iter()
+        .map(|file| {
+            file_meta
+                .get(&file.file_id)
+                .map(|meta| meta.file_length)
+                .unwrap_or(0)
+        })
+        .sum::<u64>();
+    // Keep the LoadingBarId in an Arc. LoadingBarId::Drop removes the bar, so
+    // cloning the ID itself would destroy progress as soon as the first task
+    // finished. Arc clones only share ownership.
+    let loading_bar = Arc::new(
+        init_loading(
+            LoadingBarType::PackDownload {
+                instance_id: request.instance_id.clone(),
+                pack_name: project.name.clone(),
+                icon: cached_icon_path.clone(),
+                pack_id: Some(request.project_id.to_string()),
+                pack_version: Some(request.file_id.to_string()),
+            },
+            total_files as f64,
+            &format!("Downloading {instance_name}"),
+        )
+        .await?,
+    );
+    let _ = emit_loading(
+        loading_bar.as_ref(),
+        0.0,
+        Some(&format!(
+            "0/{total_files} files · 0 / {}",
+            format_bytes(content_total_bytes)
+        )),
+    );
+
+    let content = Arc::new(Mutex::new(CurseForgeInstallResult::default()));
+    let projects = Arc::new(projects);
+    let file_meta = Arc::new(file_meta);
+    let files_done = Arc::new(AtomicU64::new(0));
+    let bytes_done = Arc::new(AtomicU64::new(0));
+    let instance_id = request.instance_id.clone();
+    let minecraft_version = manifest.minecraft.version.clone();
+    let loader_type_value = loader.as_deref().and_then(loader_type);
+
+    loading_try_for_each_concurrent(
+		stream::iter(selected_files.into_iter().map(Ok::<_, crate::Error>)),
+		Some(MODPACK_CONTENT_DOWNLOAD_CONCURRENCY),
+		// Progress is updated manually with file+byte counts below.
+		None,
+		1.0,
+		total_files,
+		None,
+		|manifest_file| {
+			let content = content.clone();
+			let projects = projects.clone();
+			let file_meta = file_meta.clone();
+			let files_done = files_done.clone();
+			let bytes_done = bytes_done.clone();
+			let loading_bar = loading_bar.clone();
+			let instance_id = instance_id.clone();
+			let minecraft_version = minecraft_version.clone();
+			async move {
+				let expected_bytes = file_meta
+					.get(&manifest_file.file_id)
+					.map(|file| file.file_length)
+					.unwrap_or(0);
+				let project_type = projects
+					.get(&manifest_file.project_id)
+					.map(|project| project_type_for_class(project.class_id))
+					.unwrap_or("mod");
+				if managed_project_type(project_type).is_err() {
+					let file =
+						get_file(manifest_file.project_id, manifest_file.file_id)
+							.await?;
+					{
+						let mut content = content.lock().expect("content mutex");
+						content.manual_downloads.push(CurseForgeManualDownload {
+							project_id: manifest_file.project_id,
+							file_id: manifest_file.file_id,
+							file_name: file.file_name.clone(),
+							website_url: projects
+								.get(&manifest_file.project_id)
+								.and_then(|project| project.links.website_url.clone()),
+						});
+					}
+					report_modpack_progress(
+						loading_bar.as_ref(),
+						&files_done,
+						&bytes_done,
+						total_files as u64,
+						content_total_bytes,
+						expected_bytes.max(file.file_length),
+					)?;
+					return Ok(());
+				}
+
+				match install_file(CurseForgeInstallRequest {
+					instance_id,
+					project_id: manifest_file.project_id,
+					file_id: manifest_file.file_id,
+					project_type: project_type.to_string(),
+					game_version: Some(minecraft_version),
+					mod_loader_type: loader_type_value,
+					world_name: None,
+					install_dependencies: false,
+				})
+				.await
+				{
+					Ok(item_result) => {
+						let mut content = content.lock().expect("content mutex");
+						merge_install_result(&mut content, item_result);
+					}
+					Err(err) => {
+						tracing::warn!(
+							"Failed to install CurseForge pack file {}/{}: {err}",
+							manifest_file.project_id,
+							manifest_file.file_id
+						);
+						let mut content = content.lock().expect("content mutex");
+						content.manual_downloads.push(CurseForgeManualDownload {
+							project_id: manifest_file.project_id,
+							file_id: manifest_file.file_id,
+							file_name: format!(
+								"project-{}-file-{}",
+								manifest_file.project_id, manifest_file.file_id
+							),
+							website_url: projects
+								.get(&manifest_file.project_id)
+								.and_then(|project| {
+									project.links.website_url.clone()
+								}),
+						});
+					}
+				}
+				report_modpack_progress(
+					loading_bar.as_ref(),
+					&files_done,
+					&bytes_done,
+					total_files as u64,
+					content_total_bytes,
+					expected_bytes,
+				)?;
+				Ok(())
+			}
+		},
+	)
+	.await?;
+
+    let content = Arc::try_unwrap(content)
+        .map_err(|_| {
+            ErrorKind::OtherError(
+                "CurseForge install state was still shared after completion"
+                    .to_string(),
+            )
+        })?
+        .into_inner()
+        .map_err(|_| {
+            ErrorKind::OtherError(
+                "CurseForge install state mutex was poisoned".to_string(),
+            )
+        })?;
 
     let instance_path =
         crate::api::instance::get_full_path(&request.instance_id).await?;
@@ -955,6 +1194,162 @@ pub async fn install_modpack(
         minecraft_version: manifest.minecraft.version,
         loader,
     })
+}
+
+pub async fn update_managed_modpack(
+    instance_id: &str,
+    file_id: u32,
+) -> crate::Result<CurseForgeModpackInstallResult> {
+    let state = State::get().await?;
+    let metadata = crate::state::instances::commands::get_instance_metadata(
+        instance_id,
+        &state.pool,
+    )
+    .await?
+    .ok_or_else(|| ErrorKind::InputError("Unknown instance".to_string()))?;
+    let project_id = match &metadata.link {
+        InstanceLink::CurseForgeModpack { project_id, .. } => {
+            project_id.parse::<u32>().map_err(|_| {
+                ErrorKind::InputError(
+                    "Linked CurseForge project ID is invalid".to_string(),
+                )
+            })?
+        }
+        _ => {
+            return Err(ErrorKind::InputError(format!(
+                "Instance {instance_id} is not a managed CurseForge pack, or has been disconnected."
+            ))
+            .into());
+        }
+    };
+
+    // Replace previous pack contents before installing the new file set.
+    remove_existing_curseforge_pack_content(instance_id, &metadata, &state)
+        .await?;
+
+    let pack_file = get_file(project_id, file_id).await?;
+    let game_version = pack_file
+        .game_versions
+        .iter()
+        .find(|value| loader_type(value).is_none())
+        .cloned()
+        .unwrap_or_else(|| metadata.applied_content_set.game_version.clone());
+    let loader = pack_file
+        .game_versions
+        .iter()
+        .find_map(|value| {
+            loader_type(value).map(|_| value.to_ascii_lowercase())
+        })
+        .or_else(|| {
+            Some(metadata.applied_content_set.loader.as_str().to_string())
+        });
+
+    crate::api::instance::edit(
+        instance_id,
+        EditInstance {
+            content_set_patch: Some(crate::state::AppliedContentSetPatch {
+                source_kind: Some(ContentSourceKind::CurseForge),
+                game_version: Some(game_version),
+                protocol_version: Some(None),
+                loader: loader
+                    .as_deref()
+                    .map(crate::data::ModLoader::from_string),
+                loader_version: Some(None),
+            }),
+            ..EditInstance::default()
+        },
+    )
+    .await?;
+
+    install_modpack(CurseForgeModpackInstallRequest {
+        instance_id: instance_id.to_string(),
+        project_id,
+        file_id,
+        install_optional: false,
+    })
+    .await
+}
+
+async fn cache_instance_icon_from_url(
+    icon_url: &str,
+) -> crate::Result<std::path::PathBuf> {
+    let state = State::get().await?;
+    // CurseForge avatar/CDN assets are frequently broken via local system
+    // proxies, so always download icons with a direct client.
+    let permit = state.fetch_semaphore.0.acquire().await?;
+    let response = CLIENT.get(icon_url).send().await?;
+    drop(permit);
+    if !response.status().is_success() {
+        return Err(ErrorKind::OtherError(format!(
+            "CurseForge icon download failed with HTTP {}",
+            response.status().as_u16()
+        ))
+        .into());
+    }
+    let icon_bytes = response.bytes().await?;
+    let filename = icon_url.rsplit('/').next().unwrap_or("icon.png");
+    crate::util::fetch::write_cached_icon(
+        filename,
+        &state.directories.caches_dir(),
+        icon_bytes,
+        &state.io_semaphore,
+    )
+    .await
+}
+
+async fn remove_existing_curseforge_pack_content(
+    instance_id: &str,
+    metadata: &crate::state::InstanceMetadata,
+    state: &State,
+) -> crate::Result<()> {
+    use crate::state::instances::adapters::sqlite::content_rows;
+
+    let entries = content_rows::get_content_entries(
+        &metadata.applied_content_set.id,
+        &state.pool,
+    )
+    .await?;
+    let files = content_rows::get_instance_files(instance_id, &state.pool)
+        .await?
+        .into_iter()
+        .map(|file| (file.id.clone(), file))
+        .collect::<HashMap<_, _>>();
+    let base = state
+        .directories
+        .instances_dir()
+        .join(&metadata.instance.path);
+
+    let mut removed_file_ids = HashSet::new();
+    for entry in entries {
+        if entry.source_kind != ContentSourceKind::CurseForge {
+            continue;
+        }
+        let Some(file_id) = entry.file_id else {
+            continue;
+        };
+        if !removed_file_ids.insert(file_id.clone()) {
+            continue;
+        }
+        let Some(file) = files.get(&file_id) else {
+            continue;
+        };
+        let _ =
+            crate::util::io::remove_file(base.join(&file.relative_path)).await;
+        content_rows::remove_content_entries_for_file(
+            &metadata.applied_content_set.id,
+            &file.id,
+            &state.pool,
+        )
+        .await?;
+        content_rows::remove_instance_file_by_relative_path(
+            instance_id,
+            &file.relative_path,
+            &state.pool,
+        )
+        .await?;
+    }
+
+    Ok(())
 }
 
 fn read_modpack_archive(
@@ -1244,6 +1639,45 @@ fn validate_file_name(file_name: &str) -> crate::Result<()> {
     Ok(())
 }
 
+fn format_bytes(bytes: u64) -> String {
+    const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
+    let mut value = bytes as f64;
+    let mut unit = 0usize;
+    while value >= 1024.0 && unit < UNITS.len() - 1 {
+        value /= 1024.0;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{bytes} {}", UNITS[unit])
+    } else {
+        format!("{value:.1} {}", UNITS[unit])
+    }
+}
+
+fn report_modpack_progress(
+    loading_bar: &crate::event::LoadingBarId,
+    files_done: &AtomicU64,
+    bytes_done: &AtomicU64,
+    total_files: u64,
+    total_bytes: u64,
+    file_bytes: u64,
+) -> crate::Result<()> {
+    let current_files = files_done.fetch_add(1, Ordering::Relaxed) + 1;
+    let current_bytes =
+        bytes_done.fetch_add(file_bytes, Ordering::Relaxed) + file_bytes;
+    let message = if total_bytes > 0 {
+        format!(
+            "{current_files}/{total_files} files · {} / {}",
+            format_bytes(current_bytes.min(total_bytes)),
+            format_bytes(total_bytes)
+        )
+    } else {
+        format!("{current_files}/{total_files} files")
+    };
+    // Advance the bar by one file and refresh the human-readable status text.
+    emit_loading(loading_bar, 1.0, Some(&message))
+}
+
 async fn download_cdn_file(url: &str) -> crate::Result<Bytes> {
     let key = api_key().ok_or_else(|| {
         ErrorKind::InputError(
@@ -1364,7 +1798,10 @@ async fn write_installed_file(
     world_name: Option<&str>,
 ) -> crate::Result<String> {
     let state = State::get().await?;
-    if project_type != ProjectType::DataPack {
+    // Pack installs (and normal content installs without a world target) should
+    // place datapacks in the instance datapacks/ folder. Only pin to a world
+    // when the caller explicitly asks for one.
+    if project_type != ProjectType::DataPack || world_name.is_none() {
         return crate::state::add_project_bytes(
             instance_id,
             file_name,
@@ -1379,11 +1816,7 @@ async fn write_installed_file(
         .await;
     }
 
-    let world_name = world_name.ok_or_else(|| {
-        ErrorKind::InputError(
-            "Select a world before installing a data pack".to_string(),
-        )
-    })?;
+    let world_name = world_name.expect("checked above");
     validate_file_name(world_name)?;
     let relative_path = format!("saves/{world_name}/datapacks/{file_name}");
     let full_path = crate::api::instance::get_full_path(instance_id)

@@ -29,6 +29,7 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
             curseforge_update_installed_file,
             curseforge_recognize_instance_files,
             curseforge_install_modpack,
+            curseforge_update_managed_modpack,
         ])
         .build()
 }
@@ -155,4 +156,15 @@ pub async fn curseforge_install_modpack(
     request: CurseForgeModpackInstallRequest,
 ) -> Result<CurseForgeModpackInstallResult> {
     Ok(theseus::curseforge::install_modpack(request).await?)
+}
+
+#[tauri::command]
+pub async fn curseforge_update_managed_modpack(
+    instance_id: String,
+    file_id: u32,
+) -> Result<CurseForgeModpackInstallResult> {
+    Ok(
+        theseus::curseforge::update_managed_modpack(&instance_id, file_id)
+            .await?,
+    )
 }

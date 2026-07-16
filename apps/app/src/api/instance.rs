@@ -91,6 +91,13 @@ pub enum InstanceLink {
         project_id: String,
         version_id: String,
     },
+    // Keep this as "curseforge_modpack" (not "curse_forge_modpack") so it matches
+    // the frontend InstanceLink type and the stored link_kind string.
+    #[serde(rename = "curseforge_modpack")]
+    CurseForgeModpack {
+        project_id: String,
+        version_id: String,
+    },
     ServerProject {
         project_id: String,
     },
@@ -228,6 +235,13 @@ impl InstanceLink {
                 project_id,
                 version_id,
             }),
+            CoreInstanceLink::CurseForgeModpack {
+                project_id,
+                version_id,
+            } => Some(Self::CurseForgeModpack {
+                project_id,
+                version_id,
+            }),
             CoreInstanceLink::ServerProject { project_id } => {
                 Some(Self::ServerProject { project_id })
             }
@@ -281,6 +295,13 @@ impl InstanceLink {
                 project_id,
                 version_id,
             } => Ok(CoreInstanceLink::ModrinthModpack {
+                project_id,
+                version_id,
+            }),
+            Self::CurseForgeModpack {
+                project_id,
+                version_id,
+            } => Ok(CoreInstanceLink::CurseForgeModpack {
                 project_id,
                 version_id,
             }),

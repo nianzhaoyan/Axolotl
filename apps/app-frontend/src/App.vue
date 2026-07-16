@@ -60,6 +60,7 @@ import UnknownPackWarningModal from '@/components/ui/install_flow/UnknownPackWar
 import MinecraftAuthErrorModal from '@/components/ui/minecraft-auth-error-modal/MinecraftAuthErrorModal.vue'
 import AppSettingsModal from '@/components/ui/modal/AppSettingsModal.vue'
 import AuthGrantFlowWaitModal from '@/components/ui/modal/AuthGrantFlowWaitModal.vue'
+import CurseForgeManualDownloadsModal from '@/components/ui/modal/CurseForgeManualDownloadsModal.vue'
 import InstallToPlayModal from '@/components/ui/modal/InstallToPlayModal.vue'
 import ModpackAlreadyInstalledModal from '@/components/ui/modal/ModpackAlreadyInstalledModal.vue'
 import UpdateToPlayModal from '@/components/ui/modal/UpdateToPlayModal.vue'
@@ -528,7 +529,7 @@ const error = useError()
 const errorModal = ref()
 const minecraftAuthErrorModal = ref()
 
-const contentInstall = createContentInstall({ router, handleError })
+const contentInstall = createContentInstall({ router, handleError, addNotification })
 provideContentInstall(contentInstall)
 const {
 	instances: contentInstallInstances,
@@ -548,6 +549,7 @@ const {
 	setModpackAlreadyInstalledModal: setContentInstallModpackAlreadyInstalledModal,
 	handleModpackDuplicateCreateAnyway: handleContentInstallModpackDuplicateCreateAnyway,
 	handleModpackDuplicateGoToInstance: handleContentInstallModpackDuplicateGoToInstance,
+	setCurseForgeManualDownloadsModal: setContentInstallCurseForgeManualDownloadsModal,
 	setIncompatibilityWarningModal: setContentIncompatibilityWarningModal,
 	incompatibilityWarningVersions: contentInstallIncompatibilityWarningVersions,
 	incompatibilityWarningCurrentGameVersion: contentInstallIncompatibilityWarningCurrentGameVersion,
@@ -573,6 +575,7 @@ const {
 const modInstallModal = ref()
 const modpackAlreadyInstalledModal = ref()
 const contentInstallModpackAlreadyInstalledModal = ref()
+const contentInstallCurseForgeManualDownloadsModal = ref()
 const addServerToInstanceModal = ref()
 const incompatibilityWarningModal = ref()
 const installToPlayModal = ref()
@@ -655,6 +658,9 @@ onMounted(() => {
 	setContentIncompatibilityWarningModal(incompatibilityWarningModal.value)
 	setContentInstallModal(modInstallModal.value)
 	setContentInstallModpackAlreadyInstalledModal(contentInstallModpackAlreadyInstalledModal.value)
+	setContentInstallCurseForgeManualDownloadsModal(
+		contentInstallCurseForgeManualDownloadsModal.value,
+	)
 	setModpackAlreadyInstalledModal(modpackAlreadyInstalledModal.value)
 	setServerAddServerToInstanceModal(addServerToInstanceModal.value)
 	setServerInstallToPlayModal(installToPlayModal.value)
@@ -1366,6 +1372,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 		ref="contentInstallModpackAlreadyInstalledModal"
 		@create-anyway="handleContentInstallModpackDuplicateCreateAnyway"
 		@go-to-instance="handleContentInstallModpackDuplicateGoToInstance"
+	/>
+	<CurseForgeManualDownloadsModal
+		ref="contentInstallCurseForgeManualDownloadsModal"
+		@view-instance="handleContentInstallModpackDuplicateGoToInstance"
 	/>
 	<InstallToPlayModal ref="installToPlayModal" />
 	<UpdateToPlayModal ref="updateToPlayModal" />

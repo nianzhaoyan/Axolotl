@@ -103,7 +103,12 @@ import ExportModal from '@/components/ui/ExportModal.vue'
 import ShareModalWrapper from '@/components/ui/modal/ShareModalWrapper.vue'
 import { trackEvent } from '@/helpers/analytics'
 import { get_project_versions, get_version, get_version_many } from '@/helpers/cache.js'
-import { updateCurseForgeFile } from '@/helpers/curseforge'
+import { updateCurseForgeFile, updateManagedCurseForgeModpack } from '@/helpers/curseforge'
+import {
+	type CurseForgeManualDownloadItem,
+	getCurseForgeManualDownloads,
+	removeInstalledCurseForgeManualDownloads,
+} from '@/helpers/curseforge-manual'
 import {
 	instance_bulk_update_progress_listener,
 	instance_listener,
@@ -170,8 +175,12 @@ let savedModalState: ModpackContentModalState | null = null
 
 const { formatMessage } = useVIntl()
 const { handleError, addNotification } = injectNotificationManager()
-const { installingItems, installRevisionByInstance, installFailureRevisionByInstance } =
-	injectContentInstall()
+const {
+	installingItems,
+	pendingManualDownloadsByInstance,
+	installRevisionByInstance,
+	installFailureRevisionByInstance,
+} = injectContentInstall()
 const router = useRouter()
 const queryClient = useQueryClient()
 const debug = useDebugLogger('Mods:ContentUpdate')
@@ -215,10 +224,46 @@ watch(projects, (newProjects) => {
 	}
 })
 
+const manualPendingItems = computed<ContentItem[]>(() => {
+	const pending =
+		pendingManualDownloadsByInstance.value.get(props.instance.id) ??
+		getCurseForgeManualDownloads(props.instance.id)
+	return pending.map((item: CurseForgeManualDownloadItem) => ({
+		id: `__manual_${item.projectId}_${item.fileId}`,
+		file_name: item.fileName,
+		file_path: undefined,
+		project_type: 'mod',
+		has_update: false,
+		update_version_id: null,
+		enabled: false,
+		pendingManualDownload: true,
+		project: {
+			id: `curseforge:${item.projectId}`,
+			slug: String(item.projectId),
+			title: item.fileName,
+			icon_url: undefined,
+		},
+		version: {
+			id: String(item.fileId),
+			version_number: String(item.fileId),
+			file_name: item.fileName,
+		},
+		provider_refs: [
+			{
+				provider: 'curseforge',
+				project_id: String(item.projectId),
+				version_id: String(item.fileId),
+				primary: true,
+			},
+		],
+		primary_provider: 'curseforge',
+	}))
+})
+
 const mergedProjects = computed<ContentItem[]>(() => {
 	const active = installingItems.value.get(props.instance.id)
 	const pending = active ?? installingBuffer.value
-	if (pending.length === 0) return projects.value
+	const manualPending = manualPendingItems.value
 	const pendingProjectIds = new Set(pending.map((p) => p.project?.id).filter(Boolean))
 	const displayProjects = projects.value.map((project) =>
 		project.project?.id && pendingProjectIds.has(project.project.id)
@@ -227,8 +272,24 @@ const mergedProjects = computed<ContentItem[]>(() => {
 	)
 	const realProjectIds = new Set(displayProjects.map((p) => p.project?.id).filter(Boolean))
 	const placeholders = pending.filter((item) => !realProjectIds.has(item.project?.id))
-	return placeholders.length > 0 ? [...displayProjects, ...placeholders] : displayProjects
+	const manualPlaceholders = manualPending.filter((item) => !realProjectIds.has(item.project?.id))
+	return [...displayProjects, ...placeholders, ...manualPlaceholders]
 })
+
+watch(
+	projects,
+	(items) => {
+		const remaining = removeInstalledCurseForgeManualDownloads(
+			props.instance.id,
+			items.map((item) => item.file_name).filter(Boolean),
+		)
+		const next = new Map(pendingManualDownloadsByInstance.value)
+		if (remaining.length > 0) next.set(props.instance.id, remaining)
+		else next.delete(props.instance.id)
+		pendingManualDownloadsByInstance.value = next
+	},
+	{ deep: true },
+)
 
 watch(
 	() => installFailureRevisionByInstance.value.get(props.instance.id) ?? 0,
@@ -277,7 +338,11 @@ const isInstanceBusy = computed(() => props.instance?.install_stage !== 'install
 const isPackLocked = computed(
 	() =>
 		props.instance?.link?.type === 'modrinth_modpack' ||
+		props.instance?.link?.type === 'curseforge_modpack' ||
 		props.instance?.link?.type === 'server_project_modpack',
+)
+const isCurseForgeLinkedModpack = computed(
+	() => props.instance?.link?.type === 'curseforge_modpack',
 )
 
 const shareModal = ref<InstanceType<typeof ShareModalWrapper> | null>()
@@ -439,7 +504,97 @@ function mergeVersionIntoList(
 	return sortVersionsByPublishedDate(mergedVersions)
 }
 
+function parseCurseForgeProjectId(projectId: string): number | null {
+	const raw = projectId.startsWith('curseforge:')
+		? projectId.slice('curseforge:'.length)
+		: projectId
+	const numeric = Number(raw)
+	return Number.isFinite(numeric) ? numeric : null
+}
+
+function mapCurseForgeFileToUpdaterVersion(
+	file: {
+		id: number
+		displayName: string
+		fileName: string
+		releaseType: number
+		fileDate: string
+		downloadUrl?: string | null
+		fileLength: number
+		gameVersions: string[]
+	},
+	projectId: number,
+): Labrinth.Versions.v2.Version {
+	const loaders = [
+		...new Set(
+			file.gameVersions
+				.map((value) => {
+					switch (value.toLowerCase().replaceAll(' ', '')) {
+						case 'forge':
+							return 'forge'
+						case 'fabric':
+						case 'fabricloader':
+							return 'fabric'
+						case 'quilt':
+							return 'quilt'
+						case 'neoforge':
+							return 'neoforge'
+						default:
+							return null
+					}
+				})
+				.filter(Boolean),
+		),
+	] as string[]
+	const gameVersions = file.gameVersions.filter((value) => {
+		const normalized = value.toLowerCase().replaceAll(' ', '')
+		return !['forge', 'fabric', 'fabricloader', 'quilt', 'neoforge'].includes(normalized)
+	})
+	return {
+		id: file.id.toString(),
+		project_id: `curseforge:${projectId}`,
+		name: file.displayName,
+		version_number: file.displayName,
+		game_versions: gameVersions,
+		loaders: loaders.length > 0 ? loaders : ['minecraft'],
+		date_published: file.fileDate,
+		version_type: file.releaseType === 1 ? 'release' : file.releaseType === 2 ? 'beta' : 'alpha',
+		files: [
+			{
+				filename: file.fileName,
+				url: file.downloadUrl ?? '',
+				primary: true,
+				size: file.fileLength,
+				hashes: {},
+			},
+		],
+	} as unknown as Labrinth.Versions.v2.Version
+}
+
 async function getUpdaterProjectVersions(projectId: string, pinnedVersionId?: string) {
+	const curseForgeProjectId = parseCurseForgeProjectId(projectId)
+	if (
+		isCurseForgeLinkedModpack.value ||
+		projectId.startsWith('curseforge:') ||
+		(curseForgeProjectId != null && props.instance?.link?.type === 'curseforge_modpack')
+	) {
+		if (curseForgeProjectId == null) return []
+		const { getCurseForgeFiles } = await import('@/helpers/curseforge')
+		const response = await getCurseForgeFiles(curseForgeProjectId, {
+			index: 0,
+			pageSize: 50,
+		}).catch((err) => {
+			handleError(err as Error)
+			return null
+		})
+		if (!response) return []
+		return sortVersionsByPublishedDate(
+			response.files
+				.filter((file) => file.isAvailable)
+				.map((file) => mapCurseForgeFileToUpdaterVersion(file, curseForgeProjectId)),
+		)
+	}
+
 	let fetchError: unknown = null
 	let versions = (await get_project_versions(projectId, 'bypass').catch((err) => {
 		fetchError = err
@@ -1096,7 +1251,15 @@ async function handleModpackUpdateConfirm() {
 	contentUpdaterModal.value?.hide()
 	isModpackUpdating.value = true
 	try {
-		await update_managed_modrinth_version(props.instance.id, version.id)
+		if (props.instance.link?.type === 'curseforge_modpack') {
+			const fileId = Number(version.id)
+			if (!Number.isFinite(fileId)) {
+				throw new Error('Invalid CurseForge file ID')
+			}
+			await updateManagedCurseForgeModpack(props.instance.id, fileId)
+		} else {
+			await update_managed_modrinth_version(props.instance.id, version.id)
+		}
 		await initProjects()
 	} finally {
 		isModpackUpdating.value = false

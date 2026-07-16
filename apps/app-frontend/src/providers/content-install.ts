@@ -23,15 +23,22 @@ import {
 	getCurseForgeProject,
 	installCurseForgeFile,
 	installCurseForgeModpack,
+	summarizeCurseForgeInstall,
 } from '@/helpers/curseforge'
+import {
+	type CurseForgeManualDownloadItem,
+	setCurseForgeManualDownloads,
+} from '@/helpers/curseforge-manual'
 import { instance_listener } from '@/helpers/events.js'
 import {
 	install_create_instance,
 	install_create_modpack_instance,
 	installJobInstanceId,
+	wait_for_install_job,
 } from '@/helpers/install'
 import {
 	add_project_from_version,
+	edit,
 	get,
 	get_content_items,
 	get_install_candidates,
@@ -51,6 +58,14 @@ interface ModalRef {
 
 interface ModpackAlreadyInstalledModalRef {
 	show: (instanceName: string, instanceId: string) => void
+}
+
+interface CurseForgeManualDownloadsModalRef {
+	show: (payload: {
+		items: CurseForgeManualDownloadItem[]
+		installed: number
+		instanceId?: string | null
+	}) => void
 }
 
 export type ContentInstallCallback = (versionId?: string, installedProjectIds?: string[]) => void
@@ -80,6 +95,36 @@ const noCompatibleVersionsMessage = defineMessage({
 	id: 'app.content-install.no-compatible-versions',
 	defaultMessage:
 		'No available versions match {compatibilityLabel}. Select a version to install anyway. Dependencies will not be installed automatically.',
+})
+const manualDownloadsTitleMessage = defineMessage({
+	id: 'app.curseforge.manual-downloads.notification-title',
+	defaultMessage: 'Some CurseForge files need manual download',
+})
+const manualDownloadsPartialMessage = defineMessage({
+	id: 'app.curseforge.manual-downloads.notification-partial',
+	defaultMessage:
+		'Installed {installed, number} files automatically, but {manual, number} could not be downloaded ({list}). Open the download list to finish those files.',
+})
+const manualDownloadsFailedMessage = defineMessage({
+	id: 'app.curseforge.manual-downloads.notification-failed',
+	defaultMessage:
+		'{manual, number} CurseForge files could not be downloaded automatically ({list}). Open the download list to install them manually.',
+})
+const manualDownloadsListAndMoreMessage = defineMessage({
+	id: 'app.curseforge.manual-downloads.list-and-more',
+	defaultMessage: '{list}, and {count, number} more',
+})
+const manualDownloadsFilesCountMessage = defineMessage({
+	id: 'app.curseforge.manual-downloads.files-count',
+	defaultMessage: '{count, number} files',
+})
+const modpackInstalledTitleMessage = defineMessage({
+	id: 'app.curseforge.modpack-installed.title',
+	defaultMessage: 'CurseForge modpack installed',
+})
+const modpackInstalledBodyMessage = defineMessage({
+	id: 'app.curseforge.modpack-installed.body',
+	defaultMessage: 'Installed {count, number} content files from CurseForge.',
 })
 
 const RESOLVABLE_PROJECT_TYPES = new Set<Labrinth.Content.v3.ContentType>([
@@ -272,6 +317,7 @@ export interface ContentInstallContext {
 	setModpackAlreadyInstalledModal: (ref: ModpackAlreadyInstalledModalRef) => void
 	handleModpackDuplicateCreateAnyway: () => Promise<void>
 	handleModpackDuplicateGoToInstance: (instanceId: string) => void
+	setCurseForgeManualDownloadsModal: (ref: CurseForgeManualDownloadsModalRef) => void
 	setIncompatibilityWarningModal: (ref: ModalRef) => void
 	incompatibilityWarningVersions: Ref<Labrinth.Versions.v2.Version[]>
 	incompatibilityWarningCurrentGameVersion: Ref<string>
@@ -302,6 +348,7 @@ export interface ContentInstallContext {
 		hints?: { preferredLoader?: string; preferredGameVersion?: string; showProjectInfo?: boolean },
 	) => Promise<void>
 	installingItems: Ref<Map<string, ContentItem[]>>
+	pendingManualDownloadsByInstance: Ref<Map<string, CurseForgeManualDownloadItem[]>>
 	installRevisionByInstance: Ref<Map<string, number>>
 	installFailureRevisionByInstance: Ref<Map<string, number>>
 }
@@ -314,6 +361,11 @@ export const [injectContentInstall, provideContentInstall] = createContext<Conte
 export function createContentInstall(opts: {
 	router: Router
 	handleError: (err: unknown) => void
+	addNotification: (notification: {
+		title: string
+		text?: string
+		type?: 'error' | 'warning' | 'success' | 'info'
+	}) => void
 }): ContentInstallContext {
 	const { formatMessage } = useVIntl()
 	const themeStore = useTheming()
@@ -328,6 +380,9 @@ export function createContentInstall(opts: {
 
 	const projectInfo = ref<ContentInstallProjectInfo | null>(null)
 	const installingItems = ref<Map<string, ContentItem[]>>(new Map())
+	const pendingManualDownloadsByInstance = ref<Map<string, CurseForgeManualDownloadItem[]>>(
+		new Map(),
+	)
 	const installRevisionByInstance = ref<Map<string, number>>(new Map())
 	const installFailureRevisionByInstance = ref<Map<string, number>>(new Map())
 	const incompatibilityWarningVersions = ref<Labrinth.Versions.v2.Version[]>([])
@@ -531,6 +586,7 @@ export function createContentInstall(opts: {
 
 	let modalRef: ModalRef | null = null
 	let modpackAlreadyInstalledModalRef: ModpackAlreadyInstalledModalRef | null = null
+	let curseForgeManualDownloadsModalRef: CurseForgeManualDownloadsModalRef | null = null
 	let incompatibilityWarningModalRef: ModalRef | null = null
 	let currentProvider: InstallProvider = 'modrinth'
 	let currentProject: Labrinth.Projects.v2.Project | null = null
@@ -550,7 +606,78 @@ export function createContentInstall(opts: {
 		source: string
 		callback: ContentInstallCallback
 		createInstanceCallback: (instanceId: string) => void
+		provider: InstallProvider
 	} | null = null
+
+	async function createAndInstallCurseForgeModpack(
+		project: Labrinth.Projects.v2.Project,
+		version: Labrinth.Versions.v2.Version,
+		numericProjectId: number,
+		gameVersion: string,
+		loader: InstanceLoader,
+		source: string,
+		callback: ContentInstallCallback,
+		createInstanceCallback: (instanceId: string) => void,
+	) {
+		const curseForgeLink = {
+			type: 'curseforge_modpack' as const,
+			project_id: numericProjectId.toString(),
+			version_id: version.id,
+		}
+		// Match Modrinth managed packs: associate the instance as soon as it is created
+		// so Installation settings can show the linked-modpack controls immediately.
+		const job = await install_create_instance({
+			name: project.title,
+			gameVersion,
+			loader,
+			loaderVersion: 'latest',
+			iconPath: project.icon_url ?? null,
+			link: curseForgeLink,
+		})
+		const createdInstanceId = installJobInstanceId(job)
+		if (!createdInstanceId) return
+		createInstanceCallback(createdInstanceId)
+		addInstallingItem(createdInstanceId, project, version)
+		try {
+			// Wait for the instance shell/job to settle before writing pack content.
+			await wait_for_install_job(job.job_id)
+			// Re-assert the association after the create job finishes so later install
+			// stages cannot leave the instance as unmanaged.
+			await edit(createdInstanceId, {
+				link: curseForgeLink,
+			})
+			const result = await installCurrentCurseForgeVersion(
+				{
+					id: createdInstanceId,
+					name: project.title,
+					game_version: gameVersion,
+					loader,
+				},
+				project,
+				version,
+				true,
+			)
+			await edit(createdInstanceId, {
+				link: curseForgeLink,
+			})
+			removeInstallingItems(createdInstanceId, [project.id])
+			trackEvent('PackInstall', {
+				id: project.id,
+				version_id: version.id,
+				title: project.title,
+				source,
+			})
+			callback(result.primaryInstalled ? version.id : undefined, result.installedProjectIds)
+		} catch (err) {
+			// Best-effort: still keep the managed association for settings/update UI.
+			await edit(createdInstanceId, {
+				link: curseForgeLink,
+			}).catch(() => {})
+			removeInstallingItems(createdInstanceId, [project.id])
+			markInstanceContentInstallFailed(createdInstanceId)
+			throw err
+		}
+	}
 
 	async function showModInstallModal(
 		project: Labrinth.Projects.v2.Project,
@@ -738,9 +865,72 @@ export function createContentInstall(opts: {
 		}
 	}
 
-	async function openManualCurseForgeDownload(result: CurseForgeInstallResult) {
-		const url = result.manualDownloads[0]?.websiteUrl ?? currentCurseForgeProject?.links.websiteUrl
-		if (url) await openUrl(url)
+	function rememberManualDownloads(
+		instanceId: string,
+		result: CurseForgeInstallResult,
+	): CurseForgeManualDownloadItem[] {
+		const manualItems: CurseForgeManualDownloadItem[] = (result.manualDownloads ?? []).map(
+			(item) => ({
+				projectId: item.projectId,
+				fileId: item.fileId,
+				fileName: item.fileName,
+				websiteUrl:
+					item.websiteUrl ??
+					currentCurseForgeProject?.links.websiteUrl ??
+					`https://www.curseforge.com/minecraft/mc-mods/${item.projectId}/files/${item.fileId}`,
+			}),
+		)
+		setCurseForgeManualDownloads(instanceId, manualItems)
+		const next = new Map(pendingManualDownloadsByInstance.value)
+		if (manualItems.length > 0) {
+			next.set(instanceId, manualItems)
+		} else {
+			next.delete(instanceId)
+		}
+		pendingManualDownloadsByInstance.value = next
+		return manualItems
+	}
+
+	function showManualCurseForgeDownloads(instanceId: string, result: CurseForgeInstallResult) {
+		const summary = summarizeCurseForgeInstall(result)
+		const manualItems = rememberManualDownloads(instanceId, result)
+		if (manualItems.length === 0) return
+
+		const manualNames = manualItems
+			.slice(0, 5)
+			.map((item) => item.fileName)
+			.filter(Boolean)
+		const extra = summary.manual > manualNames.length ? summary.manual - manualNames.length : 0
+		const listText = manualNames.length
+			? extra > 0
+				? formatMessage(manualDownloadsListAndMoreMessage, {
+						list: manualNames.join(', '),
+						count: extra,
+					})
+				: manualNames.join(', ')
+			: formatMessage(manualDownloadsFilesCountMessage, { count: summary.manual })
+
+		opts.addNotification({
+			title: formatMessage(manualDownloadsTitleMessage),
+			text:
+				summary.installed > 0
+					? formatMessage(manualDownloadsPartialMessage, {
+							installed: summary.installed,
+							manual: summary.manual,
+							list: listText,
+						})
+					: formatMessage(manualDownloadsFailedMessage, {
+							manual: summary.manual,
+							list: listText,
+						}),
+			type: summary.installed > 0 ? 'warning' : 'error',
+		})
+
+		curseForgeManualDownloadsModalRef?.show({
+			items: manualItems,
+			installed: summary.installed,
+			instanceId,
+		})
 	}
 
 	async function installCurrentCurseForgeVersion(
@@ -777,7 +967,7 @@ export function createContentInstall(opts: {
 			})
 		}
 
-		await openManualCurseForgeDownload(result)
+		showManualCurseForgeDownloads(instance.id, result)
 		const installedProjectIds = [
 			...new Set(result.installed.map((installed) => `curseforge:${installed.projectId}`)),
 		]
@@ -790,6 +980,22 @@ export function createContentInstall(opts: {
 			installedProjectIds.unshift(project.id)
 		}
 		markInstanceContentChanged(instance.id)
+		if (project.project_type === 'modpack') {
+			const summary = summarizeCurseForgeInstall(result)
+			if (summary.manual === 0 && summary.installed > 0) {
+				setCurseForgeManualDownloads(instance.id, [])
+				const next = new Map(pendingManualDownloadsByInstance.value)
+				next.delete(instance.id)
+				pendingManualDownloadsByInstance.value = next
+				opts.addNotification({
+					title: formatMessage(modpackInstalledTitleMessage),
+					text: formatMessage(modpackInstalledBodyMessage, {
+						count: summary.installed,
+					}),
+					type: 'success',
+				})
+			}
+		}
 		return { installedProjectIds, primaryInstalled }
 	}
 
@@ -1078,7 +1284,14 @@ export function createContentInstall(opts: {
 			const existingPack = packs.find((pack) => pack.link?.project_id === project.id)
 
 			if (existingPack && !themeStore.getFeatureFlag('skip_non_essential_warnings')) {
-				pendingModpackInstall = { project, version, source, callback, createInstanceCallback }
+				pendingModpackInstall = {
+					project,
+					version,
+					source,
+					callback,
+					createInstanceCallback,
+					provider: 'modrinth',
+				}
 				modpackAlreadyInstalledModalRef?.show(existingPack.name, existingPack.id)
 				return
 			}
@@ -1219,42 +1432,35 @@ export function createContentInstall(opts: {
 			}
 			const loader =
 				version.loaders.find((candidate) => SUPPORTED_LOADERS.has(candidate)) ?? 'vanilla'
-			const job = await install_create_instance({
-				name: project.title,
-				gameVersion,
-				loader: loader as InstanceLoader,
-				loaderVersion: 'latest',
-				iconPath: null,
-			})
-			const createdInstanceId = installJobInstanceId(job)
-			if (!createdInstanceId) return
-			addInstallingItem(createdInstanceId, project, version)
-			try {
-				const result = await installCurrentCurseForgeVersion(
-					{
-						id: createdInstanceId,
-						name: project.title,
-						game_version: gameVersion,
-						loader: loader as InstanceLoader,
-					},
+			const packs = await list()
+			const existingPack = packs.find(
+				(pack) =>
+					pack.link?.type === 'curseforge_modpack' &&
+					(pack.link.project_id === numericProjectId.toString() ||
+						pack.link.project_id === project.id),
+			)
+			if (existingPack && !themeStore.getFeatureFlag('skip_non_essential_warnings')) {
+				pendingModpackInstall = {
 					project,
-					version,
-					true,
-				)
-				removeInstallingItems(createdInstanceId, [project.id])
-				createInstanceCallback(createdInstanceId)
-				trackEvent('PackInstall', {
-					id: project.id,
-					version_id: version.id,
-					title: project.title,
+					version: version.id,
 					source,
-				})
-				callback(result.primaryInstalled ? version.id : undefined, result.installedProjectIds)
-			} catch (err) {
-				removeInstallingItems(createdInstanceId, [project.id])
-				markInstanceContentInstallFailed(createdInstanceId)
-				throw err
+					callback,
+					createInstanceCallback,
+					provider: 'curseforge',
+				}
+				modpackAlreadyInstalledModalRef?.show(existingPack.name, existingPack.id)
+				return
 			}
+			await createAndInstallCurseForgeModpack(
+				project,
+				version,
+				numericProjectId,
+				gameVersion,
+				loader as InstanceLoader,
+				source,
+				callback,
+				createInstanceCallback,
+			)
 		} else if (instanceId) {
 			const instance = await get(instanceId)
 			if (!instance) return
@@ -1310,10 +1516,41 @@ export function createContentInstall(opts: {
 		setModpackAlreadyInstalledModal(ref: ModpackAlreadyInstalledModalRef) {
 			modpackAlreadyInstalledModalRef = ref
 		},
+		setCurseForgeManualDownloadsModal(ref: CurseForgeManualDownloadsModalRef) {
+			curseForgeManualDownloadsModalRef = ref
+		},
 		async handleModpackDuplicateCreateAnyway() {
 			if (!pendingModpackInstall) return
-			const { project, version, source, callback, createInstanceCallback } = pendingModpackInstall
+			const { project, version, source, callback, createInstanceCallback, provider } =
+				pendingModpackInstall
 			pendingModpackInstall = null
+			if (provider === 'curseforge') {
+				const numericProjectId = Number(project.id.replace(/^curseforge:/, ''))
+				const selectedVersion =
+					currentVersions.find((candidate) => candidate.id === version) ?? currentVersions[0]
+				if (!selectedVersion || !Number.isFinite(numericProjectId)) {
+					throw new Error('Unable to reinstall the CurseForge modpack')
+				}
+				const gameVersion = selectedVersion.game_versions[0]
+				if (!gameVersion) {
+					throw new Error('The CurseForge modpack does not declare a Minecraft version')
+				}
+				const loader =
+					(selectedVersion.loaders.find((candidate) => SUPPORTED_LOADERS.has(candidate)) as
+						| InstanceLoader
+						| undefined) ?? 'vanilla'
+				await createAndInstallCurseForgeModpack(
+					project,
+					selectedVersion,
+					numericProjectId,
+					gameVersion,
+					loader,
+					source,
+					callback,
+					createInstanceCallback,
+				)
+				return
+			}
 			const job = await install_create_modpack_instance({
 				type: 'fromVersionId',
 				project_id: project.id,
@@ -1353,6 +1590,7 @@ export function createContentInstall(opts: {
 		install,
 		installCurseForge,
 		installingItems,
+		pendingManualDownloadsByInstance,
 		installRevisionByInstance,
 		installFailureRevisionByInstance,
 	}

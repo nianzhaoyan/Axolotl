@@ -40,6 +40,7 @@ export interface ContentCardTableItem {
 	isClientOnly?: boolean
 	clientWarning?: ClientWarningType | null
 	hideSwitchVersion?: boolean
+	pendingManualDownload?: boolean
 	overflowOptions?: OverflowMenuOption[]
 }
 
@@ -70,6 +71,7 @@ export interface ContentItem extends Omit<
 	pack_client_retained?: boolean
 	pack_client_depends?: boolean
 	installing?: boolean
+	pendingManualDownload?: boolean
 	provider_refs?: Array<{
 		provider: 'modrinth' | 'curseforge'
 		project_id: string

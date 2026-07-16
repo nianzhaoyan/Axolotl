@@ -39,6 +39,10 @@ const messages = defineMessages({
 		id: 'content.card.select-project',
 		defaultMessage: 'Select {project}',
 	},
+	pendingManualDownload: {
+		id: 'content.card.pending-manual-download',
+		defaultMessage: 'Manual download required',
+	},
 })
 
 interface Props {
@@ -49,6 +53,7 @@ interface Props {
 	owner?: ContentOwner
 	enabled?: boolean
 	installing?: boolean
+	pendingManualDownload?: boolean
 	hasUpdate?: boolean
 	isClientOnly?: boolean
 	clientWarning?: ClientWarningType | null
@@ -71,6 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
 	owner: undefined,
 	enabled: undefined,
 	installing: false,
+	pendingManualDownload: false,
 	hasUpdate: false,
 	isClientOnly: false,
 	clientWarning: null,
@@ -154,7 +160,13 @@ const deleteHovered = ref(false)
 				:class="enabled === false && !disabled ? 'grayscale opacity-50' : ''"
 			>
 				<div
-					v-tooltip="installing ? formatMessage(commonMessages.installingLabel) : undefined"
+					v-tooltip="
+						installing
+							? formatMessage(commonMessages.installingLabel)
+							: pendingManualDownload
+								? formatMessage(messages.pendingManualDownload)
+								: undefined
+					"
 					class="relative flex shrink-0 items-center"
 				>
 					<Avatar
@@ -169,6 +181,12 @@ const deleteHovered = ref(false)
 						class="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/20"
 					>
 						<SpinnerIcon class="size-5 animate-spin text-white" />
+					</div>
+					<div
+						v-else-if="pendingManualDownload"
+						class="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-orange text-white"
+					>
+						<TriangleAlertIcon class="size-3.5" />
 					</div>
 				</div>
 				<div class="flex min-w-0 flex-col gap-0.5">

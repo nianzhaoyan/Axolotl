@@ -172,7 +172,7 @@ pub(crate) async fn get_instance_install_candidates(
 				)
 					THEN 1
 				ELSE 0
-			END AS "installed!: i64"
+			END AS installed
 		FROM instances i
 		INNER JOIN instance_content_sets cs
 			ON cs.id = i.applied_content_set_id
@@ -247,8 +247,9 @@ pub(crate) async fn list_content(
     )
     .await?;
     let imported_modpack_scope = is_imported_modpack_scope(&link);
+    let curseforge_modpack_scope = is_curseforge_modpack_scope(&link);
     let linked_modpack_source_kind = linked_modpack_source_kind(&link);
-    let modpack_ids = if imported_modpack_scope {
+    let modpack_ids = if imported_modpack_scope || curseforge_modpack_scope {
         None
     } else {
         match linked_modpack_ids(&link) {
@@ -266,6 +267,12 @@ pub(crate) async fn list_content(
     let filter = if imported_modpack_scope {
         ContentFilter::ExcludeSourceKind {
             source_kind: ContentSourceKind::ImportedModpack,
+            exclude_untracked: resolved.instance.install_stage
+                != crate::state::InstanceInstallStage::Installed,
+        }
+    } else if curseforge_modpack_scope {
+        ContentFilter::ExcludeSourceKind {
+            source_kind: ContentSourceKind::CurseForge,
             exclude_untracked: resolved.instance.install_stage
                 != crate::state::InstanceInstallStage::Installed,
         }
@@ -333,6 +340,29 @@ pub(crate) async fn list_linked_modpack_content(
         .await;
     }
 
+    if is_curseforge_modpack_scope(&link) {
+        let files = content_projects_for_scope(
+            &resolved,
+            cache_behaviour,
+            state,
+            ContentFilter::OnlySourceKind {
+                source_kind: ContentSourceKind::CurseForge,
+                include_untracked: resolved.instance.install_stage
+                    != crate::state::InstanceInstallStage::Installed,
+            },
+        )
+        .await?;
+        let files = files.into_iter().collect::<Vec<_>>();
+
+        return content_files_to_content_items(
+            &resolved.instance,
+            &files,
+            cache_behaviour,
+            state,
+        )
+        .await;
+    }
+
     let Some((_, version_id)) = linked_modpack_ids(&link) else {
         return Ok(Vec::new());
     };
@@ -380,12 +410,24 @@ pub(crate) async fn get_linked_modpack_info(
         &state.pool,
     )
     .await?;
-    let Some((project_id, version_id)) =
-        linked_modpack_ids_for_instance(&resolved.instance.id, &state.pool)
-            .await?
-    else {
+    let link = sqlite::instance_rows::get_instance_link(
+        &resolved.instance.id,
+        &state.pool,
+    )
+    .await?;
+    let Some((project_id, version_id)) = linked_modpack_ids(&link) else {
         return Ok(None);
     };
+
+    if is_curseforge_modpack_scope(&link) {
+        return get_curseforge_linked_modpack_info(
+            &project_id,
+            &version_id,
+            resolved.instance.update_channel,
+        )
+        .await;
+    }
+
     let (project, version, all_versions) = tokio::try_join!(
         CachedEntry::get_project(
             &project_id,
@@ -483,6 +525,240 @@ pub(crate) async fn get_linked_modpack_info(
         update_version_id,
         update_version,
     }))
+}
+
+async fn get_curseforge_linked_modpack_info(
+    project_id: &str,
+    version_id: &str,
+    preferred_update_channel: ReleaseChannel,
+) -> crate::Result<Option<LinkedModpackInfo>> {
+    let numeric_project_id = project_id.parse::<u32>().map_err(|_| {
+        crate::ErrorKind::InputError(format!(
+            "Linked CurseForge project ID {project_id} is invalid"
+        ))
+    })?;
+    let numeric_file_id = version_id.parse::<u32>().map_err(|_| {
+        crate::ErrorKind::InputError(format!(
+            "Linked CurseForge file ID {version_id} is invalid"
+        ))
+    })?;
+
+    let project =
+        crate::api::curseforge::get_project(numeric_project_id).await?;
+    let installed_file =
+        crate::api::curseforge::get_file(numeric_project_id, numeric_file_id)
+            .await?;
+    let files = crate::api::curseforge::get_files(
+        numeric_project_id,
+        crate::api::curseforge::CurseForgeFilesRequest {
+            game_version: None,
+            mod_loader_type: None,
+            game_version_type_id: None,
+            index: 0,
+            page_size: 50,
+        },
+    )
+    .await?
+    .files;
+
+    let project_model = curseforge_project_to_project(&project);
+    let version = curseforge_file_to_version(&installed_file);
+    let all_versions = files
+        .into_iter()
+        .filter(|file| file.is_available)
+        .map(|file| curseforge_file_to_version(&file))
+        .collect::<Vec<_>>();
+    let owner = project.authors.first().map(|author| ContentItemOwner {
+        id: author.id.to_string(),
+        name: author.name.clone(),
+        avatar_url: None,
+        owner_type: OwnerType::User,
+    });
+    let (has_update, update_version_id, update_version) = check_modpack_update(
+        &version.id,
+        &version,
+        Some(all_versions),
+        preferred_update_channel,
+    );
+
+    Ok(Some(LinkedModpackInfo {
+        project: project_model,
+        version,
+        owner,
+        has_update,
+        update_version_id,
+        update_version,
+    }))
+}
+
+fn curseforge_project_to_project(
+    project: &crate::api::curseforge::CurseForgeProject,
+) -> Project {
+    let mut game_versions = Vec::new();
+    let mut loaders = Vec::new();
+    let mut seen_versions = HashSet::new();
+    let mut seen_loaders = HashSet::new();
+    for index in &project.latest_files_indexes {
+        if seen_versions.insert(index.game_version.clone()) {
+            game_versions.push(index.game_version.clone());
+        }
+        if let Some(loader) = index.mod_loader.and_then(curseforge_loader_name)
+            && seen_loaders.insert(loader)
+        {
+            loaders.push(loader.to_string());
+        }
+    }
+
+    Project {
+        id: format!("curseforge:{}", project.id),
+        slug: Some(project.slug.clone()),
+        project_type: "modpack".to_string(),
+        team: String::new(),
+        organization: None,
+        title: project.name.clone(),
+        description: project.summary.clone(),
+        body: project.summary.clone(),
+        published: parse_curseforge_datetime(&project.date_created),
+        updated: parse_curseforge_datetime(&project.date_modified),
+        approved: None,
+        status: "approved".to_string(),
+        license: crate::state::License {
+            id: String::new(),
+            name: String::new(),
+            url: None,
+        },
+        client_side: crate::state::SideType::Unknown,
+        server_side: crate::state::SideType::Unknown,
+        downloads: project.download_count.min(u32::MAX as u64) as u32,
+        followers: 0,
+        categories: project
+            .categories
+            .iter()
+            .map(|category| category.slug.clone())
+            .collect(),
+        additional_categories: Vec::new(),
+        game_versions,
+        loaders,
+        versions: project
+            .latest_files
+            .iter()
+            .map(|file| file.id.to_string())
+            .collect(),
+        icon_url: project.logo.as_ref().map(|logo| logo.thumbnail_url.clone()),
+        issues_url: project.links.issues_url.clone(),
+        source_url: project.links.source_url.clone(),
+        wiki_url: project.links.wiki_url.clone(),
+        discord_url: None,
+        donation_urls: None,
+        gallery: project
+            .screenshots
+            .iter()
+            .map(|screenshot| crate::state::GalleryItem {
+                url: screenshot.url.clone(),
+                raw_url: screenshot.url.clone(),
+                featured: false,
+                title: Some(screenshot.title.clone()),
+                description: Some(screenshot.description.clone()),
+                created: parse_curseforge_datetime(&project.date_created),
+                ordering: 0,
+            })
+            .collect(),
+        color: None,
+    }
+}
+
+fn curseforge_file_to_version(
+    file: &crate::api::curseforge::CurseForgeFile,
+) -> Version {
+    let loaders = file
+        .game_versions
+        .iter()
+        .filter_map(|value| curseforge_loader_from_name(value))
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    let game_versions = file
+        .game_versions
+        .iter()
+        .filter(|value| curseforge_loader_from_name(value).is_none())
+        .cloned()
+        .collect::<Vec<_>>();
+    let hashes = file
+        .hashes
+        .iter()
+        .filter_map(|hash| {
+            let algo = match hash.algo {
+                1 => "sha1",
+                2 => "md5",
+                _ => return None,
+            };
+            Some((algo.to_string(), hash.value.clone()))
+        })
+        .collect();
+
+    Version {
+        id: file.id.to_string(),
+        project_id: format!("curseforge:{}", file.mod_id),
+        author_id: String::new(),
+        featured: false,
+        name: file.display_name.clone(),
+        version_number: file.display_name.clone(),
+        changelog: None,
+        changelog_url: None,
+        date_published: parse_curseforge_datetime(&file.file_date),
+        downloads: file.download_count.min(u32::MAX as u64) as u32,
+        version_type: match file.release_type {
+            1 => "release".to_string(),
+            2 => "beta".to_string(),
+            _ => "alpha".to_string(),
+        },
+        files: vec![crate::state::VersionFile {
+            hashes,
+            url: file.download_url.clone().unwrap_or_default(),
+            filename: file.file_name.clone(),
+            primary: true,
+            size: file.file_length.min(u32::MAX as u64) as u32,
+            file_type: None,
+        }],
+        dependencies: Vec::new(),
+        game_versions,
+        loaders: if loaders.is_empty() {
+            vec!["minecraft".to_string()]
+        } else {
+            loaders
+        },
+    }
+}
+
+fn parse_curseforge_datetime(value: &str) -> chrono::DateTime<chrono::Utc> {
+    chrono::DateTime::parse_from_rfc3339(value)
+        .map(|datetime| datetime.with_timezone(&chrono::Utc))
+        .or_else(|_| {
+            chrono::NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S")
+                .map(|datetime| datetime.and_utc())
+        })
+        .unwrap_or_else(|_| chrono::Utc::now())
+}
+
+fn curseforge_loader_name(value: u32) -> Option<&'static str> {
+    match value {
+        1 => Some("forge"),
+        4 => Some("fabric"),
+        5 => Some("quilt"),
+        6 => Some("neoforge"),
+        _ => None,
+    }
+}
+
+fn curseforge_loader_from_name(value: &str) -> Option<&'static str> {
+    match value.to_ascii_lowercase().replace(' ', "").as_str() {
+        "forge" => Some("forge"),
+        "fabric" | "fabricloader" => Some("fabric"),
+        "quilt" => Some("quilt"),
+        "neoforge" => Some("neoforge"),
+        _ => None,
+    }
 }
 
 pub(crate) async fn dependencies_to_content_items(
@@ -1255,18 +1531,17 @@ fn is_imported_modpack_scope(link: &InstanceLink) -> bool {
     matches!(link, InstanceLink::ImportedModpack { .. })
 }
 
-async fn linked_modpack_ids_for_instance(
-    instance_id: &str,
-    pool: &SqlitePool,
-) -> crate::Result<Option<(String, String)>> {
-    let link =
-        sqlite::instance_rows::get_instance_link(instance_id, pool).await?;
-    Ok(linked_modpack_ids(&link))
+fn is_curseforge_modpack_scope(link: &InstanceLink) -> bool {
+    matches!(link, InstanceLink::CurseForgeModpack { .. })
 }
 
 fn linked_modpack_ids(link: &InstanceLink) -> Option<(String, String)> {
     match link {
         InstanceLink::ModrinthModpack {
+            project_id,
+            version_id,
+        }
+        | InstanceLink::CurseForgeModpack {
             project_id,
             version_id,
         } => Some((project_id.clone(), version_id.clone())),
@@ -1290,6 +1565,9 @@ fn linked_modpack_source_kind(
     match link {
         InstanceLink::ModrinthModpack { .. } => {
             Some(ContentSourceKind::ModrinthModpack)
+        }
+        InstanceLink::CurseForgeModpack { .. } => {
+            Some(ContentSourceKind::CurseForge)
         }
         InstanceLink::ServerProjectModpack { .. } => {
             Some(ContentSourceKind::ServerProject)

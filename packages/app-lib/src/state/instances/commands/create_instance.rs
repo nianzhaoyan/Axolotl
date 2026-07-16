@@ -177,19 +177,30 @@ async fn resolve_icon_path(
     let (bytes, file_name) = if icon.starts_with("https://")
         || icon.starts_with("http://")
     {
-        let fetched = fetch::fetch(
-            icon,
-            None,
-            None,
-            None,
-            &state.fetch_semaphore,
-            &state.pool,
-        )
-        .await?;
+        // Icon downloads are best-effort. CurseForge CDN icons often fail
+        // through local system proxies; never block instance creation on that.
+        let fetched = match fetch_icon_bytes(icon, state).await {
+            Ok(bytes) => bytes,
+            Err(err) => {
+                tracing::warn!(
+                    "Failed to download instance icon from {icon}: {err}"
+                );
+                return Ok(None);
+            }
+        };
         let name = icon.rsplit('/').next().unwrap_or("icon").to_string();
         (fetched, name)
     } else {
-        let data = io::read(state.directories.caches_dir().join(icon)).await?;
+        let data =
+            match io::read(state.directories.caches_dir().join(icon)).await {
+                Ok(data) => data,
+                Err(err) => {
+                    tracing::warn!(
+                        "Failed to read instance icon from {icon}: {err}"
+                    );
+                    return Ok(None);
+                }
+            };
         (bytes::Bytes::from(data), icon.to_string())
     };
 
@@ -204,12 +215,65 @@ async fn resolve_icon_path(
     Ok(Some(file.to_string_lossy().to_string()))
 }
 
+async fn fetch_icon_bytes(
+    icon_url: &str,
+    state: &State,
+) -> crate::Result<bytes::Bytes> {
+    // Prefer a direct connection for CDN hosts that are commonly blocked or
+    // broken through local HTTP proxies (e.g. media.forgecdn.net).
+    if is_direct_cdn_icon_url(icon_url) {
+        let permit = state.fetch_semaphore.0.acquire().await?;
+        let response = DIRECT_ICON_CLIENT.get(icon_url).send().await?;
+        drop(permit);
+        if !response.status().is_success() {
+            return Err(crate::ErrorKind::OtherError(format!(
+                "Icon download failed with HTTP {}",
+                response.status().as_u16()
+            ))
+            .into());
+        }
+        return Ok(response.bytes().await?);
+    }
+
+    fetch::fetch(
+        icon_url,
+        None,
+        None,
+        None,
+        &state.fetch_semaphore,
+        &state.pool,
+    )
+    .await
+}
+
+fn is_direct_cdn_icon_url(url: &str) -> bool {
+    let Ok(parsed) = reqwest::Url::parse(url) else {
+        return false;
+    };
+    let host = parsed.host_str().unwrap_or_default().to_ascii_lowercase();
+    host == "forgecdn.net"
+        || host.ends_with(".forgecdn.net")
+        || host == "media.forgecdn.net"
+}
+
+static DIRECT_ICON_CLIENT: std::sync::LazyLock<reqwest::Client> =
+    std::sync::LazyLock::new(|| {
+        reqwest::Client::builder()
+            .connect_timeout(std::time::Duration::from_secs(15))
+            .read_timeout(std::time::Duration::from_secs(30))
+            .user_agent(crate::launcher_user_agent())
+            .no_proxy()
+            .build()
+            .expect("Direct icon client configuration should be valid")
+    });
+
 fn content_source_kind(link: &InstanceLink) -> ContentSourceKind {
     match link {
         InstanceLink::Unmanaged => ContentSourceKind::Local,
         InstanceLink::ModrinthModpack { .. } => {
             ContentSourceKind::ModrinthModpack
         }
+        InstanceLink::CurseForgeModpack { .. } => ContentSourceKind::CurseForge,
         InstanceLink::ServerProject { .. }
         | InstanceLink::ServerProjectModpack { .. } => {
             ContentSourceKind::ServerProject

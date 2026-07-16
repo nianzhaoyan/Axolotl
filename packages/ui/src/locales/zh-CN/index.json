@@ -104,27 +104,6 @@
   "browse.search.placeholder": {
     "defaultMessage": "搜索{projectType}……"
   },
-  "browse.sort.date-published": {
-    "defaultMessage": "发布日期"
-  },
-  "browse.sort.date-updated": {
-    "defaultMessage": "更新日期"
-  },
-  "browse.sort.downloads": {
-    "defaultMessage": "下载量"
-  },
-  "browse.sort.followers": {
-    "defaultMessage": "关注者"
-  },
-  "browse.sort.players": {
-    "defaultMessage": "玩家数"
-  },
-  "browse.sort.relevance": {
-    "defaultMessage": "相关性"
-  },
-  "browse.sort.verified-plays": {
-    "defaultMessage": "已验证游玩次数"
-  },
   "browse.selected-projects-floating-bar.aria-label": {
     "defaultMessage": "选定的项目"
   },
@@ -145,6 +124,27 @@
   },
   "browse.selected-projects-leave-modal.header": {
     "defaultMessage": "选定的项目尚未安装"
+  },
+  "browse.sort.date-published": {
+    "defaultMessage": "发布日期"
+  },
+  "browse.sort.date-updated": {
+    "defaultMessage": "更新日期"
+  },
+  "browse.sort.downloads": {
+    "defaultMessage": "下载量"
+  },
+  "browse.sort.followers": {
+    "defaultMessage": "关注者"
+  },
+  "browse.sort.players": {
+    "defaultMessage": "玩家数"
+  },
+  "browse.sort.relevance": {
+    "defaultMessage": "相关性"
+  },
+  "browse.sort.verified-plays": {
+    "defaultMessage": "已验证游玩次数"
   },
   "browse.view-prefix": {
     "defaultMessage": "查看："
@@ -242,6 +242,9 @@
   "button.open-folder": {
     "defaultMessage": "打开文件夹"
   },
+  "button.open-in-browser": {
+    "defaultMessage": "在浏览器中打开"
+  },
   "button.open-in-folder": {
     "defaultMessage": "在文件夹中打开"
   },
@@ -311,6 +314,9 @@
   "button.stop": {
     "defaultMessage": "停止"
   },
+  "button.switch-to-version": {
+    "defaultMessage": "切换到此版本"
+  },
   "button.switch-version": {
     "defaultMessage": "切换版本"
   },
@@ -338,6 +344,21 @@
   "changelog.product.web": {
     "defaultMessage": "平台"
   },
+  "collection-widget.empty-collection": {
+    "defaultMessage": "此收藏为空。"
+  },
+  "collection-widget.loading-projects": {
+    "defaultMessage": "正在加载项目…"
+  },
+  "collection-widget.no-search-results": {
+    "defaultMessage": "没有项目符合你的搜索条件。"
+  },
+  "collection-widget.project-count": {
+    "defaultMessage": "{count, plural, other {# 个项目}}"
+  },
+  "collection-widget.search-placeholder": {
+    "defaultMessage": "搜索项目"
+  },
   "collections.label.private": {
     "defaultMessage": "私有"
   },
@@ -346,6 +367,9 @@
   },
   "content-type.item.lowercase": {
     "defaultMessage": "{count, plural, one {个项目} other {个项目}}"
+  },
+  "content.card.pending-manual-download": {
+    "defaultMessage": "需要手动下载"
   },
   "content.card.select-project": {
     "defaultMessage": "选择 {project}"
@@ -1142,6 +1166,12 @@
   "external-files.permissions-card.reason.special-permission.description": {
     "defaultMessage": "您已获得特殊许可，可将本作品再分发至您的整合包中。"
   },
+  "external-files.permissions-card.remove-group": {
+    "defaultMessage": "移除组"
+  },
+  "external-files.permissions-card.remove-group-error.title": {
+    "defaultMessage": "无法移除组"
+  },
   "external-files.permissions-card.split-file": {
     "defaultMessage": "从组中移除"
   },
@@ -1426,6 +1456,9 @@
   },
   "files.row.item-count": {
     "defaultMessage": "{count} 项"
+  },
+  "files.row.parent-folder": {
+    "defaultMessage": "上级文件夹"
   },
   "files.table-header.created": {
     "defaultMessage": "创建时间"
@@ -2296,6 +2329,9 @@
   },
   "label.server": {
     "defaultMessage": "服务端"
+  },
+  "label.server-only": {
+    "defaultMessage": "仅服务端"
   },
   "label.servers": {
     "defaultMessage": "服务器"
@@ -3476,6 +3512,12 @@
   "project.versions.channel.release.symbol": {
     "defaultMessage": "R"
   },
+  "project.versions.filter.toggle-tooltip": {
+    "defaultMessage": "切换 {filter} 筛选条件"
+  },
+  "project.versions.platform.modloader.short": {
+    "defaultMessage": "模组加载器"
+  },
   "project.versions.version.withheld": {
     "defaultMessage": "保留"
   },
@@ -3559,6 +3601,18 @@
   },
   "search.filter.option.show_more": {
     "defaultMessage": "显示更多"
+  },
+  "search.filter_type.advanced": {
+    "defaultMessage": "高级"
+  },
+  "search.filter_type.advanced.exclude_datapack": {
+    "defaultMessage": "排除数据包"
+  },
+  "search.filter_type.advanced.exclude_mod": {
+    "defaultMessage": "排除模组"
+  },
+  "search.filter_type.advanced.exclude_plugin": {
+    "defaultMessage": "排除插件"
   },
   "search.filter_type.environment": {
     "defaultMessage": "运行环境"
@@ -4991,6 +5045,9 @@
   "settings.sessions.title": {
     "defaultMessage": "会话"
   },
+  "skin.preview.drag-to-rotate": {
+    "defaultMessage": "拖动以旋转"
+  },
   "tag.category.128x": {
     "defaultMessage": "128x"
   },
@@ -5710,59 +5767,5 @@
   },
   "version.supplementary-resources.type": {
     "defaultMessage": "类型"
-  },
-  "button.open-in-browser": {
-    "defaultMessage": "在浏览器中打开"
-  },
-  "button.switch-to-version": {
-    "defaultMessage": "切换到此版本"
-  },
-  "collection-widget.empty-collection": {
-    "defaultMessage": "此收藏为空。"
-  },
-  "collection-widget.loading-projects": {
-    "defaultMessage": "正在加载项目…"
-  },
-  "collection-widget.no-search-results": {
-    "defaultMessage": "没有项目符合你的搜索条件。"
-  },
-  "collection-widget.project-count": {
-    "defaultMessage": "{count, plural, other {# 个项目}}"
-  },
-  "collection-widget.search-placeholder": {
-    "defaultMessage": "搜索项目"
-  },
-  "external-files.permissions-card.remove-group": {
-    "defaultMessage": "移除组"
-  },
-  "external-files.permissions-card.remove-group-error.title": {
-    "defaultMessage": "无法移除组"
-  },
-  "files.row.parent-folder": {
-    "defaultMessage": "上级文件夹"
-  },
-  "label.server-only": {
-    "defaultMessage": "仅服务端"
-  },
-  "project.versions.filter.toggle-tooltip": {
-    "defaultMessage": "切换 {filter} 筛选条件"
-  },
-  "project.versions.platform.modloader.short": {
-    "defaultMessage": "模组加载器"
-  },
-  "search.filter_type.advanced": {
-    "defaultMessage": "高级"
-  },
-  "search.filter_type.advanced.exclude_datapack": {
-    "defaultMessage": "排除数据包"
-  },
-  "search.filter_type.advanced.exclude_mod": {
-    "defaultMessage": "排除模组"
-  },
-  "search.filter_type.advanced.exclude_plugin": {
-    "defaultMessage": "排除插件"
-  },
-  "skin.preview.drag-to-rotate": {
-    "defaultMessage": "拖动以旋转"
   }
 }

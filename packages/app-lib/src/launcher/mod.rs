@@ -711,6 +711,10 @@ fn link_project_and_version(
         InstanceLink::ModrinthModpack {
             project_id,
             version_id,
+        }
+        | InstanceLink::CurseForgeModpack {
+            project_id,
+            version_id,
         } => (Some(project_id), Some(version_id)),
         InstanceLink::ServerProject { project_id } => (Some(project_id), None),
         InstanceLink::ServerProjectModpack {

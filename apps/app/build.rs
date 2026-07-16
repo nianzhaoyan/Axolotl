@@ -72,6 +72,7 @@ fn main() {
                         "curseforge_update_installed_file",
                         "curseforge_recognize_instance_files",
                         "curseforge_install_modpack",
+                        "curseforge_update_managed_modpack",
                     ])
                     .default_permission(
                         DefaultPermissionRule::AllowAllCommands,
