@@ -69,6 +69,9 @@ app-playground-data/*
 !.claude/skills/
 .letta
 
+# Codex local verification artifacts
+/.codex-*
+
 # labrinth demo fixtures
 apps/labrinth/fixtures/demo
 

@@ -1,4 +1,0 @@
-• turbo 2.8.2
-@modrinth/app:dev: ERROR: command finished with error: command (D:\Code\Minecraft\axolotl-launcher\apps\app) C:\Users\12783\AppData\Local\pnpm\.tools\pnpm\10.33.2\bin\pnpm.CMD run dev exited (1073807364)
-@modrinth/app#dev: command (D:\Code\Minecraft\axolotl-launcher\apps\app) C:\Users\12783\AppData\Local\pnpm\.tools\pnpm\10.33.2\bin\pnpm.CMD run dev exited (1073807364)
- ERROR  run failed: command  exited (1073807364)
