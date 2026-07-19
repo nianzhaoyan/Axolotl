@@ -392,8 +392,16 @@ async function refreshValues() {
 		await set_default_user(defaultUser.value).catch(handleError)
 	}
 	const userList = await users(offline.value).catch(handleError)
-	accounts.value = Array.isArray(userList) ? [...userList] : []
-	accounts.value.sort((a, b) => (a.profile?.name ?? '').localeCompare(b.profile?.name ?? ''))
+	accounts.value = Array.isArray(userList) ? (userList as unknown as MinecraftCredential[]) : []
+	const typeOrder = { microsoft: 0, yggdrasil: 1, offline: 2 }
+	accounts.value.sort((a, b) => {
+		const nameCmp = (a.profile?.name ?? '').localeCompare(b.profile?.name ?? '')
+		if (nameCmp !== 0) return nameCmp
+		const typeCmp =
+			(typeOrder[a.account_type as keyof typeof typeOrder] ?? 3) -
+			(typeOrder[b.account_type as keyof typeof typeOrder] ?? 3)
+		return typeCmp
+	})
 	await renderYggdrasilAccountHeads(accounts.value)
 	try {
 		const skins = await get_available_skins()
@@ -535,6 +543,7 @@ function getAccountAvatarUrl(account: MinecraftCredential) {
 
 async function setAccount(account: MinecraftCredential) {
 	defaultUser.value = account.profile.id
+	equippedSkin.value = null
 	await set_default_user(account.profile.id).catch(handleError)
 	await refreshValues()
 	emit('change')
