@@ -458,6 +458,9 @@
 	"app.downloads.item-status": {
 		"message": "状态"
 	},
+	"app.downloads.manual-download-required": {
+		"message": "CurseForge 要求手动下载此文件。"
+	},
 	"app.downloads.item-status.completed": {
 		"message": "已完成"
 	},
@@ -886,6 +889,15 @@
 	},
 	"app.instance.mods.share-title": {
 		"message": "分享整合包内容"
+	},
+	"app.instance.mods.skipped-files-warning.body": {
+		"message": "因为网络原因或根据模组开发者要求，安装过程中跳过了 {count, number} 个文件。请手动下载并安装这些文件。详细信息请前往 下载-历史记录 查看。"
+	},
+	"app.instance.mods.skipped-files-warning.more": {
+		"message": "另有 {count, number} 个文件。"
+	},
+	"app.instance.mods.skipped-files-warning.title": {
+		"message": "部分整合包文件需要手动安装"
 	},
 	"app.instance.mods.successfully-uploaded": {
 		"message": "上传成功"
@@ -2437,6 +2449,6 @@
 		"message": "未知文件警告"
 	},
 	"omorphia.component.loading-indicator.label": {
-		"defaultMessage": "加载中"
+		"message": "加载中"
 	}
 }

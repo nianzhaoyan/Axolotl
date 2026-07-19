@@ -198,7 +198,25 @@
 						<template #cell-name="{ row }">
 							<div class="min-w-0 py-2">
 								<div class="truncate font-medium text-contrast">{{ row.name }}</div>
-								<div v-if="row.error" class="truncate text-xs text-red">{{ row.error }}</div>
+								<div
+									v-if="row.project_id && row.version_id"
+									class="truncate text-xs text-secondary"
+								>
+									{{
+										formatMessage(messages.projectFile, {
+											projectId: row.project_id,
+											fileId: row.version_id,
+										})
+									}}
+								</div>
+								<div v-if="row.error" class="truncate text-xs text-red">
+									{{ itemError(row) }}
+								</div>
+								<ButtonStyled v-if="row.manual_url" type="transparent" size="small">
+									<button class="!px-0" @click.stop="openManualDownload(row)">
+										<ExternalIcon />{{ formatMessage(messages.manualDownload) }}
+									</button>
+								</ButtonStyled>
 							</div>
 						</template>
 						<template #cell-status="{ row }">
@@ -275,6 +293,7 @@ import {
 	useVIntl,
 } from '@modrinth/ui'
 import { convertFileSrc } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -353,6 +372,18 @@ const messages = defineMessages({
 	itemName: { id: 'app.downloads.item-name', defaultMessage: 'File' },
 	itemStatus: { id: 'app.downloads.item-status', defaultMessage: 'Status' },
 	itemProgress: { id: 'app.downloads.item-progress', defaultMessage: 'Downloaded' },
+	manualDownload: {
+		id: 'app.curseforge.manual-downloads.open',
+		defaultMessage: 'Open',
+	},
+	manualDownloadRequired: {
+		id: 'app.downloads.manual-download-required',
+		defaultMessage: 'CurseForge requires this file to be downloaded manually.',
+	},
+	projectFile: {
+		id: 'app.curseforge.manual-downloads.project-file',
+		defaultMessage: 'Project {projectId} · File {fileId}',
+	},
 })
 
 const statusMessages = defineMessages({
@@ -568,6 +599,17 @@ function progressText(job: InstallJobSnapshot) {
 function itemProgress(item: DownloadItem) {
 	if (!item.bytes_total) return formatMessage(messages.notAvailable)
 	return `${formatBytes(item.bytes_downloaded)} / ${formatBytes(item.bytes_total)}`
+}
+
+function itemError(item: DownloadItem) {
+	if (item.error?.includes('requires manual download')) {
+		return formatMessage(messages.manualDownloadRequired)
+	}
+	return item.error ?? ''
+}
+
+async function openManualDownload(item: DownloadItem) {
+	if (item.manual_url) await openUrl(item.manual_url)
 }
 
 function legacyPercent(bar: LoadingBar) {

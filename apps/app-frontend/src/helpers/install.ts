@@ -162,6 +162,8 @@ export interface InstallJobSnapshot {
 	items: Array<{
 		id: string
 		name: string
+		project_id?: string | null
+		version_id?: string | null
 		status:
 			| 'queued'
 			| 'downloading'

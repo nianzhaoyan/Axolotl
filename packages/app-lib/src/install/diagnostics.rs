@@ -226,9 +226,9 @@ fn write_content_summary(details: &mut String, events: &[InstallJobEvent]) {
     let skipped = events
         .iter()
         .filter_map(|event| match &event.kind {
-            InstallJobEventKind::ContentFileSkipped { path, reason } => {
-                Some((path.as_str(), reason.as_str()))
-            }
+            InstallJobEventKind::ContentFileSkipped {
+                path, reason, ..
+            } => Some((path.as_str(), reason.as_str())),
             _ => None,
         })
         .collect::<Vec<_>>();

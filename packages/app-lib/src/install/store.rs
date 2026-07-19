@@ -464,11 +464,14 @@ async fn sync_download_details(
         let status = format!("{:?}", item.status).to_ascii_lowercase();
         sqlx::query(
             "INSERT INTO install_job_items (
-                id, job_id, name, status, bytes_total, bytes_downloaded,
+                id, job_id, name, project_id, version_id, status,
+                bytes_total, bytes_downloaded,
                 error, manual_url, created, modified, finished
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(job_id, id) DO UPDATE SET
                 name = excluded.name,
+                project_id = excluded.project_id,
+                version_id = excluded.version_id,
                 status = excluded.status,
                 bytes_total = excluded.bytes_total,
                 bytes_downloaded = excluded.bytes_downloaded,
@@ -480,6 +483,8 @@ async fn sync_download_details(
         .bind(item.id)
         .bind(&id_value)
         .bind(item.name)
+        .bind(item.project_id)
+        .bind(item.version_id)
         .bind(status)
         .bind(item.bytes_total.map(|value| value as i64))
         .bind(item.bytes_downloaded as i64)

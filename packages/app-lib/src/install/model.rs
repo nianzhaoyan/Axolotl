@@ -119,6 +119,16 @@ mod tests {
             path: "mods/a.jar".to_string(),
             bytes: 100,
         });
+        job.record_event(InstallJobEventKind::ContentFileSkipped {
+            path: "mods/manual.jar".to_string(),
+            reason: "manual download required".to_string(),
+            project_id: Some("123".to_string()),
+            version_id: Some("456".to_string()),
+            manual_url: Some(
+                "https://www.curseforge.com/minecraft/mc-mods/example"
+                    .to_string(),
+            ),
+        });
         job.set_progress(
             InstallPhaseId::DownloadingContent,
             Some(InstallProgress {
@@ -137,7 +147,11 @@ mod tests {
         assert_eq!(summary.files_total, Some(3));
         assert_eq!(summary.bytes_downloaded, 220);
         assert_eq!(summary.bytes_total, Some(300));
-        assert_eq!(job.download_items().len(), 1);
+        let items = job.download_items();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[1].project_id.as_deref(), Some("123"));
+        assert_eq!(items[1].version_id.as_deref(), Some("456"));
+        assert!(items[1].manual_url.is_some());
     }
 
     #[test]
@@ -237,6 +251,12 @@ pub enum InstallJobEventKind {
     ContentFileSkipped {
         path: String,
         reason: String,
+        #[serde(default)]
+        project_id: Option<String>,
+        #[serde(default)]
+        version_id: Option<String>,
+        #[serde(default)]
+        manual_url: Option<String>,
     },
     ContentFileCompleted {
         path: String,
@@ -407,6 +427,10 @@ pub enum DownloadItemStatus {
 pub struct DownloadItemSnapshot {
     pub id: String,
     pub name: String,
+    #[serde(default)]
+    pub project_id: Option<String>,
+    #[serde(default)]
+    pub version_id: Option<String>,
     pub status: DownloadItemStatus,
     pub bytes_downloaded: u64,
     pub bytes_total: Option<u64>,
@@ -786,6 +810,8 @@ impl InstallJobState {
                     Some(DownloadItemSnapshot {
                         id: path.clone(),
                         name: path.clone(),
+                        project_id: None,
+                        version_id: None,
                         status: DownloadItemStatus::Completed,
                         bytes_downloaded: *bytes,
                         bytes_total: Some(*bytes),
@@ -793,17 +819,23 @@ impl InstallJobState {
                         manual_url: None,
                     })
                 }
-                InstallJobEventKind::ContentFileSkipped { path, reason } => {
-                    Some(DownloadItemSnapshot {
-                        id: path.clone(),
-                        name: path.clone(),
-                        status: DownloadItemStatus::Skipped,
-                        bytes_downloaded: 0,
-                        bytes_total: None,
-                        error: Some(reason.clone()),
-                        manual_url: None,
-                    })
-                }
+                InstallJobEventKind::ContentFileSkipped {
+                    path,
+                    reason,
+                    project_id,
+                    version_id,
+                    manual_url,
+                } => Some(DownloadItemSnapshot {
+                    id: path.clone(),
+                    name: path.clone(),
+                    project_id: project_id.clone(),
+                    version_id: version_id.clone(),
+                    status: DownloadItemStatus::Skipped,
+                    bytes_downloaded: 0,
+                    bytes_total: None,
+                    error: Some(reason.clone()),
+                    manual_url: manual_url.clone(),
+                }),
                 _ => None,
             })
             .collect()

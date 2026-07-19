@@ -593,6 +593,9 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                             InstallJobEventKind::ContentFileSkipped {
                                 path: project_path,
                                 reason: "unsupported on client".to_string(),
+                                project_id: None,
+                                version_id: None,
+                                manual_url: None,
                             },
                         )
                         .await?;

@@ -458,6 +458,9 @@
 	"app.downloads.item-status": {
 		"message": "Status"
 	},
+	"app.downloads.manual-download-required": {
+		"message": "CurseForge requires this file to be downloaded manually."
+	},
 	"app.downloads.item-status.completed": {
 		"message": "Completed"
 	},
@@ -883,6 +886,15 @@
 	},
 	"app.instance.mods.share-title": {
 		"message": "Sharing modpack content"
+	},
+	"app.instance.mods.skipped-files-warning.body": {
+		"message": "{count, plural, one {# file was} other {# files were}} skipped during installation. Download and install them manually."
+	},
+	"app.instance.mods.skipped-files-warning.more": {
+		"message": "And {count, number} more."
+	},
+	"app.instance.mods.skipped-files-warning.title": {
+		"message": "Some modpack files require manual installation"
 	},
 	"app.instance.mods.successfully-uploaded": {
 		"message": "Successfully uploaded"
@@ -2433,6 +2445,6 @@
 		"message": "Unknown file warning"
 	},
 	"omorphia.component.loading-indicator.label": {
-		"defaultMessage": "Loading"
+		"message": "Loading"
 	}
 }

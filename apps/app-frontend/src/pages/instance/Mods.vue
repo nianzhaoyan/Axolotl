@@ -1,5 +1,46 @@
 <template>
 	<ReadyTransition :pending="loading">
+		<template #pending>
+			<LoadingIndicator class="pt-4" />
+		</template>
+		<Admonition
+			v-if="skippedManualDownloads.length > 0"
+			type="warning"
+			:header="formatMessage(messages.skippedFilesWarningTitle)"
+			class="mb-4"
+		>
+			<p class="m-0">
+				{{
+					formatMessage(messages.skippedFilesWarningBody, {
+						count: skippedManualDownloads.length,
+					})
+				}}
+			</p>
+			<ul class="mb-0 mt-2 flex list-none flex-col gap-1 p-0">
+				<li
+					v-for="item in visibleSkippedManualDownloads"
+					:key="`${item.projectId}:${item.fileId}`"
+					class="min-w-0"
+				>
+					<button
+						v-if="item.websiteUrl"
+						class="inline-flex max-w-full cursor-pointer items-center gap-1 text-left font-semibold text-brand hover:underline"
+						@click="openUrl(item.websiteUrl)"
+					>
+						<span class="truncate">{{ item.fileName }}</span>
+						<ExternalIcon class="size-4 shrink-0" />
+					</button>
+					<span v-else>{{ item.fileName }}</span>
+				</li>
+			</ul>
+			<p v-if="hiddenSkippedManualDownloadCount > 0" class="mb-0 mt-2 text-secondary">
+				{{
+					formatMessage(messages.skippedFilesWarningMore, {
+						count: hiddenSkippedManualDownloadCount,
+					})
+				}}
+			</p>
+		</Admonition>
 		<ContentPageLayout>
 			<template #modals>
 				<ShareModalWrapper
@@ -67,8 +108,9 @@
 
 <script setup lang="ts">
 import type { Labrinth } from '@modrinth/api-client'
-import { ClipboardCopyIcon, FolderOpenIcon } from '@modrinth/assets'
+import { ClipboardCopyIcon, ExternalIcon, FolderOpenIcon } from '@modrinth/assets'
 import {
+	Admonition,
 	type BulkOperationStatus,
 	commonMessages,
 	ConfirmModpackUpdateModal,
@@ -81,6 +123,7 @@ import {
 	ContentUpdaterModal,
 	defineMessages,
 	injectNotificationManager,
+	LoadingIndicator,
 	ModpackContentModal,
 	type ModpackContentModalState,
 	type OverflowMenuOption,
@@ -130,6 +173,7 @@ import { type InstanceContentData, loadInstanceContentData } from '@/helpers/ins
 import type { CacheBehaviour, GameInstance } from '@/helpers/types'
 import { highlightModInInstance } from '@/helpers/utils.js'
 import { injectContentInstall } from '@/providers/content-install'
+import { injectDownloadManager } from '@/providers/download-manager'
 import { useTheming } from '@/store/state'
 
 const messages = defineMessages({
@@ -169,6 +213,19 @@ const messages = defineMessages({
 		id: 'app.instance.mods.bulk-update.finishing',
 		defaultMessage: 'Finishing update...',
 	},
+	skippedFilesWarningTitle: {
+		id: 'app.instance.mods.skipped-files-warning.title',
+		defaultMessage: 'Some modpack files require manual installation',
+	},
+	skippedFilesWarningBody: {
+		id: 'app.instance.mods.skipped-files-warning.body',
+		defaultMessage:
+			'{count, plural, one {# file was} other {# files were}} skipped during installation. Download and install them manually.',
+	},
+	skippedFilesWarningMore: {
+		id: 'app.instance.mods.skipped-files-warning.more',
+		defaultMessage: 'And {count, number} more.',
+	},
 })
 
 let savedModalState: ModpackContentModalState | null = null
@@ -183,6 +240,7 @@ const {
 } = injectContentInstall()
 const router = useRouter()
 const queryClient = useQueryClient()
+const downloadManager = injectDownloadManager()
 const debug = useDebugLogger('Mods:ContentUpdate')
 const themeStore = useTheming()
 const skipNonEssentialWarnings = computed(() =>
@@ -259,6 +317,36 @@ const manualPendingItems = computed<ContentItem[]>(() => {
 		primary_provider: 'curseforge',
 	}))
 })
+
+const skippedManualDownloads = computed<CurseForgeManualDownloadItem[]>(() => {
+	const latestJob = downloadManager.jobs.value.find(
+		(job) =>
+			job.status === 'succeeded' &&
+			job.provider === 'curse_forge' &&
+			installJobInstanceId(job) === props.instance.id,
+	)
+	const source = latestJob
+		? latestJob.items
+				.filter((item) => item.status === 'skipped')
+				.map((item) => ({
+					projectId: Number(item.project_id ?? 0),
+					fileId: Number(item.version_id ?? 0),
+					fileName: item.name,
+					websiteUrl: item.manual_url ?? undefined,
+				}))
+		: (pendingManualDownloadsByInstance.value.get(props.instance.id) ??
+			getCurseForgeManualDownloads(props.instance.id))
+
+	const unique = new Map<string, CurseForgeManualDownloadItem>()
+	for (const item of source) {
+		unique.set(`${item.projectId}:${item.fileId}:${item.fileName}`, item)
+	}
+	return [...unique.values()]
+})
+const visibleSkippedManualDownloads = computed(() => skippedManualDownloads.value.slice(0, 5))
+const hiddenSkippedManualDownloadCount = computed(() =>
+	Math.max(0, skippedManualDownloads.value.length - visibleSkippedManualDownloads.value.length),
+)
 
 const mergedProjects = computed<ContentItem[]>(() => {
 	const active = installingItems.value.get(props.instance.id)
