@@ -449,6 +449,12 @@
   "app.downloads.instance-target": {
     "message": "Instance: {instance}"
   },
+  "app.downloads.item-attempt-progress": {
+    "message": "{attempt}/{maxAttempts}"
+  },
+  "app.downloads.item-attempts": {
+    "message": "Attempts"
+  },
   "app.downloads.item-name": {
     "message": "File"
   },
@@ -750,7 +756,7 @@
     "message": "Downloading Minecraft"
   },
   "app.install.phase.downloading_pack_file": {
-    "message": "Downloading pack file"
+    "message": "Downloading .mrpack"
   },
   "app.install.phase.extracting_overrides": {
     "message": "Extracting overrides"

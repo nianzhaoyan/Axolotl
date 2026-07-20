@@ -65,7 +65,7 @@ const phaseMessages = defineMessages({
 	},
 	downloading_pack_file: {
 		id: 'app.install.phase.downloading_pack_file',
-		defaultMessage: 'Downloading pack file',
+		defaultMessage: 'Downloading .mrpack',
 	},
 	reading_pack_manifest: {
 		id: 'app.install.phase.reading_pack_manifest',
@@ -241,7 +241,7 @@ export async function useInstallJobNotifications(opts: {
 	router: Router
 	manager: DownloadManager
 	handleError: (err: unknown) => void
-	onChange: () => void
+	onChange: (resummon?: boolean) => void
 }) {
 	const { formatMessage } = useVIntl()
 	const jobs = ref<InstallJobSnapshot[]>([])
@@ -723,8 +723,14 @@ export async function useInstallJobNotifications(opts: {
 	const stopJobsWatch = watch(
 		() => opts.manager.jobs.value,
 		(nextJobs) => {
+			const previousPhases = new Map(jobs.value.map((job) => [job.job_id, job.phase]))
+			const enteredPackDownload = nextJobs.some(
+				(job) =>
+					job.phase === 'downloading_pack_file' &&
+					previousPhases.get(job.job_id) !== 'downloading_pack_file',
+			)
 			setJobs(nextJobs)
-			opts.onChange()
+			opts.onChange(enteredPackDownload)
 			void refreshMetadata()
 		},
 	)

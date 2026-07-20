@@ -26,7 +26,7 @@ const officialLabrinthBaseUrl = trimTrailingSlash(
 	import.meta.env.MODRINTH_API_BASE_URL || 'https://api.modrinth.com',
 )
 export const MODRINTH_MIRROR_BASE_URL = 'https://mod.mcimirror.top/modrinth'
-let useModrinthMirror = false
+let useModrinthMirror = true
 
 export function setModrinthMirrorEnabled(enabled: boolean) {
 	useModrinthMirror = enabled

@@ -222,6 +222,9 @@
 						<template #cell-status="{ row }">
 							<Badge :color="itemStatusColor(row.status)" :type="statusLabel(row.status)" />
 						</template>
+						<template #cell-attempts="{ row }">
+							<span>{{ itemAttempts(row) }}</span>
+						</template>
 						<template #cell-progress="{ row }">
 							<span>{{ itemProgress(row) }}</span>
 						</template>
@@ -371,6 +374,11 @@ const messages = defineMessages({
 	notAvailable: { id: 'app.downloads.not-available', defaultMessage: '—' },
 	itemName: { id: 'app.downloads.item-name', defaultMessage: 'File' },
 	itemStatus: { id: 'app.downloads.item-status', defaultMessage: 'Status' },
+	itemAttempts: { id: 'app.downloads.item-attempts', defaultMessage: 'Attempts' },
+	attemptProgress: {
+		id: 'app.downloads.item-attempt-progress',
+		defaultMessage: '{attempt}/{maxAttempts}',
+	},
 	itemProgress: { id: 'app.downloads.item-progress', defaultMessage: 'Downloaded' },
 	manualDownload: {
 		id: 'app.curseforge.manual-downloads.open',
@@ -469,9 +477,10 @@ const downloadTabs = computed(() => [
 	{ href: 'history', label: formatMessage(messages.history), icon: ClockIcon },
 ])
 const itemColumns = computed<TableColumn[]>(() => [
-	{ key: 'name', label: formatMessage(messages.itemName), width: '58%' },
-	{ key: 'status', label: formatMessage(messages.itemStatus), width: '22%' },
-	{ key: 'progress', label: formatMessage(messages.itemProgress), width: '20%', align: 'right' },
+	{ key: 'name', label: formatMessage(messages.itemName), width: '48%' },
+	{ key: 'status', label: formatMessage(messages.itemStatus), width: '18%' },
+	{ key: 'attempts', label: formatMessage(messages.itemAttempts), width: '16%' },
+	{ key: 'progress', label: formatMessage(messages.itemProgress), width: '18%', align: 'right' },
 ])
 const sourceJobs = computed(() =>
 	tab.value === 'active' ? manager.activeJobs.value : manager.historyJobs.value,
@@ -599,6 +608,14 @@ function progressText(job: InstallJobSnapshot) {
 function itemProgress(item: DownloadItem) {
 	if (!item.bytes_total) return formatMessage(messages.notAvailable)
 	return `${formatBytes(item.bytes_downloaded)} / ${formatBytes(item.bytes_total)}`
+}
+
+function itemAttempts(item: DownloadItem) {
+	if (!item.attempt || !item.max_attempts) return formatMessage(messages.notAvailable)
+	return formatMessage(messages.attemptProgress, {
+		attempt: item.attempt,
+		maxAttempts: item.max_attempts,
+	})
 }
 
 function itemError(item: DownloadItem) {

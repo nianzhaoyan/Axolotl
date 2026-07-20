@@ -201,6 +201,7 @@ fn timeline_event_description(event: &InstallJobEvent) -> Option<String> {
             Some(format!("Rollback failed: {message}"))
         }
         InstallJobEventKind::ContentDownloadStarted { .. }
+        | InstallJobEventKind::ContentFileDownloadAttempt { .. }
         | InstallJobEventKind::ContentFileSkipped { .. }
         | InstallJobEventKind::ContentFileCompleted { .. }
         | InstallJobEventKind::TargetInstanceDeleted { .. } => None,

@@ -51,6 +51,42 @@ pub(crate) struct ResolvedDownloadUrl {
     pub is_mirror: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DownloadRouteSource {
+    Official,
+    Mirror,
+}
+
+fn modrinth_request_kind(url: &str) -> Option<&'static str> {
+    if url.starts_with(env!("MODRINTH_API_URL"))
+        || url.starts_with(env!("MODRINTH_API_URL_V3"))
+    {
+        Some("API")
+    } else if url.starts_with("https://cdn.modrinth.com") {
+        Some("CDN")
+    } else {
+        None
+    }
+}
+
+fn is_official_modrinth_cdn_url(url: &reqwest::Url) -> bool {
+    url.host_str()
+        .is_some_and(|host| host.eq_ignore_ascii_case("cdn.modrinth.com"))
+}
+
+fn is_official_modrinth_cdn_redirect(location: Option<&str>) -> bool {
+    location
+        .and_then(|location| reqwest::Url::parse(location).ok())
+        .as_ref()
+        .is_some_and(is_official_modrinth_cdn_url)
+}
+
+fn is_mrpack_url(url: &str) -> bool {
+    reqwest::Url::parse(url)
+        .ok()
+        .is_some_and(|url| url.path().to_ascii_lowercase().ends_with(".mrpack"))
+}
+
 fn replace_url_base(url: &str, source: &str, target: &str) -> Option<String> {
     if url == source {
         return Some(target.to_string());
@@ -364,8 +400,29 @@ pub static REQWEST_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
         .expect("client configuration should be valid")
 });
 
+static MODRINTH_MIRROR_CLIENT: LazyLock<reqwest::Client> =
+    LazyLock::new(|| {
+        reqwest_client_builder()
+            .https_only(true)
+            .redirect(reqwest::redirect::Policy::custom(|attempt| {
+                if is_official_modrinth_cdn_url(attempt.url()) {
+                    attempt.stop()
+                } else if attempt.previous().len() >= 10 {
+                    attempt.error("too many Modrinth mirror redirects")
+                } else {
+                    attempt.follow()
+                }
+            }))
+            .build()
+            .expect("Modrinth mirror client configuration should be valid")
+    });
+
 const FETCH_ATTEMPTS: usize = 4;
 const FETCH_RETRY_DELAY: time::Duration = time::Duration::from_secs(1);
+const DOWNLOAD_PROGRESS_LOG_INTERVAL: u64 = 8 * 1024 * 1024;
+const MODRINTH_CDN_ATTEMPTS: usize = 3;
+const MODRINTH_CDN_ATTEMPT_TIMEOUT: time::Duration =
+    time::Duration::from_secs(120);
 
 fn fetch_retry_delay(attempt: usize) -> time::Duration {
     let multiplier = 1_u32 << (attempt - 1);
@@ -375,6 +432,14 @@ fn fetch_retry_delay(attempt: usize) -> time::Duration {
 pub type FetchProgressFn<'a> = dyn FnMut(
         u64,
         u64,
+    ) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>>
+    + Send
+    + 'a;
+
+pub type FetchAttemptFn<'a> = dyn FnMut(
+        usize,
+        usize,
+        String,
     ) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>>
     + Send
     + 'a;
@@ -454,6 +519,38 @@ pub async fn fetch_with_client_progress(
         client,
         progress,
         None,
+        None,
+    )
+    .await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn fetch_with_client_progress_and_attempts(
+    url: &str,
+    sha1: Option<&str>,
+    download_meta: Option<&DownloadMeta>,
+    uri_path: Option<&'static str>,
+    semaphore: &FetchSemaphore,
+    exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
+    client: &reqwest::Client,
+    progress: Option<&mut FetchProgressFn<'_>>,
+    attempt_reporter: Option<&mut FetchAttemptFn<'_>>,
+) -> crate::Result<Bytes> {
+    fetch_advanced_with_client_and_progress(
+        Method::GET,
+        url,
+        sha1,
+        None,
+        None,
+        download_meta,
+        None,
+        uri_path,
+        semaphore,
+        exec,
+        client,
+        progress,
+        attempt_reporter,
+        None,
     )
     .await
 }
@@ -488,6 +585,7 @@ where
         semaphore,
         exec,
         &INSECURE_REQWEST_CLIENT,
+        None,
         None,
         Some(&validate_json),
     )
@@ -556,6 +654,7 @@ pub async fn fetch_advanced_with_progress(
         &INSECURE_REQWEST_CLIENT,
         progress,
         None,
+        None,
     )
     .await
 }
@@ -590,6 +689,7 @@ pub async fn fetch_advanced_with_client(
         client,
         None,
         None,
+        None,
     )
     .await
 }
@@ -599,6 +699,7 @@ pub async fn fetch_advanced_with_client(
     semaphore,
     client,
     progress,
+    attempt_reporter,
     response_validator
 ))]
 #[allow(clippy::too_many_arguments)]
@@ -615,6 +716,7 @@ async fn fetch_advanced_with_client_and_progress(
     exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     client: &reqwest::Client,
     mut progress: Option<&mut FetchProgressFn<'_>>,
+    mut attempt_reporter: Option<&mut FetchAttemptFn<'_>>,
     response_validator: Option<
         &(dyn Fn(&Bytes) -> crate::Result<()> + Send + Sync),
     >,
@@ -623,6 +725,9 @@ async fn fetch_advanced_with_client_and_progress(
 
     let request_routes =
         resolve_download_routes(url, DownloadMirrorSettings::current());
+    let modrinth_request_kind = modrinth_request_kind(url);
+    let is_mrpack_download =
+        modrinth_request_kind == Some("CDN") && is_mrpack_url(url);
     let is_api_url = url.starts_with(env!("MODRINTH_API_URL"))
         || url.starts_with(env!("MODRINTH_API_URL_V3"));
     let creds = if header
@@ -638,6 +743,11 @@ async fn fetch_advanced_with_client_and_progress(
     for (route_index, route) in request_routes.iter().enumerate() {
         let request_url = &route.url;
         let is_mirror = route.is_mirror;
+        let route_source = if is_mirror {
+            DownloadRouteSource::Mirror
+        } else {
+            DownloadRouteSource::Official
+        };
         let has_next_route = route_index + 1 < request_routes.len();
         let fence_key = if is_api_url && !is_mirror {
             uri_path
@@ -652,7 +762,13 @@ async fn fetch_advanced_with_client_and_progress(
             })
             .flatten();
 
-        for attempt in 1..=(FETCH_ATTEMPTS + 1) {
+        let max_attempts = if modrinth_request_kind == Some("CDN") {
+            if is_mirror { 1 } else { MODRINTH_CDN_ATTEMPTS }
+        } else {
+            FETCH_ATTEMPTS + 1
+        };
+        for attempt in 1..=max_attempts {
+            let has_more_attempts = attempt < max_attempts;
             if let Some(fence_key) = fence_key
                 && GLOBAL_FETCH_FENCE.is_blocked(fence_key)
             {
@@ -662,7 +778,38 @@ async fn fetch_advanced_with_client_and_progress(
                 .into());
             }
 
-            let mut req = client.request(method.clone(), request_url);
+            let started = time::Instant::now();
+            if let Some(request_kind) = modrinth_request_kind {
+                tracing::info!(
+                    source = ?route_source,
+                    request_kind,
+                    method = %method,
+                    url = request_url,
+                    route = route_index + 1,
+                    attempt,
+                    max_attempts,
+                    "Attempting Modrinth request"
+                );
+            }
+
+            if modrinth_request_kind == Some("CDN")
+                && !is_mirror
+                && let Some(attempt_reporter) = attempt_reporter.as_mut()
+            {
+                attempt_reporter(attempt, max_attempts, request_url.clone())
+                    .await?;
+            }
+
+            let request_client = if is_mirror && modrinth_request_kind.is_some()
+            {
+                &*MODRINTH_MIRROR_CLIENT
+            } else {
+                client
+            };
+            let mut req = request_client.request(method.clone(), request_url);
+            if modrinth_request_kind == Some("CDN") && !is_mrpack_download {
+                req = req.timeout(MODRINTH_CDN_ATTEMPT_TIMEOUT);
+            }
 
             if let Some(body) = json_body.clone() {
                 req = req.json(&body);
@@ -687,12 +834,68 @@ async fn fetch_advanced_with_client_and_progress(
             let result = req.send().await;
             match result {
                 Ok(resp) => {
+                    if is_mirror
+                        && has_next_route
+                        && resp.status().is_redirection()
+                    {
+                        let status = resp.status();
+                        let redirect_url = resp
+                            .headers()
+                            .get(reqwest::header::LOCATION)
+                            .and_then(|value| value.to_str().ok())
+                            .map(str::to_string);
+                        let cache_status = resp
+                            .headers()
+                            .get("eo-cache-status")
+                            .and_then(|value| value.to_str().ok())
+                            .unwrap_or("unknown");
+                        let redirects_to_official =
+                            is_official_modrinth_cdn_redirect(
+                                redirect_url.as_deref(),
+                            );
+                        if redirects_to_official {
+                            tracing::warn!(
+                                mirror_status = "cache_miss",
+                                source = ?route_source,
+                                mirror_url = request_url,
+                                redirect_url = redirect_url.as_deref().unwrap_or("<missing>"),
+                                cache_status,
+                                status = status.as_u16(),
+                                elapsed_ms = started.elapsed().as_millis(),
+                                "Modrinth mirror redirected to official CDN; falling back to official source"
+                            );
+                        } else {
+                            tracing::warn!(
+                                mirror_status = "redirect_unresolved",
+                                source = ?route_source,
+                                mirror_url = request_url,
+                                redirect_url = redirect_url.as_deref().unwrap_or("<missing>"),
+                                cache_status,
+                                status = status.as_u16(),
+                                elapsed_ms = started.elapsed().as_millis(),
+                                "Modrinth mirror returned an unresolved redirect; falling back to official source"
+                            );
+                        }
+                        break;
+                    }
+
                     if resp.status().is_server_error() {
                         if let Some(fence_key) = fence_key {
                             GLOBAL_FETCH_FENCE.record_fail(fence_key);
                         }
 
-                        if attempt <= FETCH_ATTEMPTS {
+                        if has_more_attempts {
+                            if modrinth_request_kind.is_some() {
+                                tracing::warn!(
+                                    source = ?route_source,
+                                    url = request_url,
+                                    attempt,
+                                    max_attempts,
+                                    status = resp.status().as_u16(),
+                                    elapsed_ms = started.elapsed().as_millis(),
+                                    "Modrinth request attempt failed; retrying"
+                                );
+                            }
                             tokio::time::sleep(fetch_retry_delay(attempt))
                                 .await;
                             continue;
@@ -717,17 +920,56 @@ async fn fetch_advanced_with_client_and_progress(
                             backup_error.into()
                         };
                         if has_next_route {
+                            if modrinth_request_kind.is_some() {
+                                tracing::warn!(
+                                    source = ?route_source,
+                                    url = request_url,
+                                    status = status.as_u16(),
+                                    elapsed_ms = started.elapsed().as_millis(),
+                                    error = %route_error,
+                                    "Modrinth mirror failed; falling back to official source"
+                                );
+                            } else {
+                                tracing::warn!(
+                                    url = request_url,
+                                    status = status.as_u16(),
+                                    error = %route_error,
+                                    "Mirror request failed; falling back to official source"
+                                );
+                            }
+                            break;
+                        }
+                        if modrinth_request_kind.is_some() {
                             tracing::warn!(
+                                source = ?route_source,
                                 url = request_url,
                                 status = status.as_u16(),
+                                elapsed_ms = started.elapsed().as_millis(),
                                 error = %route_error,
-                                "Mirror request failed; falling back to official source"
+                                "Modrinth official request failed"
                             );
-                            break;
                         }
                         return Err(route_error);
                     }
 
+                    let response_url = resp.url().to_string();
+                    if is_mirror && modrinth_request_kind == Some("CDN") {
+                        let cache_status = resp
+                            .headers()
+                            .get("eo-cache-status")
+                            .and_then(|value| value.to_str().ok())
+                            .unwrap_or("unknown");
+                        tracing::info!(
+                            mirror_status = "cache_hit",
+                            source = ?route_source,
+                            mirror_url = request_url,
+                            final_url = %response_url,
+                            cache_status,
+                            status = resp.status().as_u16(),
+                            elapsed_ms = started.elapsed().as_millis(),
+                            "Modrinth mirror resolved cached file"
+                        );
+                    }
                     let bytes: eyre::Result<Bytes> = if loading_bar.is_some()
                         || progress.is_some()
                     {
@@ -739,6 +981,8 @@ async fn fetch_advanced_with_client_and_progress(
                             async {
                                 let mut bytes = Vec::new();
                                 let mut downloaded = 0_u64;
+                                let mut next_progress_log =
+                                    DOWNLOAD_PROGRESS_LOG_INTERVAL;
 
                                 while let Some(item) = stream.next().await {
                                     let chunk = item.wrap_err_with(|| {
@@ -749,6 +993,26 @@ async fn fetch_advanced_with_client_and_progress(
 
                                     downloaded += chunk.len() as u64;
                                     bytes.extend_from_slice(&chunk);
+
+                                    if modrinth_request_kind == Some("CDN")
+                                        && downloaded >= next_progress_log
+                                    {
+                                        tracing::info!(
+                                            source = ?route_source,
+                                            attempt,
+                                            url = request_url,
+                                            final_url = %response_url,
+                                            downloaded_bytes = downloaded,
+                                            expected_bytes = total_size,
+                                            "Modrinth CDN download progress"
+                                        );
+                                        while next_progress_log <= downloaded {
+                                            next_progress_log =
+                                                next_progress_log.saturating_add(
+                                                    DOWNLOAD_PROGRESS_LOG_INTERVAL,
+                                                );
+                                        }
+                                    }
 
                                     if let Some((bar, total)) = &loading_bar {
                                         emit_loading(
@@ -787,7 +1051,17 @@ async fn fetch_advanced_with_client_and_progress(
                         if let Some(sha1) = sha1 {
                             let hash = sha1_async(bytes.clone()).await?;
                             if &*hash != sha1 {
-                                if attempt <= FETCH_ATTEMPTS {
+                                if has_more_attempts {
+                                    if modrinth_request_kind.is_some() {
+                                        tracing::warn!(
+                                            source = ?route_source,
+                                            url = request_url,
+                                            attempt,
+                                            max_attempts,
+                                            elapsed_ms = started.elapsed().as_millis(),
+                                            "Modrinth checksum validation failed; retrying"
+                                        );
+                                    }
                                     tokio::time::sleep(fetch_retry_delay(
                                         attempt,
                                     ))
@@ -828,45 +1102,117 @@ async fn fetch_advanced_with_client_and_progress(
                         }
 
                         tracing::trace!("Done downloading URL {request_url}");
+                        if let Some(request_kind) = modrinth_request_kind {
+                            tracing::info!(
+                                source = ?route_source,
+                                request_kind,
+                                url = request_url,
+                                final_url = %response_url,
+                                attempt,
+                                bytes = bytes.len(),
+                                elapsed_ms = started.elapsed().as_millis(),
+                                "Completed Modrinth request"
+                            );
+                        }
 
                         if let Some(fence_key) = fence_key {
                             GLOBAL_FETCH_FENCE.record_ok(fence_key);
                         }
 
                         return Ok(bytes);
-                    } else if attempt <= FETCH_ATTEMPTS {
+                    } else if has_more_attempts {
+                        if modrinth_request_kind.is_some() {
+                            tracing::warn!(
+                                source = ?route_source,
+                                url = request_url,
+                                attempt,
+                                max_attempts,
+                                elapsed_ms = started.elapsed().as_millis(),
+                                "Modrinth response body failed; retrying"
+                            );
+                        }
                         tokio::time::sleep(fetch_retry_delay(attempt)).await;
                         continue;
                     } else if let Err(err) = bytes {
                         if has_next_route {
-                            tracing::warn!(
-                                url = request_url,
-                                error = %err,
-                                "Mirror response failed; falling back to official source"
-                            );
+                            if modrinth_request_kind.is_some() {
+                                tracing::warn!(
+                                    source = ?route_source,
+                                    url = request_url,
+                                    elapsed_ms = started.elapsed().as_millis(),
+                                    error = %err,
+                                    "Modrinth mirror response failed; falling back to official source"
+                                );
+                            } else {
+                                tracing::warn!(
+                                    url = request_url,
+                                    error = %err,
+                                    "Mirror response failed; falling back to official source"
+                                );
+                            }
                             break;
+                        }
+                        if modrinth_request_kind.is_some() {
+                            tracing::warn!(
+                                source = ?route_source,
+                                url = request_url,
+                                elapsed_ms = started.elapsed().as_millis(),
+                                error = %err,
+                                "Modrinth official response failed"
+                            );
                         }
                         return Err(err.into());
                     }
                 }
-                Err(error) if attempt <= FETCH_ATTEMPTS => {
-                    tracing::debug!(
-                        attempt,
-                        url = request_url,
-                        error = %error,
-                        "Fetch failed; retrying"
-                    );
+                Err(error) if has_more_attempts => {
+                    if modrinth_request_kind.is_some() {
+                        tracing::warn!(
+                            source = ?route_source,
+                            url = request_url,
+                            attempt,
+                            max_attempts,
+                            elapsed_ms = started.elapsed().as_millis(),
+                            error = %error,
+                            "Modrinth connection failed; retrying"
+                        );
+                    } else {
+                        tracing::debug!(
+                            attempt,
+                            url = request_url,
+                            error = %error,
+                            "Fetch failed; retrying"
+                        );
+                    }
                     tokio::time::sleep(fetch_retry_delay(attempt)).await;
                     continue;
                 }
                 Err(err) => {
                     if has_next_route {
-                        tracing::warn!(
-                            url = request_url,
-                            error = %err,
-                            "Mirror connection failed; falling back to official source"
-                        );
+                        if modrinth_request_kind.is_some() {
+                            tracing::warn!(
+                                source = ?route_source,
+                                url = request_url,
+                                elapsed_ms = started.elapsed().as_millis(),
+                                error = %err,
+                                "Modrinth mirror connection failed; falling back to official source"
+                            );
+                        } else {
+                            tracing::warn!(
+                                url = request_url,
+                                error = %err,
+                                "Mirror connection failed; falling back to official source"
+                            );
+                        }
                         break;
+                    }
+                    if modrinth_request_kind.is_some() {
+                        tracing::warn!(
+                            source = ?route_source,
+                            url = request_url,
+                            elapsed_ms = started.elapsed().as_millis(),
+                            error = %err,
+                            "Modrinth official connection failed"
+                        );
                     }
                     return Err(err.into());
                 }
@@ -939,6 +1285,45 @@ pub async fn fetch_mirrors_with_progress(
             exec,
             &REQWEST_CLIENT,
             progress.as_deref_mut(),
+        )
+        .await;
+
+        if result.is_ok() || (result.is_err() && index == (mirrors.len() - 1)) {
+            return result;
+        }
+    }
+
+    unreachable!()
+}
+
+#[tracing::instrument(skip(semaphore, progress, attempt_reporter))]
+pub async fn fetch_mirrors_with_progress_and_attempts(
+    mirrors: &[&str],
+    sha1: Option<&str>,
+    download_meta: Option<&DownloadMeta>,
+    uri_path: Option<&'static str>,
+    semaphore: &FetchSemaphore,
+    exec: impl sqlx::Executor<'_, Database = sqlx::Sqlite> + Copy,
+    mut progress: Option<&mut FetchProgressFn<'_>>,
+    mut attempt_reporter: Option<&mut FetchAttemptFn<'_>>,
+) -> crate::Result<Bytes> {
+    if mirrors.is_empty() {
+        return Err(
+            ErrorKind::InputError("No mirrors provided!".to_string()).into()
+        );
+    }
+
+    for (index, mirror) in mirrors.iter().enumerate() {
+        let result = fetch_with_client_progress_and_attempts(
+            mirror,
+            sha1,
+            download_meta,
+            uri_path,
+            semaphore,
+            exec,
+            &REQWEST_CLIENT,
+            progress.as_deref_mut(),
+            attempt_reporter.as_deref_mut(),
         )
         .await;
 
@@ -1262,6 +1647,48 @@ mod tests {
                 is_mirror: false,
             }]
         );
+    }
+
+    #[test]
+    fn modrinth_requests_are_classified_for_logging() {
+        assert_eq!(
+            modrinth_request_kind("https://api.modrinth.com/v2/project"),
+            Some("API")
+        );
+        assert_eq!(
+            modrinth_request_kind(
+                "https://cdn.modrinth.com/data/project/version/file.jar"
+            ),
+            Some("CDN")
+        );
+        assert_eq!(modrinth_request_kind("https://example.com/file.jar"), None);
+    }
+
+    #[test]
+    fn modrinth_cdn_redirects_only_fall_back_to_official_cdn() {
+        assert!(is_official_modrinth_cdn_redirect(Some(
+            "https://cdn.modrinth.com/data/project/versions/version/file.jar"
+        )));
+        assert!(is_official_modrinth_cdn_redirect(Some(
+            "https://CDN.MODRINTH.COM/data/project/versions/version/file.jar"
+        )));
+        assert!(!is_official_modrinth_cdn_redirect(Some(
+            "https://cache.mcimirror.top/data/project/versions/version/file.jar"
+        )));
+        assert!(!is_official_modrinth_cdn_redirect(Some(
+            "https://cdn.modrinth.com.evil.example/file.jar"
+        )));
+        assert!(!is_official_modrinth_cdn_redirect(None));
+    }
+
+    #[test]
+    fn mrpack_urls_are_detected_without_query_string() {
+        assert!(is_mrpack_url(
+            "https://cdn.modrinth.com/data/project/version/pack.MRPACK?download=1"
+        ));
+        assert!(!is_mrpack_url(
+            "https://cdn.modrinth.com/data/project/version/mod.jar"
+        ));
     }
 
     #[test]

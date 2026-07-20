@@ -14,8 +14,8 @@ use crate::state::{
     cache_file_hash,
 };
 use crate::util::fetch::{
-    DownloadMeta, DownloadReason, FetchProgressFn, fetch_mirrors_with_progress,
-    write,
+    DownloadMeta, DownloadReason, FetchAttemptFn, FetchProgressFn,
+    fetch_mirrors_with_progress_and_attempts, write,
 };
 use crate::util::io;
 use async_zip::base::read::seek::ZipFileReader as SeekZipFileReader;
@@ -42,6 +42,7 @@ type ExtractProgressFn<'a> = dyn FnMut(u64) -> Pin<Box<dyn Future<Output = crate
     + Send
     + 'a;
 const MODPACK_CONTENT_DOWNLOAD_CONCURRENCY: usize = 4;
+const MODRINTH_CONTENT_MAX_ATTEMPTS: usize = 3;
 
 #[derive(Clone)]
 struct ModpackContentInstallContext {
@@ -62,6 +63,43 @@ struct ModpackContentInstallContext {
 }
 
 impl ModpackContentInstallContext {
+    async fn report_download_attempt(
+        &self,
+        path: String,
+        file_size: u64,
+        attempt: usize,
+        max_attempts: usize,
+    ) -> crate::Result<()> {
+        let active_bytes = self.update_active_download(path.clone(), 0).await;
+        let current_bytes = self
+            .content_bytes_progress
+            .load(Ordering::Relaxed)
+            .saturating_add(active_bytes)
+            .min(self.content_total_bytes);
+        self.reporter
+            .update_with_events(
+                InstallPhaseId::DownloadingContent,
+                Some(InstallProgress {
+                    current: self.content_progress.load(Ordering::Relaxed),
+                    total: self.num_files as u64,
+                    secondary: (self.content_total_bytes > 0).then_some(
+                        InstallProgressSecondary {
+                            current: current_bytes,
+                            total: self.content_total_bytes,
+                        },
+                    ),
+                }),
+                self.modpack_details.clone(),
+                vec![InstallJobEventKind::ContentFileDownloadAttempt {
+                    path,
+                    bytes_total: (file_size > 0).then_some(file_size),
+                    attempt: attempt as u32,
+                    max_attempts: max_attempts as u32,
+                }],
+            )
+            .await
+    }
+
     async fn mark_downloaded(
         &self,
         file_size: u64,
@@ -676,7 +714,48 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                 };
                 let progress =
                     &mut report_download_progress as &mut FetchProgressFn<'_>;
-                let file = match fetch_mirrors_with_progress(
+                let attempt_context = content_context.clone();
+                let attempt_path = project_path.clone();
+                let attempt_count = Arc::new(AtomicU64::new(0));
+                let mut report_download_attempt =
+                    move |_attempt: usize,
+                          _max_attempts: usize,
+                          _url: String| {
+                        let attempt_context = attempt_context.clone();
+                        let attempt_path = attempt_path.clone();
+                        let attempt_count = attempt_count.clone();
+                        Box::pin(async move {
+                            let attempt = attempt_count
+                                .fetch_add(1, Ordering::Relaxed)
+                                as usize
+                                + 1;
+                            if attempt > MODRINTH_CONTENT_MAX_ATTEMPTS {
+                                return Err(crate::ErrorKind::OtherError(
+                                    "Modrinth CDN download attempt limit reached"
+                                        .to_string(),
+                                )
+                                .into());
+                            }
+                            attempt_context
+                                .report_download_attempt(
+                                    attempt_path,
+                                    project_size,
+                                    attempt,
+                                    MODRINTH_CONTENT_MAX_ATTEMPTS,
+                                )
+                                .await
+                        }) as Pin<
+                            Box<
+                                dyn Future<Output = crate::Result<()>> + Send,
+                            >,
+                        >
+                    };
+                let attempt_reporter =
+                    &mut report_download_attempt as &mut FetchAttemptFn<'_>;
+                let is_modrinth_cdn = project.downloads.iter().any(|url| {
+                    url.starts_with("https://cdn.modrinth.com/")
+                });
+                let file = match fetch_mirrors_with_progress_and_attempts(
                     &project
                         .downloads
                         .iter()
@@ -688,6 +767,7 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                     &state.fetch_semaphore,
                     &state.pool,
                     Some(progress),
+                    Some(attempt_reporter),
                 )
                 .await
                 {
@@ -701,6 +781,27 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                         content_context
                             .remove_active_download(&project_path)
                             .await;
+                        if is_modrinth_cdn {
+                            tracing::warn!(
+                                path = %project_path,
+                                error = %error,
+                                "Skipping Modrinth content file after official CDN retries were exhausted"
+                            );
+                            content_context
+                                .mark_downloaded(
+                                    project_size,
+                                    InstallJobEventKind::ContentFileSkipped {
+                                        path: project_path,
+                                        reason: "[fallback]官方cdn下载失败"
+                                            .to_string(),
+                                        project_id: None,
+                                        version_id: None,
+                                        manual_url: None,
+                                    },
+                                )
+                                .await?;
+                            return Ok(());
+                        }
                         content_context
                             .reporter
                             .persist_failure_context(context)

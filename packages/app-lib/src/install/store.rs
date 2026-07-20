@@ -461,13 +461,22 @@ async fn sync_download_details(
 
     let now = Utc::now().timestamp();
     for item in state.download_items() {
+        let finished = matches!(
+            item.status,
+            super::model::DownloadItemStatus::Completed
+                | super::model::DownloadItemStatus::Skipped
+                | super::model::DownloadItemStatus::Failed
+                | super::model::DownloadItemStatus::Canceled
+        )
+        .then_some(now);
         let status = format!("{:?}", item.status).to_ascii_lowercase();
         sqlx::query(
             "INSERT INTO install_job_items (
                 id, job_id, name, project_id, version_id, status,
                 bytes_total, bytes_downloaded,
-                error, manual_url, created, modified, finished
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                attempt, max_attempts, error, manual_url,
+                created, modified, finished
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(job_id, id) DO UPDATE SET
                 name = excluded.name,
                 project_id = excluded.project_id,
@@ -475,6 +484,8 @@ async fn sync_download_details(
                 status = excluded.status,
                 bytes_total = excluded.bytes_total,
                 bytes_downloaded = excluded.bytes_downloaded,
+                attempt = excluded.attempt,
+                max_attempts = excluded.max_attempts,
                 error = excluded.error,
                 manual_url = excluded.manual_url,
                 modified = excluded.modified,
@@ -488,11 +499,13 @@ async fn sync_download_details(
         .bind(status)
         .bind(item.bytes_total.map(|value| value as i64))
         .bind(item.bytes_downloaded as i64)
+        .bind(item.attempt.map(i64::from))
+        .bind(item.max_attempts.map(i64::from))
         .bind(item.error)
         .bind(item.manual_url)
         .bind(now)
         .bind(now)
-        .bind(now)
+        .bind(finished)
         .execute(&app_state.pool)
         .await?;
     }

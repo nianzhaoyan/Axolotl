@@ -176,6 +176,8 @@ export interface InstallJobSnapshot {
 			| 'canceled'
 		bytes_downloaded: number
 		bytes_total?: number | null
+		attempt?: number | null
+		max_attempts?: number | null
 		error?: string | null
 		manual_url?: string | null
 	}>

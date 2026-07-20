@@ -135,13 +135,19 @@ impl InstallProgressReporter {
                 &state.job.progress.details,
                 InstallPhaseDetails::Empty
             ) && !matches!(&details, InstallPhaseDetails::Empty);
+        let force_persist = events.iter().any(|event| {
+            matches!(
+                event,
+                InstallJobEventKind::ContentFileDownloadAttempt { .. }
+            )
+        });
 
         state.job.set_progress(phase, progress, details);
         for event in events {
             state.job.record_event(event);
         }
 
-        if !state.should_persist(phase_started) {
+        if !state.should_persist(phase_started || force_persist) {
             return Ok(());
         }
 

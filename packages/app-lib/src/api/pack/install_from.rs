@@ -275,14 +275,13 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
         .await?;
     }
 
-    let (url, hash) =
+    let (url, hash, file_size) =
         if let Some(file) = version.files.iter().find(|x| x.primary) {
-            Some((file.url.clone(), file.hashes.get("sha1")))
+            Some((file.url.clone(), file.hashes.get("sha1"), file.size as u64))
         } else {
-            version
-                .files
-                .first()
-                .map(|file| (file.url.clone(), file.hashes.get("sha1")))
+            version.files.first().map(|file| {
+                (file.url.clone(), file.hashes.get("sha1"), file.size as u64)
+            })
         }
         .ok_or_else(|| {
             crate::ErrorKind::InputError(
@@ -350,6 +349,18 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
         .version_id(version_id.clone())
         .build();
     reporter.set_context(context).await?;
+    reporter
+        .update(
+            InstallPhaseId::DownloadingPackFile,
+            Some(InstallProgress {
+                current: 0,
+                total: file_size.max(1),
+                secondary: None,
+            }),
+            details.clone(),
+        )
+        .await?;
+    reporter.persist().await?;
     let file = fetch_advanced_with_progress(
         Method::GET,
         &url,

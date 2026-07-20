@@ -446,6 +446,12 @@
   "app.downloads.instance-target": {
     "message": "目标实例：{instance}"
   },
+  "app.downloads.item-attempt-progress": {
+    "message": "{attempt}/{maxAttempts}"
+  },
+  "app.downloads.item-attempts": {
+    "message": "尝试次数"
+  },
   "app.downloads.item-name": {
     "message": "文件"
   },
@@ -750,7 +756,7 @@
     "message": "正在下载 Minecraft"
   },
   "app.install.phase.downloading_pack_file": {
-    "message": "正在下载包文件"
+    "message": "正在下载 .mrpack"
   },
   "app.install.phase.extracting_overrides": {
     "message": "提取覆盖项"
