@@ -324,7 +324,7 @@
     "message": "所有来源"
   },
   "app.browse.source.curseforge": {
-    "message": "CurseForge"
+    "message": "CurseForge 来源"
   },
   "app.browse.source.modrinth": {
     "message": "Modrinth"
