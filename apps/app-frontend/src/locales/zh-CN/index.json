@@ -324,7 +324,7 @@
     "message": "所有来源"
   },
   "app.browse.source.curseforge": {
-    "message": "CurseForge 平台"
+    "message": "CurseForge"
   },
   "app.browse.source.modrinth": {
     "message": "Modrinth"
@@ -1860,7 +1860,7 @@
     "message": "建造者与生物群系"
   },
   "app.skins.section.chaos-cubed": {
-    "message": "Chaos Cubed"
+    "message": "混沌立方"
   },
   "app.skins.section.chase-the-skies": {
     "message": "追逐天空"
