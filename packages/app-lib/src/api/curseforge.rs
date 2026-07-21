@@ -8,32 +8,32 @@ use crate::install::{
 };
 use crate::state::ContentProvider;
 use crate::state::{
-    ContentSourceKind, EditInstance, InstanceLink, ModLoader, ProjectType,
+    ContentSourceKind, DownloadSourceMode, EditInstance, InstanceLink,
+    ModLoader, ProjectType,
 };
-use crate::util::fetch::{DownloadMirrorSettings, resolve_download_url};
+use crate::util::fetch::{
+    ContentValidation, DownloadRequest, DownloadResult, DownloadRouteSource,
+    FetchProgressFn, Integrity, ProxyPolicy, ResourceClass, download_to_path,
+    resolve_download_routes_for, sha1_file_async,
+};
 use crate::{ErrorKind, State};
-use bytes::{Bytes, BytesMut};
-use futures::{StreamExt, stream};
+use futures::stream;
 use reqwest::{Method, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
-use std::io::{Cursor, Read, Seek};
+use std::io::{Read, Seek};
 use std::path::{Component, Path};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
 const API_BASE_URL: &str = "https://api.curseforge.com";
-const API_MIRROR_BASE_URL: &str = "https://mod.mcimirror.top/curseforge";
 const MINECRAFT_GAME_ID: u32 = 432;
 const MAX_PAGE_SIZE: u32 = 50;
 const MODPACK_CONTENT_DOWNLOAD_CONCURRENCY: usize = 8;
-const MODPACK_FILE_INSTALL_ATTEMPTS: usize = 3;
-const CDN_DOWNLOAD_ATTEMPTS: usize = 3;
-const CDN_MAX_REDIRECTS: usize = 5;
-const CDN_PROGRESS_LOG_INTERVAL: u64 = 8 * 1024 * 1024;
+const MODPACK_FILE_INSTALL_ATTEMPTS: usize = 1;
 const PROJECT_CACHE_TTL: Duration = Duration::from_secs(5 * 60);
 
 static UNAUTHORIZED: AtomicBool = AtomicBool::new(false);
@@ -41,21 +41,48 @@ static CATEGORY_CACHE: LazyLock<RwLock<Option<Vec<CurseForgeCategory>>>> =
     LazyLock::new(|| RwLock::new(None));
 static PROJECT_CACHE: LazyLock<RwLock<HashMap<u32, CachedCurseForgeProject>>> =
     LazyLock::new(|| RwLock::new(HashMap::new()));
-static MODPACK_ARCHIVE_CACHE: LazyLock<
-    Mutex<Option<CachedCurseForgeModpackArchive>>,
-> = LazyLock::new(|| Mutex::new(None));
-
-#[derive(Clone)]
-struct CachedCurseForgeModpackArchive {
-    project_id: u32,
-    file_id: u32,
-    bytes: Bytes,
-}
-
 #[derive(Clone)]
 struct CachedCurseForgeProject {
     project: CurseForgeProject,
     cached_at: Instant,
+}
+
+#[derive(Default)]
+struct CurseForgeDownloadMetrics {
+    source: Mutex<Option<String>>,
+    fallback_count: AtomicU64,
+    resumed_bytes: AtomicU64,
+}
+
+impl CurseForgeDownloadMetrics {
+    fn record(&self, result: &DownloadResult) {
+        if result.attempts > 0
+            && let Ok(mut source) = self.source.lock()
+        {
+            *source = Some(result.source.as_str().to_string());
+        }
+        self.fallback_count
+            .fetch_add(result.fallback_count as u64, Ordering::Relaxed);
+        self.resumed_bytes
+            .fetch_add(result.resumed_bytes, Ordering::Relaxed);
+    }
+
+    async fn finish(
+        &self,
+        reporter: &InstallProgressReporter,
+    ) -> crate::Result<()> {
+        let source = self.source.lock().ok().and_then(|source| source.clone());
+        if let Some(source) = source {
+            reporter
+                .record_download_metrics(
+                    source,
+                    self.fallback_count.load(Ordering::Relaxed),
+                    self.resumed_bytes.load(Ordering::Relaxed),
+                )
+                .await?;
+        }
+        Ok(())
+    }
 }
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
@@ -793,6 +820,13 @@ pub async fn match_fingerprints(
 pub async fn install_file(
     request: CurseForgeInstallRequest,
 ) -> crate::Result<CurseForgeInstallResult> {
+    install_file_with_metrics(request, None).await
+}
+
+async fn install_file_with_metrics(
+    request: CurseForgeInstallRequest,
+    download_metrics: Option<&CurseForgeDownloadMetrics>,
+) -> crate::Result<CurseForgeInstallResult> {
     let project_type = managed_project_type(&request.project_type)?;
     let mut result = CurseForgeInstallResult::default();
     let mut visited = HashSet::new();
@@ -858,27 +892,24 @@ pub async fn install_file(
                 project_id,
                 file_id,
                 file_name: file.file_name,
-                website_url: project.links.website_url,
+                website_url: curseforge_file_page_url(
+                    project.links.website_url.as_deref(),
+                    file_id,
+                ),
             });
             continue;
         };
 
         validate_file_name(&file.file_name)?;
-        let bytes = download_cdn_file_with_attempts(&download_url, 1).await?;
-        verify_file(&file, &bytes)?;
-        let relative_path = write_installed_file(
+        let relative_path = download_installed_file(
             &request.instance_id,
-            &file.file_name,
-            &bytes,
+            &download_url,
+            &file,
             item_type,
             request.world_name.as_deref(),
-        )
-        .await?;
-        register_provider_ref(
-            &request.instance_id,
-            &relative_path,
             project_id,
             file_id,
+            download_metrics,
         )
         .await?;
         result.installed.push(CurseForgeInstalledFile {
@@ -943,22 +974,38 @@ pub async fn get_modpack_target(
         &format!("Downloading {}", pack_file.file_name),
     )
     .await?;
-    let pack_bytes = download_cdn_file_with_progress(
+    let mut last_downloaded = 0_u64;
+    let mut progress = |current: u64,
+                        _total: u64|
+     -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = crate::Result<()>> + Send>,
+    > {
+        let delta = current.saturating_sub(last_downloaded);
+        last_downloaded = current;
+        let result = emit_loading(
+            &loading_bar,
+            delta as f64,
+            Some("Downloading CurseForge modpack"),
+        );
+        Box::pin(async move { result })
+    };
+    let pack_download = download_curseforge_archive(
+        project_id,
+        file_id,
+        &pack_file,
         &download_url,
-        CDN_DOWNLOAD_ATTEMPTS,
-        Some(&loading_bar),
+        Some(&mut progress as &mut FetchProgressFn<'_>),
     )
     .await?;
-    verify_file(&pack_file, &pack_bytes)?;
-    let parse_bytes = pack_bytes.clone();
+    let pack_path = pack_download.path;
     let target = tokio::task::spawn_blocking(move || {
-        let mut archive = zip::ZipArchive::new(Cursor::new(&parse_bytes[..]))
-            .map_err(modpack_zip_error)?;
+        let file = std::fs::File::open(&pack_path)?;
+        let mut archive =
+            zip::ZipArchive::new(file).map_err(modpack_zip_error)?;
         let manifest = read_modpack_manifest(&mut archive)?;
         modpack_target(&manifest)
     })
     .await??;
-    cache_modpack_archive(project_id, file_id, pack_bytes);
     Ok(target)
 }
 
@@ -996,7 +1043,10 @@ pub async fn install_modpack_with_reporter(
                     project_id: request.project_id,
                     file_id: request.file_id,
                     file_name: pack_file.file_name,
-                    website_url: project.links.website_url,
+                    website_url: curseforge_file_page_url(
+                        project.links.website_url.as_deref(),
+                        request.file_id,
+                    ),
                 }],
                 ..Default::default()
             },
@@ -1069,26 +1119,70 @@ pub async fn install_modpack_with_reporter(
             )
             .await?;
     }
-    let pack_bytes = if let Some(bytes) =
-        cached_modpack_archive(request.project_id, request.file_id)
-    {
-        tracing::info!(
-            project_id = request.project_id,
-            file_id = request.file_id,
-            bytes = bytes.len(),
-            "Using cached CurseForge modpack archive"
-        );
-        bytes
-    } else {
-        download_cdn_file(&download_url).await?
+    let mut last_downloaded = 0_u64;
+    let progress_reporter = reporter.clone();
+    let progress_details = pack_details.clone();
+    let mut progress = move |current: u64,
+                             total: u64|
+          -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = crate::Result<()>> + Send>,
+    > {
+        let min_delta = (total / 200).max(256 * 1024);
+        if current < total
+            && current.saturating_sub(last_downloaded) < min_delta
+        {
+            return Box::pin(async { Ok(()) });
+        }
+        last_downloaded = current;
+        let reporter = progress_reporter.clone();
+        let details = progress_details.clone();
+        Box::pin(async move {
+            if let Some(reporter) = reporter {
+                reporter
+                    .update(
+                        InstallPhaseId::DownloadingPackFile,
+                        Some(InstallProgress {
+                            current,
+                            total,
+                            secondary: None,
+                        }),
+                        details,
+                    )
+                    .await?;
+            }
+            Ok(())
+        })
     };
+    let progress = reporter
+        .is_some()
+        .then_some(&mut progress as &mut FetchProgressFn<'_>);
+    let pack_download = download_curseforge_archive(
+        request.project_id,
+        request.file_id,
+        &pack_file,
+        &download_url,
+        progress,
+    )
+    .await?;
+    if let Some(reporter) = reporter.as_ref()
+        && pack_download.attempts > 0
+    {
+        reporter
+            .record_download_metrics(
+                pack_download.source.as_str(),
+                pack_download.fallback_count as u64,
+                pack_download.resumed_bytes,
+            )
+            .await?;
+    }
+    let pack_path = pack_download.path;
     if let Some(reporter) = reporter.as_ref() {
         reporter
             .update(
                 InstallPhaseId::DownloadingPackFile,
                 Some(InstallProgress {
-                    current: pack_bytes.len() as u64,
-                    total: pack_file.file_length.max(pack_bytes.len() as u64),
+                    current: pack_file.file_length,
+                    total: pack_file.file_length.max(1),
                     secondary: None,
                 }),
                 pack_details.clone(),
@@ -1102,10 +1196,14 @@ pub async fn install_modpack_with_reporter(
             )
             .await?;
     }
-    verify_file(&pack_file, &pack_bytes)?;
-    let (manifest, overrides) =
-        tokio::task::spawn_blocking(move || read_modpack_archive(&pack_bytes))
-            .await??;
+    let pack_path_for_manifest = pack_path.clone();
+    let manifest = tokio::task::spawn_blocking(move || {
+        let file = std::fs::File::open(&pack_path_for_manifest)?;
+        let mut archive =
+            zip::ZipArchive::new(file).map_err(modpack_zip_error)?;
+        read_modpack_manifest(&mut archive)
+    })
+    .await??;
 
     let state = State::get().await?;
     use sqlx::Row;
@@ -1270,6 +1368,9 @@ pub async fn install_modpack_with_reporter(
         "Resolved CurseForge modpack manifest files"
     );
     let content = Arc::new(Mutex::new(CurseForgeInstallResult::default()));
+    let download_metrics = reporter
+        .as_ref()
+        .map(|_| Arc::new(CurseForgeDownloadMetrics::default()));
     let projects = Arc::new(projects);
     let file_meta = Arc::new(file_meta);
     let files_done = Arc::new(AtomicU64::new(0));
@@ -1295,6 +1396,7 @@ pub async fn install_modpack_with_reporter(
             let active_downloads = active_downloads.clone();
             let loading_bar = loading_bar.clone();
             let reporter = reporter.clone();
+            let download_metrics = download_metrics.clone();
             let pack_details = pack_details.clone();
             let instance_id = instance_id.clone();
             let minecraft_version = minecraft_version.clone();
@@ -1319,16 +1421,19 @@ pub async fn install_modpack_with_reporter(
                 let mut failed_result = None;
                 let mut failure_reason = "no file was installed".to_string();
                 for attempt in 1..=MODPACK_FILE_INSTALL_ATTEMPTS {
-                    match install_file(CurseForgeInstallRequest {
-                        instance_id: instance_id.clone(),
-                        project_id: manifest_file.project_id,
-                        file_id: manifest_file.file_id,
-                        project_type: project_type.to_string(),
-                        game_version: Some(minecraft_version.clone()),
-                        mod_loader_type: loader_type_value,
-                        world_name: None,
-                        install_dependencies: false,
-                    })
+                    match install_file_with_metrics(
+                        CurseForgeInstallRequest {
+                            instance_id: instance_id.clone(),
+                            project_id: manifest_file.project_id,
+                            file_id: manifest_file.file_id,
+                            project_type: project_type.to_string(),
+                            game_version: Some(minecraft_version.clone()),
+                            mod_loader_type: loader_type_value,
+                            world_name: None,
+                            install_dependencies: false,
+                        },
+                        download_metrics.as_deref(),
+                    )
                     .await
                     {
                         Ok(item_result)
@@ -1391,7 +1496,10 @@ pub async fn install_modpack_with_reporter(
                                 project_id: manifest_file.project_id,
                                 file_id: manifest_file.file_id,
                                 file_name: file_name.clone(),
-                                website_url: project.links.website_url.clone(),
+                                website_url: curseforge_file_page_url(
+                                    project.links.website_url.as_deref(),
+                                    manifest_file.file_id,
+                                ),
                             },
                         );
                     }
@@ -1467,6 +1575,12 @@ pub async fn install_modpack_with_reporter(
     )
     .await?;
 
+    if let (Some(reporter), Some(download_metrics)) =
+        (reporter.as_ref(), download_metrics.as_ref())
+    {
+        download_metrics.finish(reporter).await?;
+    }
+
     let content = Arc::try_unwrap(content)
         .map_err(|_| {
             ErrorKind::OtherError(
@@ -1488,19 +1602,10 @@ pub async fn install_modpack_with_reporter(
             .update(InstallPhaseId::ExtractingOverrides, None, pack_details)
             .await?;
     }
-    let mut overrides_written = 0;
-    for (relative_path, bytes) in overrides {
-        let target = instance_path.join(&relative_path);
-        crate::util::fetch::write(
-            &target,
-            &Bytes::from(bytes),
-            &state.io_semaphore,
-        )
-        .await?;
-        overrides_written += 1;
-    }
-
-    clear_cached_modpack_archive(request.project_id, request.file_id);
+    let overrides_written = tokio::task::spawn_blocking(move || {
+        extract_modpack_overrides(&pack_path, &instance_path)
+    })
+    .await??;
     Ok(CurseForgeModpackInstallResult {
         content,
         overrides_written,
@@ -1665,14 +1770,15 @@ async fn remove_existing_curseforge_pack_content(
     Ok(())
 }
 
-fn read_modpack_archive(
-    bytes: &Bytes,
-) -> crate::Result<(CurseForgeModpackManifest, Vec<(String, Vec<u8>)>)> {
-    let mut archive = zip::ZipArchive::new(Cursor::new(&bytes[..]))
-        .map_err(modpack_zip_error)?;
+fn extract_modpack_overrides(
+    archive_path: &Path,
+    instance_path: &Path,
+) -> crate::Result<u32> {
+    let file = std::fs::File::open(archive_path)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(modpack_zip_error)?;
     let manifest = read_modpack_manifest(&mut archive)?;
     let prefix = format!("{}/", manifest.overrides.trim_matches('/'));
-    let mut output = Vec::new();
+    let mut files_written = 0_u32;
     let mut total_size = 0_u64;
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).map_err(modpack_zip_error)?;
@@ -1689,11 +1795,27 @@ fn read_modpack_archive(
             )
             .into());
         }
-        let mut data = Vec::with_capacity(entry.size() as usize);
-        entry.read_to_end(&mut data)?;
-        output.push((safe_path, data));
+        let target = instance_path.join(safe_path);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut output = std::fs::File::create(target)?;
+        let written = std::io::copy(&mut entry, &mut output)?;
+        if written != entry.size() {
+            return Err(ErrorKind::InputError(
+                "CurseForge modpack override was truncated during extraction"
+                    .to_string(),
+            )
+            .into());
+        }
+        files_written = files_written.checked_add(1).ok_or_else(|| {
+            ErrorKind::InputError(
+                "CurseForge modpack contains too many override files"
+                    .to_string(),
+            )
+        })?;
     }
-    Ok((manifest, output))
+    Ok(files_written)
 }
 
 fn read_modpack_manifest<R: Read + Seek>(
@@ -2066,37 +2188,6 @@ async fn report_modpack_progress(
     Ok(())
 }
 
-fn cached_modpack_archive(project_id: u32, file_id: u32) -> Option<Bytes> {
-    MODPACK_ARCHIVE_CACHE
-        .lock()
-        .ok()
-        .and_then(|cache| cache.as_ref().cloned())
-        .filter(|cached| {
-            cached.project_id == project_id && cached.file_id == file_id
-        })
-        .map(|cached| cached.bytes)
-}
-
-fn cache_modpack_archive(project_id: u32, file_id: u32, bytes: Bytes) {
-    if let Ok(mut cache) = MODPACK_ARCHIVE_CACHE.lock() {
-        *cache = Some(CachedCurseForgeModpackArchive {
-            project_id,
-            file_id,
-            bytes,
-        });
-    }
-}
-
-fn clear_cached_modpack_archive(project_id: u32, file_id: u32) {
-    if let Ok(mut cache) = MODPACK_ARCHIVE_CACHE.lock()
-        && cache.as_ref().is_some_and(|cached| {
-            cached.project_id == project_id && cached.file_id == file_id
-        })
-    {
-        *cache = None;
-    }
-}
-
 fn cached_project(project_id: u32) -> Option<CurseForgeProject> {
     PROJECT_CACHE
         .read()
@@ -2121,251 +2212,34 @@ fn cache_projects(projects: &[CurseForgeProject]) {
     }
 }
 
-async fn download_cdn_file(url: &str) -> crate::Result<Bytes> {
-    download_cdn_file_with_attempts(url, CDN_DOWNLOAD_ATTEMPTS).await
-}
-
-async fn download_cdn_file_with_attempts(
-    url: &str,
-    max_attempts: usize,
-) -> crate::Result<Bytes> {
-    download_cdn_file_with_progress(url, max_attempts, None).await
-}
-
-async fn download_cdn_file_with_progress(
-    url: &str,
-    max_attempts: usize,
-    loading_bar: Option<&crate::event::LoadingBarId>,
-) -> crate::Result<Bytes> {
-    let state = State::get().await?;
-    let original_url = reqwest::Url::parse(url).map_err(|_| {
-        ErrorKind::InputError(
-            "CurseForge returned an invalid download URL".to_string(),
-        )
-    })?;
-    validate_cdn_url(&original_url)?;
-
-    let resolved_url = resolve_download_url(
-        url,
-        DownloadMirrorSettings {
-            curseforge: state.use_curseforge_mirror(),
-            ..DownloadMirrorSettings::default()
-        },
-    );
-    let key = api_key();
-    let mut routes = Vec::new();
-    if resolved_url.is_mirror {
-        let mirror_url =
-            reqwest::Url::parse(&resolved_url.url).map_err(|_| {
-                ErrorKind::InputError(
-                    "CurseForge mirror produced an invalid download URL"
-                        .to_string(),
-                )
-            })?;
-        validate_cdn_url(&mirror_url)?;
-        routes.push((mirror_url, None, RequestRouteSource::Mirror));
-        if let Some(key) = key {
-            routes.push((
-                original_url,
-                Some(key),
-                RequestRouteSource::Official,
-            ));
-        }
-    } else {
-        let key = key.ok_or_else(|| {
-            ErrorKind::InputError(
-                "CurseForge integration is waiting for an API key".to_string(),
-            )
-        })?;
-        routes.push((original_url, Some(key), RequestRouteSource::Official));
-    }
-    let mut last_error = String::new();
-
-    for (route_index, (url, key, source)) in routes.iter().enumerate() {
-        for attempt in 1..=max_attempts {
-            let use_system_proxy = attempt % 2 == 0;
-            tracing::info!(
-                source = ?source,
-                route = route_index + 1,
-                attempt,
-                max_attempts,
-                url = %url,
-                use_system_proxy,
-                "Attempting CurseForge CDN download"
-            );
-            let started = Instant::now();
-            let attempt_progress = AtomicU64::new(0);
-            let result = download_cdn_file_attempt(
-                url.clone(),
-                key.clone(),
-                use_system_proxy,
-                attempt,
-                loading_bar,
-                &attempt_progress,
-            )
-            .await;
-            match result {
-                Ok(bytes) => {
-                    tracing::info!(
-                        attempt,
-                        bytes = bytes.len(),
-                        elapsed_ms = started.elapsed().as_millis(),
-                        "Completed CurseForge CDN download"
-                    );
-                    return Ok(bytes);
-                }
-                Err(err) => last_error = err.to_string(),
-            }
-            let downloaded = attempt_progress.load(Ordering::Relaxed);
-            if downloaded > 0
-                && let Some(loading_bar) = loading_bar
-            {
-                emit_loading(
-                    loading_bar,
-                    -(downloaded as f64),
-                    Some("Retrying CurseForge download"),
-                )?;
-            }
-            tracing::warn!(
-                attempt,
-                max_attempts,
-                elapsed_ms = started.elapsed().as_millis(),
-                error = %last_error,
-                "CurseForge CDN download attempt failed"
-            );
-            if attempt < max_attempts {
-                tokio::time::sleep(Duration::from_millis(250 * attempt as u64))
-                    .await;
-            }
-        }
-
-        if route_index + 1 < routes.len() {
-            tracing::warn!(
-                source = ?source,
-                url = %url,
-                error = %last_error,
-                "CurseForge mirror failed; falling back to official CDN"
-            );
-        }
-    }
-
-    Err(ErrorKind::OtherError(format!(
-        "CurseForge download failed after all routes: {last_error}"
-    ))
-    .into())
-}
-
-async fn download_cdn_file_attempt(
-    original_url: reqwest::Url,
-    key: Option<String>,
-    use_system_proxy: bool,
-    attempt: usize,
-    loading_bar: Option<&crate::event::LoadingBarId>,
-    attempt_progress: &AtomicU64,
-) -> crate::Result<Bytes> {
-    let state = State::get().await?;
-    let mut url = original_url;
-    let mut key = key;
-    for redirect_count in 0..=CDN_MAX_REDIRECTS {
-        validate_cdn_url(&url)?;
-        let permit = state.api_semaphore.0.acquire().await?;
-        let mut request = request_client(url.as_str(), use_system_proxy)
-            .get(url.clone())
-            .header("accept", "application/octet-stream");
-        if is_forge_cdn_url(&url)
-            && let Some(key) = &key
-        {
-            request = request.header("x-api-key", key);
-        }
-        let response = request.send().await?;
-
-        if !response.status().is_success() {
-            if response.status().is_redirection() {
-                let location = response
-                    .headers()
-                    .get(reqwest::header::LOCATION)
-                    .and_then(|value| value.to_str().ok())
-                    .ok_or_else(|| {
-                        ErrorKind::OtherError(
-                            "CurseForge CDN redirect omitted its destination"
-                                .to_string(),
-                        )
-                    })?;
-                if let Some(response_key) = response
-                    .headers()
-                    .get("x-api-key")
-                    .and_then(|value| value.to_str().ok())
-                {
-                    key = Some(response_key.to_string());
-                }
-                if redirect_count == CDN_MAX_REDIRECTS {
-                    return Err(ErrorKind::OtherError(
-                        "CurseForge CDN returned too many redirects"
-                            .to_string(),
-                    )
-                    .into());
-                }
-                url = url.join(location).map_err(|_| {
-                    ErrorKind::InputError(
-                        "CurseForge CDN returned an invalid redirect"
-                            .to_string(),
-                    )
-                })?;
-                drop(permit);
-                continue;
-            }
-            return Err(ErrorKind::OtherError(format!(
-                "CurseForge download failed with HTTP {}",
-                response.status().as_u16()
-            ))
-            .into());
-        }
-
-        let expected_bytes = response.content_length();
-        tracing::info!(
-            attempt,
-            url = %url,
-            expected_bytes = ?expected_bytes,
-            "Receiving CurseForge CDN response body"
-        );
-        let mut body = BytesMut::new();
-        let mut stream = response.bytes_stream();
-        let mut next_progress_log = CDN_PROGRESS_LOG_INTERVAL;
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk?;
-            if let Some(loading_bar) = loading_bar {
-                emit_loading(
-                    loading_bar,
-                    chunk.len() as f64,
-                    Some("Downloading CurseForge modpack"),
-                )?;
-            }
-            body.extend_from_slice(&chunk);
-            let downloaded = body.len() as u64;
-            attempt_progress.store(downloaded, Ordering::Relaxed);
-            if downloaded >= next_progress_log {
-                tracing::info!(
-                    attempt,
-                    downloaded_bytes = downloaded,
-                    expected_bytes = ?expected_bytes,
-                    "CurseForge CDN download progress"
-                );
-                while next_progress_log <= downloaded {
-                    next_progress_log = next_progress_log
-                        .saturating_add(CDN_PROGRESS_LOG_INTERVAL);
-                }
-            }
-        }
-        drop(permit);
-        return Ok(body.freeze());
-    }
-
-    unreachable!("redirect loop always returns or continues")
-}
-
 fn is_forge_cdn_url(url: &reqwest::Url) -> bool {
     let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
     host == "forgecdn.net" || host.ends_with(".forgecdn.net")
+}
+
+fn curseforge_file_page_url(
+    website_url: Option<&str>,
+    file_id: u32,
+) -> Option<String> {
+    let website_url = website_url?;
+    let Ok(mut url) = reqwest::Url::parse(website_url) else {
+        return Some(website_url.to_owned());
+    };
+    if !matches!(
+        url.host_str(),
+        Some("curseforge.com" | "www.curseforge.com" | "legacy.curseforge.com")
+    ) {
+        return Some(website_url.to_owned());
+    }
+
+    let file_path = format!("/files/{file_id}");
+    let path = url.path().trim_end_matches('/');
+    if !path.ends_with(&file_path) {
+        url.set_path(&format!("{path}{file_path}"));
+    }
+    url.set_query(None);
+    url.set_fragment(None);
+    Some(url.into())
 }
 
 fn validate_cdn_url(url: &reqwest::Url) -> crate::Result<()> {
@@ -2387,86 +2261,185 @@ fn validate_cdn_url(url: &reqwest::Url) -> crate::Result<()> {
     Ok(())
 }
 
-fn verify_file(file: &CurseForgeFile, bytes: &Bytes) -> crate::Result<()> {
-    if bytes.len() as u64 != file.file_length {
-        return Err(ErrorKind::OtherError(format!(
-            "CurseForge file size mismatch for {}",
-            file.file_name
-        ))
-        .into());
-    }
-
-    if let Some(expected) = file.hashes.iter().find(|hash| hash.algo == 1) {
-        let actual = sha1_smol::Sha1::from(&bytes[..]).hexdigest();
-        if !actual.eq_ignore_ascii_case(&expected.value) {
-            return Err(ErrorKind::OtherError(format!(
-                "CurseForge SHA-1 mismatch for {}",
-                file.file_name
-            ))
-            .into());
-        }
-    } else if let Some(expected) =
-        file.hashes.iter().find(|hash| hash.algo == 2)
+fn curseforge_content_validation(file_name: &str) -> ContentValidation {
+    match Path::new(file_name)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(str::to_ascii_lowercase)
+        .as_deref()
     {
-        let actual = format!("{:x}", md5::compute(&bytes[..]));
-        if !actual.eq_ignore_ascii_case(&expected.value) {
-            return Err(ErrorKind::OtherError(format!(
-                "CurseForge MD5 mismatch for {}",
-                file.file_name
-            ))
-            .into());
-        }
+        Some("jar" | "zip" | "mrpack") => ContentValidation::Jar,
+        _ => ContentValidation::None,
     }
-
-    Ok(())
 }
 
-async fn write_installed_file(
-    instance_id: &str,
-    file_name: &str,
-    bytes: &Bytes,
-    project_type: ProjectType,
-    world_name: Option<&str>,
-) -> crate::Result<String> {
-    let state = State::get().await?;
-    // Pack installs (and normal content installs without a world target) should
-    // place datapacks in the instance datapacks/ folder. Only pin to a world
-    // when the caller explicitly asks for one.
-    if project_type != ProjectType::DataPack || world_name.is_none() {
-        return crate::state::add_project_bytes(
-            instance_id,
-            file_name,
-            bytes.clone(),
-            None,
-            Some(project_type),
-            ContentSourceKind::CurseForge,
-            None,
-            None,
-            &state,
+fn curseforge_integrity(
+    file: &CurseForgeFile,
+    validation: ContentValidation,
+) -> Integrity {
+    Integrity {
+        size: Some(file.file_length),
+        sha1: file
+            .hashes
+            .iter()
+            .find(|hash| hash.algo == 1)
+            .map(|hash| hash.value.clone()),
+        md5: file
+            .hashes
+            .iter()
+            .find(|hash| hash.algo == 2)
+            .map(|hash| hash.value.clone()),
+        content: validation,
+        ..Integrity::default()
+    }
+}
+
+fn curseforge_candidate_urls(url: &str) -> crate::Result<Vec<String>> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| {
+        ErrorKind::InputError(
+            "CurseForge returned an invalid download URL".to_string(),
         )
-        .await;
+    })?;
+    validate_cdn_url(&parsed)?;
+    if !is_forge_cdn_url(&parsed) {
+        return Ok(Vec::new());
     }
 
-    let world_name = world_name.expect("checked above");
-    validate_file_name(world_name)?;
-    let relative_path = format!("saves/{world_name}/datapacks/{file_name}");
+    let original_host = parsed.host_str().unwrap_or_default();
+    let mut candidates = Vec::new();
+    for host in [
+        "edge.forgecdn.net",
+        "media.forgecdn.net",
+        "mediafilez.forgecdn.net",
+    ] {
+        if host == original_host {
+            continue;
+        }
+        let mut candidate = parsed.clone();
+        candidate.set_host(Some(host)).map_err(|_| {
+            ErrorKind::InputError(
+                "CurseForge returned an invalid CDN URL".to_string(),
+            )
+        })?;
+        candidates.push(candidate.to_string());
+    }
+    Ok(candidates)
+}
+
+async fn download_curseforge_path(
+    url: &str,
+    file: &CurseForgeFile,
+    destination: &Path,
+    validation: ContentValidation,
+    progress: Option<&mut FetchProgressFn<'_>>,
+) -> crate::Result<crate::util::fetch::DownloadResult> {
+    let state = State::get().await?;
+    let mut request = DownloadRequest::new(url, ResourceClass::CurseForge)
+        .with_candidate_urls(curseforge_candidate_urls(url)?)
+        .with_integrity(curseforge_integrity(file, validation));
+    let parsed = reqwest::Url::parse(url)?;
+    if is_forge_cdn_url(&parsed)
+        && let Some(key) = api_key()
+    {
+        request = request.with_header("x-api-key", key);
+    }
+    download_to_path(
+        request,
+        destination,
+        &state.fetch_semaphore,
+        &state.pool,
+        progress,
+    )
+    .await
+}
+
+async fn download_curseforge_archive(
+    project_id: u32,
+    file_id: u32,
+    file: &CurseForgeFile,
+    url: &str,
+    progress: Option<&mut FetchProgressFn<'_>>,
+) -> crate::Result<crate::util::fetch::DownloadResult> {
+    validate_file_name(&file.file_name)?;
+    let state = State::get().await?;
+    let path = state
+        .directories
+        .caches_dir()
+        .join("curseforge")
+        .join("modpacks")
+        .join(project_id.to_string())
+        .join(file_id.to_string())
+        .join(&file.file_name);
+    download_curseforge_path(url, file, &path, ContentValidation::Jar, progress)
+        .await
+}
+
+async fn download_installed_file(
+    instance_id: &str,
+    url: &str,
+    file: &CurseForgeFile,
+    project_type: ProjectType,
+    world_name: Option<&str>,
+    project_id: u32,
+    file_id: u32,
+    download_metrics: Option<&CurseForgeDownloadMetrics>,
+) -> crate::Result<String> {
+    let state = State::get().await?;
+    validate_file_name(&file.file_name)?;
+    let relative_path = if project_type == ProjectType::DataPack
+        && let Some(world_name) = world_name
+    {
+        validate_file_name(world_name)?;
+        format!("saves/{world_name}/datapacks/{}", file.file_name)
+    } else {
+        format!("{}/{}", project_type.get_folder(), file.file_name)
+    };
     let full_path = crate::api::instance::get_full_path(instance_id)
         .await?
         .join(&relative_path);
-    crate::util::fetch::write(&full_path, bytes, &state.io_semaphore).await?;
-    let sha1 = sha1_smol::Sha1::from(&bytes[..]).hexdigest();
+    let result = download_curseforge_path(
+        url,
+        file,
+        &full_path,
+        curseforge_content_validation(&file.file_name),
+        None,
+    )
+    .await?;
+    if let Some(download_metrics) = download_metrics {
+        download_metrics.record(&result);
+    }
+    let sha1 =
+        if let Some(hash) = file.hashes.iter().find(|hash| hash.algo == 1) {
+            hash.value.clone()
+        } else {
+            sha1_file_async(&full_path).await?.1
+        };
+    crate::state::cache_file_hash_metadata(
+        instance_id,
+        &relative_path,
+        result.size,
+        sha1.clone(),
+        Some(project_type),
+        None,
+        &state.pool,
+    )
+    .await?;
+    let project_id_string = project_id.to_string();
+    let file_id_string = file_id.to_string();
     crate::state::record_project_file(
         instance_id,
         &relative_path,
         &sha1,
-        bytes.len() as u64,
-        ProjectType::DataPack,
+        result.size,
+        project_type,
         ContentSourceKind::CurseForge,
-        None,
-        None,
+        Some(&project_id_string),
+        Some(&file_id_string),
         &state,
     )
     .await?;
+    register_provider_ref(instance_id, &relative_path, project_id, file_id)
+        .await?;
     Ok(relative_path)
 }
 
@@ -2678,6 +2651,17 @@ fn request_routes(
     path: &str,
     mirror_policy: MirrorPolicy,
 ) -> Vec<RequestRoute> {
+    let mode = match mirror_policy {
+        MirrorPolicy::MirrorFirst => DownloadSourceMode::MirrorPreferred,
+        MirrorPolicy::OfficialOnly => DownloadSourceMode::OfficialOnly,
+    };
+    request_routes_with_mode(path, mode)
+}
+
+fn request_routes_with_mode(
+    path: &str,
+    mode: DownloadSourceMode,
+) -> Vec<RequestRoute> {
     let base_url = api_base_url();
     if base_url != API_BASE_URL {
         return vec![RequestRoute {
@@ -2688,28 +2672,26 @@ fn request_routes(
         }];
     }
 
-    let mut routes = Vec::new();
-    if mirror_policy == MirrorPolicy::MirrorFirst {
-        routes.push(RequestRoute {
-            url: format!("{API_MIRROR_BASE_URL}{path}"),
-            use_api_key: false,
-            use_system_proxy: false,
-            source: RequestRouteSource::Mirror,
-        });
-    }
-    routes.push(RequestRoute {
-        url: format!("{API_BASE_URL}{path}"),
-        use_api_key: true,
-        use_system_proxy: false,
-        source: RequestRouteSource::Official,
-    });
-    routes.push(RequestRoute {
-        url: format!("{API_BASE_URL}{path}"),
-        use_api_key: true,
-        use_system_proxy: true,
-        source: RequestRouteSource::Official,
-    });
-    routes
+    resolve_download_routes_for(
+        &format!("{API_BASE_URL}{path}"),
+        ResourceClass::CurseForge,
+        mode,
+    )
+    .into_iter()
+    .map(|route| RequestRoute {
+        use_api_key: route.allow_sensitive_headers,
+        use_system_proxy: route.proxy == ProxyPolicy::System,
+        source: match route.source {
+            DownloadRouteSource::Bmclapi
+            | DownloadRouteSource::Mcim
+            | DownloadRouteSource::TencentMaven => RequestRouteSource::Mirror,
+            DownloadRouteSource::Official | DownloadRouteSource::Alternate => {
+                RequestRouteSource::Official
+            }
+        },
+        url: route.url,
+    })
+    .collect()
 }
 
 async fn request_json<T: DeserializeOwned>(
@@ -2721,12 +2703,14 @@ async fn request_json<T: DeserializeOwned>(
 ) -> crate::Result<T> {
     let key = api_key();
     let state = State::get().await?;
-    let mirror_policy = if state.use_curseforge_mirror() {
-        mirror_policy
+    let source_mode = if method != Method::GET
+        || mirror_policy == MirrorPolicy::OfficialOnly
+    {
+        DownloadSourceMode::OfficialOnly
     } else {
-        MirrorPolicy::OfficialOnly
+        state.curseforge_source()
     };
-    let routes = request_routes(path, mirror_policy);
+    let routes = request_routes_with_mode(path, source_mode);
     let mut last_error = None;
 
     for (route_index, route) in routes.iter().enumerate() {
@@ -2745,12 +2729,19 @@ async fn request_json<T: DeserializeOwned>(
             .header("accept", "application/json")
             .query(&query);
         if route.use_api_key {
-            let key = key.as_ref().ok_or_else(|| {
-                ErrorKind::InputError(
+            let Some(key) = key.as_ref() else {
+                drop(permit);
+                let error: crate::Error = ErrorKind::InputError(
                     "CurseForge integration is waiting for an API key"
                         .to_string(),
                 )
-            })?;
+                .into();
+                if route_index + 1 < routes.len() {
+                    last_error = Some(error);
+                    continue;
+                }
+                return Err(error);
+            };
             request = request.header("x-api-key", key);
         }
         if let Some(body) = &body {
@@ -2857,8 +2848,10 @@ fn should_try_next_route(
     has_next_route: bool,
 ) -> bool {
     has_next_route
-        && route.source == RequestRouteSource::Mirror
-        && status == StatusCode::NOT_FOUND
+        && (route.source == RequestRouteSource::Mirror
+            || status == StatusCode::TOO_MANY_REQUESTS
+            || status == StatusCode::FORBIDDEN
+            || status.is_server_error())
 }
 
 fn response_error_message(status: StatusCode, bytes: &[u8]) -> String {
@@ -2978,7 +2971,7 @@ mod tests {
     }
 
     #[test]
-    fn official_http_errors_are_final() {
+    fn official_forbidden_response_tries_proxy_route() {
         let route = RequestRoute {
             url: String::new(),
             use_api_key: true,
@@ -2986,7 +2979,7 @@ mod tests {
             source: RequestRouteSource::Official,
         };
 
-        assert!(!should_try_next_route(&route, StatusCode::FORBIDDEN, true));
+        assert!(should_try_next_route(&route, StatusCode::FORBIDDEN, true));
     }
 
     #[test]
@@ -3065,6 +3058,37 @@ mod tests {
             parent_category_id: class_id,
             display_index: Some(0),
         }
+    }
+
+    #[test]
+    fn manual_downloads_open_the_official_file_page() {
+        assert_eq!(
+            curseforge_file_page_url(
+                Some("https://www.curseforge.com/minecraft/mc-mods/example"),
+                12345,
+            ),
+            Some(
+                "https://www.curseforge.com/minecraft/mc-mods/example/files/12345"
+                    .to_string()
+            )
+        );
+        assert_eq!(
+            curseforge_file_page_url(
+                Some("https://www.curseforge.com/minecraft/mc-mods/example/files/12345?tab=files"),
+                12345,
+            ),
+            Some(
+                "https://www.curseforge.com/minecraft/mc-mods/example/files/12345"
+                    .to_string()
+            )
+        );
+        assert_eq!(
+            curseforge_file_page_url(
+                Some("https://example.com/project"),
+                12345
+            ),
+            Some("https://example.com/project".to_string())
+        );
     }
 
     #[test]

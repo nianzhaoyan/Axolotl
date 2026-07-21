@@ -9,16 +9,16 @@ use crate::state::{
     EditInstance, InstanceInstallStage, InstanceLink, SideType,
 };
 use crate::util::fetch::{
-    DownloadMeta, DownloadReason, FetchProgressFn, fetch,
-    fetch_advanced_with_progress, sha1_file_async, write_cached_icon,
+    ContentValidation, DownloadMeta, DownloadReason, DownloadRequest,
+    FetchProgressFn, Integrity, ResourceClass, download_to_path, fetch,
+    sha1_file_async, write_cached_icon,
 };
 use path_util::SafeRelativeUtf8UnixPathBuf;
-use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::future::Future;
 
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::pin::Pin;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq)]
@@ -275,19 +275,33 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
         .await?;
     }
 
-    let (url, hash, file_size) =
-        if let Some(file) = version.files.iter().find(|x| x.primary) {
-            Some((file.url.clone(), file.hashes.get("sha1"), file.size as u64))
-        } else {
-            version.files.first().map(|file| {
-                (file.url.clone(), file.hashes.get("sha1"), file.size as u64)
-            })
-        }
+    let pack_file = version
+        .files
+        .iter()
+        .find(|file| file.primary)
+        .or_else(|| version.files.first())
         .ok_or_else(|| {
             crate::ErrorKind::InputError(
                 "Specified version has no files".to_string(),
             )
         })?;
+    let file_name = Path::new(&pack_file.filename);
+    if file_name.components().count() != 1
+        || !matches!(file_name.components().next(), Some(Component::Normal(_)))
+    {
+        return Err(crate::ErrorKind::InputError(
+            "Modrinth returned an invalid modpack file name".to_string(),
+        )
+        .into());
+    }
+    let hash = pack_file.hashes.get("sha1");
+    let pack_path = state
+        .directories
+        .caches_dir()
+        .join("modpacks")
+        .join(&project_id)
+        .join(&version_id)
+        .join(file_name);
 
     let metadata =
         crate::api::instance::get(&instance_id)
@@ -343,8 +357,10 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
     let progress = Some(&mut progress as &mut FetchProgressFn<'_>);
 
     let context = InstallErrorContext::new("download modpack file")
-        .urls(vec![url.clone()])
+        .urls(vec![pack_file.url.clone()])
         .maybe_expected_hash(hash.cloned())
+        .expected_size(pack_file.size as u64)
+        .target_path(pack_path.display().to_string())
         .project_id(project_id.clone())
         .version_id(version_id.clone())
         .build();
@@ -354,27 +370,38 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
             InstallPhaseId::DownloadingPackFile,
             Some(InstallProgress {
                 current: 0,
-                total: file_size.max(1),
+                total: pack_file.size.max(1) as u64,
                 secondary: None,
             }),
             details.clone(),
         )
         .await?;
     reporter.persist().await?;
-    let file = fetch_advanced_with_progress(
-        Method::GET,
-        &url,
-        hash.map(|x| &**x),
-        None,
-        None,
-        Some(&download_meta),
-        None,
-        None,
+    let download_result = download_to_path(
+        DownloadRequest::new(&pack_file.url, ResourceClass::Modpack)
+            .with_integrity(Integrity {
+                size: Some(pack_file.size as u64),
+                sha1: hash.cloned(),
+                sha512: pack_file.hashes.get("sha512").cloned(),
+                content: ContentValidation::Jar,
+                ..Integrity::default()
+            })
+            .with_download_meta(download_meta),
+        &pack_path,
         &state.fetch_semaphore,
         &state.pool,
         progress,
     )
     .await?;
+    if download_result.attempts > 0 {
+        reporter
+            .record_download_metrics(
+                download_result.source.as_str(),
+                download_result.fallback_count as u64,
+                download_result.resumed_bytes,
+            )
+            .await?;
+    }
 
     reporter
         .update(InstallPhaseId::ResolvingPack, None, details.clone())
@@ -450,7 +477,7 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
     }
 
     Ok(CreatePack {
-        file: CreatePackFile::Bytes(file),
+        file: CreatePackFile::Path(pack_path),
         description: CreatePackDescription {
             icon,
             override_title: Some(title),

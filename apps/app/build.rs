@@ -273,6 +273,8 @@ fn main() {
                     .commands(&[
                         "settings_get",
                         "settings_set",
+                        "download_source_health",
+                        "reset_download_source_health",
                         "cancel_directory_change",
                     ])
                     .default_permission(

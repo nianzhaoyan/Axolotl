@@ -114,6 +114,18 @@
 								}}</span>
 							</template>
 						</div>
+						<div
+							v-if="downloadTelemetry(job).length"
+							class="mt-1 flex flex-wrap items-center gap-2 text-sm text-secondary"
+						>
+							<template
+								v-for="(metric, index) in downloadTelemetry(job)"
+								:key="`${index}-${metric}`"
+							>
+								<BulletDivider v-if="index > 0" />
+								<span>{{ metric }}</span>
+							</template>
+						</div>
 					</div>
 					<div class="flex flex-wrap items-center gap-2">
 						<ButtonStyled v-if="canCancel(job)" color="red" type="outlined" size="small">
@@ -392,6 +404,39 @@ const messages = defineMessages({
 		id: 'app.curseforge.manual-downloads.project-file',
 		defaultMessage: 'Project {projectId} · File {fileId}',
 	},
+	downloadSource: { id: 'app.downloads.download-source', defaultMessage: 'Source: {source}' },
+	downloadSourceOfficial: { id: 'app.downloads.source.official', defaultMessage: 'Official' },
+	downloadSourceBmclapi: { id: 'app.downloads.source.bmclapi', defaultMessage: 'OpenBMCLAPI' },
+	downloadSourceMcim: { id: 'app.downloads.source.mcim', defaultMessage: 'MCIM' },
+	downloadSourceTencentMaven: {
+		id: 'app.downloads.source.tencent-maven',
+		defaultMessage: 'Tencent Maven',
+	},
+	downloadSourceAlternate: {
+		id: 'app.downloads.source.alternate',
+		defaultMessage: 'Alternate source',
+	},
+	downloadSpeed: { id: 'app.downloads.download-speed', defaultMessage: 'Speed: {speed}/s' },
+	downloadEtaSeconds: {
+		id: 'app.downloads.download-eta-seconds',
+		defaultMessage: '{seconds}s remaining',
+	},
+	downloadEtaMinutes: {
+		id: 'app.downloads.download-eta-minutes',
+		defaultMessage: '{minutes}m remaining',
+	},
+	downloadEtaHours: {
+		id: 'app.downloads.download-eta-hours',
+		defaultMessage: '{hours}h {minutes}m remaining',
+	},
+	downloadFallbacks: {
+		id: 'app.downloads.download-fallbacks',
+		defaultMessage: '{count} fallbacks',
+	},
+	downloadResumed: {
+		id: 'app.downloads.download-resumed',
+		defaultMessage: '{bytes} resumed',
+	},
 })
 
 const statusMessages = defineMessages({
@@ -603,6 +648,69 @@ function progressText(job: InstallJobSnapshot) {
 		return `${formatBytes(job.summary.bytes_downloaded)} / ${formatBytes(job.summary.bytes_total)}`
 	if (job.summary.files_total) return `${job.summary.files_completed} / ${job.summary.files_total}`
 	return phaseLabel(job.phase)
+}
+
+function downloadTelemetry(job: InstallJobSnapshot) {
+	const summary = job.summary
+	const metrics: string[] = []
+	if (summary.source) {
+		metrics.push(
+			formatMessage(messages.downloadSource, {
+				source: downloadSourceLabel(summary.source),
+			}),
+		)
+	}
+	if (summary.speed_bytes_per_second && summary.speed_bytes_per_second > 0) {
+		metrics.push(
+			formatMessage(messages.downloadSpeed, {
+				speed: formatBytes(summary.speed_bytes_per_second),
+			}),
+		)
+	}
+	if (summary.eta_seconds != null) {
+		metrics.push(formatDownloadEta(summary.eta_seconds))
+	}
+	if (summary.fallback_count > 0) {
+		metrics.push(formatMessage(messages.downloadFallbacks, { count: summary.fallback_count }))
+	}
+	if (summary.resumed_bytes > 0) {
+		metrics.push(
+			formatMessage(messages.downloadResumed, {
+				bytes: formatBytes(summary.resumed_bytes),
+			}),
+		)
+	}
+	return metrics
+}
+
+function downloadSourceLabel(source: string) {
+	switch (source) {
+		case 'official':
+			return formatMessage(messages.downloadSourceOfficial)
+		case 'bmclapi':
+			return formatMessage(messages.downloadSourceBmclapi)
+		case 'mcim':
+			return formatMessage(messages.downloadSourceMcim)
+		case 'tencent_maven':
+			return formatMessage(messages.downloadSourceTencentMaven)
+		default:
+			return formatMessage(messages.downloadSourceAlternate)
+	}
+}
+
+function formatDownloadEta(seconds: number) {
+	const clamped = Math.max(0, Math.round(seconds))
+	if (clamped < 60) {
+		return formatMessage(messages.downloadEtaSeconds, { seconds: clamped })
+	}
+	const minutes = Math.floor(clamped / 60)
+	if (minutes < 60) {
+		return formatMessage(messages.downloadEtaMinutes, { minutes })
+	}
+	return formatMessage(messages.downloadEtaHours, {
+		hours: Math.floor(minutes / 60),
+		minutes: minutes % 60,
+	})
 }
 
 function itemProgress(item: DownloadItem) {

@@ -158,6 +158,11 @@ export interface InstallJobSnapshot {
 		files_total?: number | null
 		bytes_downloaded: number
 		bytes_total?: number | null
+		speed_bytes_per_second?: number | null
+		eta_seconds?: number | null
+		source?: string | null
+		fallback_count: number
+		resumed_bytes: number
 	}
 	items: Array<{
 		id: string

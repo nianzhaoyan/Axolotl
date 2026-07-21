@@ -101,7 +101,7 @@ fn strip_console_ansi(input: &str) -> String {
 #[cfg(debug_assertions)]
 fn extract_console_field(input: &str, field: &str) -> Option<String> {
     let marker = format!(" {field}=");
-    let value = input.split_once(&marker)?.1;
+    let value = input.rsplit_once(&marker)?.1;
     if let Some(value) = value.strip_prefix('"') {
         let mut escaped = false;
         for (index, character) in value.char_indices() {
@@ -309,8 +309,6 @@ struct TruncatedConsoleWriter {
 #[cfg(debug_assertions)]
 impl std::io::Write for TruncatedConsoleWriter {
     fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
-        use std::io::Write;
-
         let input = String::from_utf8_lossy(buffer);
         let compacted = compact_modrinth_console_event(&input);
         let input = compacted.as_deref().unwrap_or(&input);

@@ -96,6 +96,7 @@ impl InstallJobState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeDelta;
 
     fn job_state() -> InstallJobState {
         InstallJobState::new(InstallRequest::CreateInstance {
@@ -188,6 +189,43 @@ mod tests {
         let summary = job.download_summary();
         assert_eq!(summary.bytes_downloaded, 125);
         assert_eq!(summary.bytes_total, Some(500));
+    }
+
+    #[test]
+    fn download_summary_tracks_metrics_and_java_progress() {
+        let mut job = job_state();
+        job.set_progress(
+            InstallPhaseId::PreparingJava,
+            Some(InstallProgress {
+                current: 1_024,
+                total: 2_048,
+                secondary: None,
+            }),
+            InstallPhaseDetails::Java {
+                major_version: 21,
+                step: InstallJavaStep::Downloading,
+            },
+        );
+        job.events.last_mut().unwrap().at = Utc::now() - TimeDelta::seconds(2);
+        job.record_event(InstallJobEventKind::DownloadMetrics {
+            source: "bmclapi".to_string(),
+            fallback_count: u64::MAX,
+            resumed_bytes: u64::MAX,
+        });
+        job.record_event(InstallJobEventKind::DownloadMetrics {
+            source: "official".to_string(),
+            fallback_count: 1,
+            resumed_bytes: 1,
+        });
+
+        let summary = job.download_summary();
+        assert_eq!(summary.bytes_downloaded, 1_024);
+        assert_eq!(summary.bytes_total, Some(2_048));
+        assert_eq!(summary.source.as_deref(), Some("official"));
+        assert_eq!(summary.fallback_count, u64::MAX);
+        assert_eq!(summary.resumed_bytes, u64::MAX);
+        assert!(summary.speed_bytes_per_second.is_some());
+        assert!(summary.eta_seconds.is_some());
     }
 
     #[test]
@@ -285,6 +323,11 @@ pub enum InstallJobEventKind {
     ContentFileCompleted {
         path: String,
         bytes: u64,
+    },
+    DownloadMetrics {
+        source: String,
+        fallback_count: u64,
+        resumed_bytes: u64,
     },
     TargetInstanceDeleted {
         instance_id: String,
@@ -472,6 +515,11 @@ pub struct DownloadJobSummary {
     pub files_total: Option<u64>,
     pub bytes_downloaded: u64,
     pub bytes_total: Option<u64>,
+    pub speed_bytes_per_second: Option<u64>,
+    pub eta_seconds: Option<u64>,
+    pub source: Option<String>,
+    pub fallback_count: u64,
+    pub resumed_bytes: u64,
 }
 
 impl InstallJobKind {
@@ -946,6 +994,17 @@ impl InstallJobState {
                 InstallJobEventKind::ContentFileSkipped { .. } => {
                     summary.files_completed += 1;
                 }
+                InstallJobEventKind::DownloadMetrics {
+                    source,
+                    fallback_count,
+                    resumed_bytes,
+                } => {
+                    summary.source = Some(source.clone());
+                    summary.fallback_count =
+                        summary.fallback_count.saturating_add(*fallback_count);
+                    summary.resumed_bytes =
+                        summary.resumed_bytes.saturating_add(*resumed_bytes);
+                }
                 _ => {}
             }
         }
@@ -959,9 +1018,62 @@ impl InstallJobState {
                 }
             } else if self.progress.phase
                 == InstallPhaseId::DownloadingMinecraft
+                || self.progress.phase == InstallPhaseId::DownloadingPackFile
+                || matches!(
+                    &self.progress.details,
+                    InstallPhaseDetails::Java {
+                        step: InstallJavaStep::Downloading,
+                        ..
+                    }
+                )
             {
                 summary.bytes_downloaded = progress.current;
                 summary.bytes_total = Some(progress.total);
+            }
+        }
+        let actively_downloading = matches!(
+            self.progress.phase,
+            InstallPhaseId::DownloadingPackFile
+                | InstallPhaseId::DownloadingContent
+                | InstallPhaseId::DownloadingMinecraft
+        ) || matches!(
+            &self.progress.details,
+            InstallPhaseDetails::Java {
+                step: InstallJavaStep::Downloading,
+                ..
+            }
+        );
+        if actively_downloading && summary.bytes_downloaded > 0 {
+            let phase_started = self.events.iter().rev().find_map(|event| {
+                matches!(
+                    &event.kind,
+                    InstallJobEventKind::PhaseStarted { phase, .. }
+                        if *phase == self.progress.phase
+                )
+                .then_some(event.at)
+            });
+            if let Some(started) = phase_started {
+                let elapsed_ms = Utc::now()
+                    .signed_duration_since(started)
+                    .num_milliseconds()
+                    .max(1) as u64;
+                let speed = summary
+                    .bytes_downloaded
+                    .saturating_mul(1_000)
+                    .checked_div(elapsed_ms)
+                    .unwrap_or(0);
+                if speed > 0 {
+                    summary.speed_bytes_per_second = Some(speed);
+                    summary.eta_seconds =
+                        summary.bytes_total.and_then(|total| {
+                            total
+                                .saturating_sub(summary.bytes_downloaded)
+                                .checked_add(speed - 1)
+                                .and_then(|remaining| {
+                                    remaining.checked_div(speed)
+                                })
+                        });
+                }
             }
         }
         summary

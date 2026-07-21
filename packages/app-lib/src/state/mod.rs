@@ -2,7 +2,7 @@
 use crate::util::fetch::{FetchSemaphore, IoSemaphore};
 use dashmap::DashMap;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use tokio::sync::{OnceCell, Semaphore};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -72,9 +72,14 @@ pub struct State {
     /// Semaphore to limit concurrent API requests. This is separate from the fetch semaphore
     /// to keep API functionality while the app is performing intensive tasks.
     pub api_semaphore: FetchSemaphore,
-    pub use_minecraft_mirror: AtomicBool,
-    pub use_modrinth_mirror: AtomicBool,
-    pub use_curseforge_mirror: AtomicBool,
+    minecraft_metadata_source: AtomicU8,
+    minecraft_file_source: AtomicU8,
+    modrinth_source: AtomicU8,
+    curseforge_source: AtomicU8,
+    auto_prefers_mirror: AtomicBool,
+    download_concurrency_target: AtomicUsize,
+    fetch_concurrency_limit: AtomicUsize,
+    api_concurrency_limit: AtomicUsize,
     pub(crate) install_job_semaphore: Semaphore,
     pub(crate) install_db_semaphore: Semaphore,
     pub(crate) install_job_cancellations: DashMap<Uuid, CancellationToken>,
@@ -99,6 +104,68 @@ pub struct State {
     pub(crate) pool: SqlitePool,
 
     pub(crate) file_watcher: FileWatcher,
+}
+
+fn grow_semaphore(
+    semaphore: &Semaphore,
+    current_limit: &AtomicUsize,
+    target: usize,
+) {
+    let mut current = current_limit.load(Ordering::Acquire);
+
+    while current < target {
+        match current_limit.compare_exchange(
+            current,
+            target,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => {
+                semaphore.add_permits(target - current);
+                return;
+            }
+            Err(updated) => current = updated,
+        }
+    }
+}
+
+async fn shrink_semaphore(
+    semaphore: &Semaphore,
+    current_limit: &AtomicUsize,
+    target: &AtomicUsize,
+) {
+    loop {
+        if current_limit.load(Ordering::Acquire)
+            <= target.load(Ordering::Acquire)
+        {
+            return;
+        }
+
+        let Ok(permit) = semaphore.acquire().await else {
+            return;
+        };
+
+        loop {
+            let current = current_limit.load(Ordering::Acquire);
+            if current <= target.load(Ordering::Acquire) {
+                drop(permit);
+                return;
+            }
+
+            if current_limit
+                .compare_exchange(
+                    current,
+                    current - 1,
+                    Ordering::AcqRel,
+                    Ordering::Acquire,
+                )
+                .is_ok()
+            {
+                permit.forget();
+                break;
+            }
+        }
+    }
 }
 
 impl State {
@@ -158,25 +225,103 @@ impl State {
         LAUNCHER_STATE.initialized()
     }
 
+    pub(crate) fn minecraft_metadata_source(&self) -> DownloadSourceMode {
+        DownloadSourceMode::from_u8(
+            self.minecraft_metadata_source.load(Ordering::Relaxed),
+        )
+    }
+
+    pub(crate) fn minecraft_file_source(&self) -> DownloadSourceMode {
+        DownloadSourceMode::from_u8(
+            self.minecraft_file_source.load(Ordering::Relaxed),
+        )
+    }
+
+    pub(crate) fn modrinth_source(&self) -> DownloadSourceMode {
+        DownloadSourceMode::from_u8(
+            self.modrinth_source.load(Ordering::Relaxed),
+        )
+    }
+
+    pub(crate) fn curseforge_source(&self) -> DownloadSourceMode {
+        DownloadSourceMode::from_u8(
+            self.curseforge_source.load(Ordering::Relaxed),
+        )
+    }
+
     pub(crate) fn use_minecraft_mirror(&self) -> bool {
-        self.use_minecraft_mirror.load(Ordering::Relaxed)
+        self.minecraft_file_source()
+            .prefers_mirror(self.auto_prefers_mirror.load(Ordering::Relaxed))
     }
 
     pub(crate) fn use_modrinth_mirror(&self) -> bool {
-        self.use_modrinth_mirror.load(Ordering::Relaxed)
+        self.modrinth_source()
+            .prefers_mirror(self.auto_prefers_mirror.load(Ordering::Relaxed))
     }
 
     pub(crate) fn use_curseforge_mirror(&self) -> bool {
-        self.use_curseforge_mirror.load(Ordering::Relaxed)
+        self.curseforge_source()
+            .prefers_mirror(self.auto_prefers_mirror.load(Ordering::Relaxed))
     }
 
-    pub(crate) fn update_mirror_settings(&self, settings: &Settings) {
-        self.use_minecraft_mirror
-            .store(settings.use_minecraft_mirror, Ordering::Relaxed);
-        self.use_modrinth_mirror
-            .store(settings.use_modrinth_mirror, Ordering::Relaxed);
-        self.use_curseforge_mirror
-            .store(settings.use_curseforge_mirror, Ordering::Relaxed);
+    pub(crate) fn update_download_settings(
+        self: &Arc<Self>,
+        settings: &Settings,
+    ) {
+        self.auto_prefers_mirror
+            .store(settings.auto_prefers_mirror(), Ordering::Relaxed);
+        self.minecraft_metadata_source
+            .store(settings.minecraft_metadata_source as u8, Ordering::Relaxed);
+        self.minecraft_file_source
+            .store(settings.minecraft_file_source as u8, Ordering::Relaxed);
+        self.modrinth_source
+            .store(settings.modrinth_source as u8, Ordering::Relaxed);
+        self.curseforge_source
+            .store(settings.curseforge_source as u8, Ordering::Relaxed);
+        self.resize_download_concurrency(
+            settings.effective_max_concurrent_downloads(),
+        );
+    }
+
+    fn resize_download_concurrency(self: &Arc<Self>, target: usize) {
+        let target = target.clamp(1, 64);
+        self.download_concurrency_target
+            .store(target, Ordering::Release);
+
+        grow_semaphore(
+            &self.fetch_semaphore.0,
+            &self.fetch_concurrency_limit,
+            target,
+        );
+        grow_semaphore(
+            &self.api_semaphore.0,
+            &self.api_concurrency_limit,
+            target,
+        );
+
+        if self.fetch_concurrency_limit.load(Ordering::Acquire) > target {
+            let state = Arc::clone(self);
+            tokio::spawn(async move {
+                shrink_semaphore(
+                    &state.fetch_semaphore.0,
+                    &state.fetch_concurrency_limit,
+                    &state.download_concurrency_target,
+                )
+                .await;
+            });
+        }
+
+        if self.api_concurrency_limit.load(Ordering::Acquire) > target {
+            let state = Arc::clone(self);
+            tokio::spawn(async move {
+                shrink_semaphore(
+                    &state.api_semaphore.0,
+                    &state.api_concurrency_limit,
+                    &state.download_concurrency_target,
+                )
+                .await;
+            });
+        }
     }
 
     pub fn get_if_initialized() -> Option<Arc<Self>> {
@@ -194,13 +339,16 @@ impl State {
 
         tracing::info!("Fetching app settings");
         let mut settings = Settings::get(&pool).await?;
+        let download_concurrency =
+            settings.effective_max_concurrent_downloads();
+        let auto_prefers_mirror = settings.auto_prefers_mirror();
 
         let fetch_semaphore =
-            FetchSemaphore(Semaphore::new(settings.max_concurrent_downloads));
+            FetchSemaphore(Semaphore::new(download_concurrency));
         let io_semaphore =
             IoSemaphore(Semaphore::new(settings.max_concurrent_writes));
         let api_semaphore =
-            FetchSemaphore(Semaphore::new(settings.max_concurrent_downloads));
+            FetchSemaphore(Semaphore::new(download_concurrency));
 
         tracing::info!("Initializing directories");
         DirectoryInfo::move_launcher_directory(
@@ -228,13 +376,18 @@ impl State {
             fetch_semaphore,
             io_semaphore,
             api_semaphore,
-            use_minecraft_mirror: AtomicBool::new(
-                settings.use_minecraft_mirror,
+            minecraft_metadata_source: AtomicU8::new(
+                settings.minecraft_metadata_source as u8,
             ),
-            use_modrinth_mirror: AtomicBool::new(settings.use_modrinth_mirror),
-            use_curseforge_mirror: AtomicBool::new(
-                settings.use_curseforge_mirror,
+            minecraft_file_source: AtomicU8::new(
+                settings.minecraft_file_source as u8,
             ),
+            modrinth_source: AtomicU8::new(settings.modrinth_source as u8),
+            curseforge_source: AtomicU8::new(settings.curseforge_source as u8),
+            auto_prefers_mirror: AtomicBool::new(auto_prefers_mirror),
+            download_concurrency_target: AtomicUsize::new(download_concurrency),
+            fetch_concurrency_limit: AtomicUsize::new(download_concurrency),
+            api_concurrency_limit: AtomicUsize::new(download_concurrency),
             install_job_semaphore: Semaphore::new(MAX_CONCURRENT_INSTALL_JOBS),
             install_db_semaphore: Semaphore::new(1),
             install_job_cancellations: DashMap::new(),

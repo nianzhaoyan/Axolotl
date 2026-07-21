@@ -425,6 +425,27 @@
   "app.downloads.details": {
     "message": "Details"
   },
+  "app.downloads.download-eta-hours": {
+    "message": "{hours}h {minutes}m remaining"
+  },
+  "app.downloads.download-eta-minutes": {
+    "message": "{minutes}m remaining"
+  },
+  "app.downloads.download-eta-seconds": {
+    "message": "{seconds}s remaining"
+  },
+  "app.downloads.download-fallbacks": {
+    "message": "{count} fallbacks"
+  },
+  "app.downloads.download-resumed": {
+    "message": "{bytes} resumed"
+  },
+  "app.downloads.download-source": {
+    "message": "Source: {source}"
+  },
+  "app.downloads.download-speed": {
+    "message": "Speed: {speed}/s"
+  },
   "app.downloads.empty-description": {
     "message": "New downloads and installation progress will appear here."
   },
@@ -550,6 +571,21 @@
   },
   "app.downloads.search": {
     "message": "Search downloads"
+  },
+  "app.downloads.source.alternate": {
+    "message": "Alternate source"
+  },
+  "app.downloads.source.bmclapi": {
+    "message": "OpenBMCLAPI"
+  },
+  "app.downloads.source.mcim": {
+    "message": "MCIM"
+  },
+  "app.downloads.source.official": {
+    "message": "Official"
+  },
+  "app.downloads.source.tencent-maven": {
+    "message": "Tencent Maven"
   },
   "app.downloads.status.canceled": {
     "message": "Canceled"
@@ -1553,11 +1589,14 @@
   "app.settings.resources.app-directory-description": {
     "message": "The directory where the launcher stores all of its files. Changes apply after restarting the launcher."
   },
+  "app.settings.resources.concurrency.manual": {
+    "message": "Manual"
+  },
   "app.settings.resources.curseforge-mirror": {
     "message": "CurseForge"
   },
   "app.settings.resources.curseforge-mirror-description": {
-    "message": "Use MCIM for CurseForge API requests and file downloads."
+    "message": "CurseForge public API requests and file downloads."
   },
   "app.settings.resources.database-backups": {
     "message": "App database backups"
@@ -1569,13 +1608,13 @@
     "message": "Download sources"
   },
   "app.settings.resources.download-mirrors-description": {
-    "message": "Choose a source for each provider. Mirror sources automatically fall back to the official source when a request fails."
+    "message": "Automatic mode chooses between official and mirror sources based on your local environment and recent connection quality."
   },
   "app.settings.resources.maximum-downloads": {
     "message": "Maximum concurrent downloads"
   },
   "app.settings.resources.maximum-downloads-description": {
-    "message": "The maximum number of files the launcher can download at the same time. Use a lower value on a poor internet connection. An app restart is required."
+    "message": "Automatic mode selects between 16 and 64 concurrent downloads based on your device. Manual changes apply immediately."
   },
   "app.settings.resources.maximum-writes": {
     "message": "Maximum concurrent writes"
@@ -1583,17 +1622,23 @@
   "app.settings.resources.maximum-writes-description": {
     "message": "The maximum number of files the launcher can write to disk at once. Use a lower value if you frequently get I/O errors. An app restart is required."
   },
-  "app.settings.resources.minecraft-mirror": {
-    "message": "Minecraft and mod loaders"
+  "app.settings.resources.minecraft-file-source": {
+    "message": "Minecraft files, loaders, and Java"
   },
-  "app.settings.resources.minecraft-mirror-description": {
-    "message": "Use OpenBMCLAPI for Minecraft, Forge, Fabric, and NeoForge downloads."
+  "app.settings.resources.minecraft-file-source-description": {
+    "message": "Game files, assets, libraries, mod loaders, and Java runtimes."
+  },
+  "app.settings.resources.minecraft-metadata-source": {
+    "message": "Minecraft metadata"
+  },
+  "app.settings.resources.minecraft-metadata-source-description": {
+    "message": "Version manifests and metadata for Minecraft and supported mod loaders."
   },
   "app.settings.resources.modrinth-mirror": {
     "message": "Modrinth"
   },
   "app.settings.resources.modrinth-mirror-description": {
-    "message": "Use MCIM for Modrinth API requests and file downloads."
+    "message": "Modrinth public API requests and file downloads."
   },
   "app.settings.resources.open-backups-folder": {
     "message": "Open backups folder"
@@ -1610,14 +1655,41 @@
   "app.settings.resources.select-directory": {
     "message": "Select a new app directory"
   },
+  "app.settings.resources.source-health": {
+    "message": "Source health"
+  },
+  "app.settings.resources.source-health-cooling-down": {
+    "message": "Cooling down"
+  },
+  "app.settings.resources.source-health-description": {
+    "message": "Connection quality is learned locally from completed downloads and is never uploaded."
+  },
+  "app.settings.resources.source-health-empty": {
+    "message": "No download measurements have been collected yet."
+  },
+  "app.settings.resources.source-health-range-splitting-disabled": {
+    "message": "Range splitting disabled"
+  },
+  "app.settings.resources.source-health-refresh": {
+    "message": "Refresh"
+  },
+  "app.settings.resources.source-health-reset": {
+    "message": "Reset learned data"
+  },
+  "app.settings.resources.source-health-stats": {
+    "message": "{ttfb} TTFB · {speed} · {successes} successful / {failures} failed"
+  },
+  "app.settings.resources.source.automatic": {
+    "message": "Automatic (recommended)"
+  },
   "app.settings.resources.source.mcim": {
-    "message": "MCIM mirror"
+    "message": "Prefer MCIM"
   },
   "app.settings.resources.source.official": {
-    "message": "Official source"
+    "message": "Official only"
   },
   "app.settings.resources.source.open-bmcl-api": {
-    "message": "OpenBMCLAPI mirror"
+    "message": "Prefer OpenBMCLAPI"
   },
   "app.settings.tabs.about": {
     "message": "About"

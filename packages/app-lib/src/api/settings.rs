@@ -2,7 +2,8 @@
 
 pub use crate::{
     State,
-    state::{Hooks, MemorySettings, Settings, WindowSize},
+    state::{DownloadSourceMode, Hooks, MemorySettings, Settings, WindowSize},
+    util::fetch::DownloadSourceHealth,
 };
 
 /// Gets entire settings
@@ -15,11 +16,22 @@ pub async fn get() -> crate::Result<Settings> {
 
 /// Sets entire settings
 #[tracing::instrument]
-pub async fn set(settings: Settings) -> crate::Result<()> {
+pub async fn set(mut settings: Settings) -> crate::Result<()> {
     let state = State::get().await?;
+    settings.apply_legacy_download_source_settings();
     settings.update(&state.pool).await?;
-    state.update_mirror_settings(&settings);
+    state.update_download_settings(&settings);
 
+    Ok(())
+}
+
+pub async fn download_source_health() -> crate::Result<Vec<DownloadSourceHealth>>
+{
+    Ok(crate::util::fetch::download_source_health())
+}
+
+pub async fn reset_download_source_health() -> crate::Result<()> {
+    crate::util::fetch::reset_download_source_health();
     Ok(())
 }
 

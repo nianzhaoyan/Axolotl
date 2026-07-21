@@ -1471,16 +1471,64 @@ impl CachedEntry {
                 .collect()
             }
             CacheValueType::MinecraftManifest => {
-                fetch_original_value!(
-                    MinecraftManifest,
+                let launcher_meta_url = format!(
+                    "{}minecraft/v{}/manifest.json",
                     env!("MODRINTH_LAUNCHER_META_URL"),
-                    format!(
-                        "minecraft/v{}/manifest.json",
-                        daedalus::minecraft::CURRENT_FORMAT_VERSION
+                    daedalus::minecraft::CURRENT_FORMAT_VERSION
+                );
+                let launcher_meta = tokio::time::timeout(
+                    std::time::Duration::from_secs(2),
+                    fetch_json(
+                        Method::GET,
+                        &launcher_meta_url,
+                        None,
+                        None,
+                        None,
+                        &fetch_semaphore,
+                        pool,
                     ),
-                    None,
-                    CacheValue::MinecraftManifest
                 )
+                .await;
+                let manifest = match launcher_meta {
+                    Ok(Ok(manifest)) => manifest,
+                    Ok(Err(error)) => {
+                        tracing::warn!(
+                            url = launcher_meta_url,
+                            error = %error,
+                            "Launcher metadata failed; falling back to Mojang manifest"
+                        );
+                        fetch_json(
+                            Method::GET,
+                            daedalus::minecraft::VERSION_MANIFEST_URL,
+                            None,
+                            None,
+                            None,
+                            &fetch_semaphore,
+                            pool,
+                        )
+                        .await?
+                    }
+                    Err(_) => {
+                        tracing::warn!(
+                            url = launcher_meta_url,
+                            "Launcher metadata was slow; falling back to Mojang manifest"
+                        );
+                        fetch_json(
+                            Method::GET,
+                            daedalus::minecraft::VERSION_MANIFEST_URL,
+                            None,
+                            None,
+                            None,
+                            &fetch_semaphore,
+                            pool,
+                        )
+                        .await?
+                    }
+                };
+                vec![(
+                    CacheValue::MinecraftManifest(manifest).get_entry(),
+                    true,
+                )]
             }
             CacheValueType::Categories => {
                 fetch_original_value!(

@@ -425,6 +425,27 @@
   "app.downloads.details": {
     "message": "详细信息"
   },
+  "app.downloads.download-eta-hours": {
+    "message": "预计剩余 {hours} 小时 {minutes} 分钟"
+  },
+  "app.downloads.download-eta-minutes": {
+    "message": "预计剩余 {minutes} 分钟"
+  },
+  "app.downloads.download-eta-seconds": {
+    "message": "预计剩余 {seconds} 秒"
+  },
+  "app.downloads.download-fallbacks": {
+    "message": "已回退 {count} 次"
+  },
+  "app.downloads.download-resumed": {
+    "message": "已续传 {bytes}"
+  },
+  "app.downloads.download-source": {
+    "message": "来源：{source}"
+  },
+  "app.downloads.download-speed": {
+    "message": "速度：{speed}/秒"
+  },
   "app.downloads.empty-description": {
     "message": "新的下载与安装进度会显示在这里。"
   },
@@ -447,7 +468,7 @@
     "message": "目标实例：{instance}"
   },
   "app.downloads.item-attempt-progress": {
-    "message": "{attempt}/{maxAttempts}"
+    "message": "{attempt}/{maxAttempts} 次"
   },
   "app.downloads.item-attempts": {
     "message": "尝试次数"
@@ -550,6 +571,21 @@
   },
   "app.downloads.search": {
     "message": "搜索下载任务"
+  },
+  "app.downloads.source.alternate": {
+    "message": "备用来源"
+  },
+  "app.downloads.source.bmclapi": {
+    "message": "OpenBMCLAPI 镜像"
+  },
+  "app.downloads.source.mcim": {
+    "message": "MCIM 镜像"
+  },
+  "app.downloads.source.official": {
+    "message": "官方"
+  },
+  "app.downloads.source.tencent-maven": {
+    "message": "腾讯 Maven"
   },
   "app.downloads.status.canceled": {
     "message": "已取消"
@@ -1563,40 +1599,76 @@
     "message": "下载源"
   },
   "app.settings.resources.download-mirrors-description": {
-    "message": "为每项服务选择下载源。镜像源请求失败时会自动回退到官方源。"
+    "message": "自动模式会根据本地环境和近期连接质量，在官方源与镜像源之间选择。"
   },
-  "app.settings.resources.minecraft-mirror": {
-    "message": "Minecraft 与模组加载器"
+  "app.settings.resources.minecraft-metadata-source": {
+    "message": "Minecraft 元数据"
   },
-  "app.settings.resources.minecraft-mirror-description": {
-    "message": "使用 OpenBMCLAPI 加速 Minecraft、Forge、Fabric 和 NeoForge 文件下载。"
+  "app.settings.resources.minecraft-metadata-source-description": {
+    "message": "Minecraft 与受支持模组加载器的版本清单和元数据。"
+  },
+  "app.settings.resources.minecraft-file-source": {
+    "message": "Minecraft 文件、加载器与 Java"
+  },
+  "app.settings.resources.minecraft-file-source-description": {
+    "message": "游戏文件、资源、依赖库、模组加载器和 Java 运行时。"
   },
   "app.settings.resources.modrinth-mirror": {
     "message": "Modrinth"
   },
   "app.settings.resources.modrinth-mirror-description": {
-    "message": "使用 MCIM 加速 Modrinth API 请求和文件下载。"
+    "message": "Modrinth 公共 API 请求和文件下载。"
   },
   "app.settings.resources.curseforge-mirror": {
     "message": "CurseForge 服务"
   },
   "app.settings.resources.curseforge-mirror-description": {
-    "message": "使用 MCIM 加速 CurseForge API 请求和文件下载。"
+    "message": "CurseForge 公共 API 请求和文件下载。"
+  },
+  "app.settings.resources.concurrency.manual": {
+    "message": "手动"
+  },
+  "app.settings.resources.source.automatic": {
+    "message": "自动（推荐）"
   },
   "app.settings.resources.source.official": {
-    "message": "官方源"
+    "message": "仅官方源"
   },
   "app.settings.resources.source.open-bmcl-api": {
-    "message": "OpenBMCLAPI 镜像"
+    "message": "优先 OpenBMCLAPI"
   },
   "app.settings.resources.source.mcim": {
-    "message": "MCIM 镜像"
+    "message": "优先 MCIM"
+  },
+  "app.settings.resources.source-health": {
+    "message": "下载源健康状态"
+  },
+  "app.settings.resources.source-health-cooling-down": {
+    "message": "冷却中"
+  },
+  "app.settings.resources.source-health-description": {
+    "message": "连接质量仅根据本机已完成的下载进行学习，数据不会上传。"
+  },
+  "app.settings.resources.source-health-empty": {
+    "message": "尚未收集到下载测量数据。"
+  },
+  "app.settings.resources.source-health-refresh": {
+    "message": "刷新"
+  },
+  "app.settings.resources.source-health-range-splitting-disabled": {
+    "message": "Range 分片已停用"
+  },
+  "app.settings.resources.source-health-reset": {
+    "message": "重置学习数据"
+  },
+  "app.settings.resources.source-health-stats": {
+    "message": "TTFB {ttfb} · {speed} · 成功 {successes} 次 / 失败 {failures} 次"
   },
   "app.settings.resources.maximum-downloads": {
     "message": "最大并发下载数"
   },
   "app.settings.resources.maximum-downloads-description": {
-    "message": "启动器同时下载文件的最大数量。网络连接较差时请降低此值；更改需要重启应用后生效。"
+    "message": "自动模式会根据设备在 16 到 64 之间选择并发下载数；手动更改会立即生效。"
   },
   "app.settings.resources.maximum-writes": {
     "message": "最大并发写入数"
