@@ -35,7 +35,6 @@ Debian(及其分支) 用户可选（APT 安装）：
 ```bash
 curl -fsSL http://axolotl.mcmes.dpdns.org/setup.sh | sudo bash
 sudo apt install axolotl-launcher
-# 后续更新：sudo apt update && sudo apt upgrade
 ```
 
 ## 本地开发
