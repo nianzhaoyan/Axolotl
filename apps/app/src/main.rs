@@ -115,7 +115,7 @@ async fn set_restart_after_pending_update(
 fn main() {
     // Workaround: NVIDIA's proprietary EGL driver crashes WebKitGTK's DMA-BUF renderer
     #[cfg(target_os = "linux")]
-    if env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_err()
+    if env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none()
         && std::path::Path::new("/proc/driver/nvidia/version").exists()
     {
         // SAFETY: This is called before any threads are spawned in main()
