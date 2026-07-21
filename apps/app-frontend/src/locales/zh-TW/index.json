@@ -1476,7 +1476,7 @@
     "message": "高度"
   },
   "app.settings.defaults.height-description": {
-    "message": "遊戲啟動時的視窗寬度。"
+    "message": "遊戲啟動時的視窗高度。"
   },
   "app.settings.defaults.height-placeholder": {
     "message": "輸入高度..."
@@ -1551,7 +1551,7 @@
     "message": "應用程式目錄"
   },
   "app.settings.resources.app-directory-description": {
-    "message": "啟動器用於存儲全部檔案的目錄。變更後將在重新啟動啟動器後生效。"
+    "message": "啟動器用於儲存全部檔案的目錄。變更後將在重新啟動啟動器後生效。"
   },
   "app.settings.resources.database-backups": {
     "message": "應用程式資料庫備份"
