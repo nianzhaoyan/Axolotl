@@ -823,8 +823,12 @@ watch(
 		hsl(300, 80%, 55%),
 		hsl(360, 80%, 55%)
 	);
-	outline: none;
 	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--color-focus-ring);
+		outline-offset: 2px;
+	}
 
 	&::-webkit-slider-thumb {
 		appearance: none;
