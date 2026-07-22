@@ -28,6 +28,7 @@ use futures::prelude::*;
 use reqwest::Method;
 use std::{
     future::Future,
+    path::Path,
     pin::Pin,
     sync::{
         Arc, Mutex,
@@ -608,7 +609,7 @@ pub async fn download_version_info(
             &mut info,
             "cache",
         ) {
-            io::write(&path, serde_json::to_vec(&info)?).await?;
+            write_version_info(&path, serde_json::to_vec(&info)?).await?;
         }
         info
     } else {
@@ -745,7 +746,7 @@ pub async fn download_version_info(
 
         info.id.clone_from(&version_id);
 
-        io::write(&path, serde_json::to_vec(&info)?).await?;
+        write_version_info(&path, serde_json::to_vec(&info)?).await?;
         info
     };
 
@@ -786,9 +787,17 @@ pub async fn load_local_version_info(
         &mut info,
         "cache",
     ) {
-        io::write(&path, serde_json::to_vec(&info)?).await?;
+        write_version_info(&path, serde_json::to_vec(&info)?).await?;
     }
     Ok(info)
+}
+
+async fn write_version_info(path: &Path, data: Vec<u8>) -> crate::Result<()> {
+    if let Some(parent) = path.parent() {
+        io::create_dir_all(parent).await?;
+    }
+    io::write(path, data).await?;
+    Ok(())
 }
 
 fn normalize_version_info_libraries(
@@ -1297,6 +1306,24 @@ pub async fn download_log_config(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn writing_version_info_creates_missing_parent_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory
+            .path()
+            .join("meta/versions/1.21.11-21.11.44/1.21.11-21.11.44.json");
+
+        assert!(!path.parent().unwrap().exists());
+        write_version_info(&path, br#"{"id":"1.21.11-21.11.44"}"#.to_vec())
+            .await
+            .unwrap();
+
+        assert_eq!(
+            io::read(&path).await.unwrap(),
+            br#"{"id":"1.21.11-21.11.44"}"#
+        );
+    }
 
     #[test]
     fn legacy_launcher_meta_maven_uses_canonical_repositories() {
