@@ -326,6 +326,25 @@ const installedManualDownloadItems = computed(() => [
 	...linkedModpackContentItems.value,
 ])
 
+function manualDownloadsEqual(
+	left: CurseForgeManualDownloadItem[] | undefined,
+	right: CurseForgeManualDownloadItem[],
+) {
+	return (
+		left?.length === right.length &&
+		left.every((item, index) => {
+			const other = right[index]
+			return (
+				other !== undefined &&
+				item.projectId === other.projectId &&
+				item.fileId === other.fileId &&
+				item.fileName === other.fileName &&
+				item.websiteUrl === other.websiteUrl
+			)
+		})
+	)
+}
+
 const skippedManualDownloads = computed(() =>
 	filterInstalledCurseForgeManualDownloads(
 		manualDownloadCandidates.value,
@@ -396,6 +415,9 @@ watch(
 			candidates,
 			items,
 		)
+		const current = pendingManualDownloadsByInstance.value.get(props.instance.id)
+		if (manualDownloadsEqual(current, remaining) || (!current && remaining.length === 0)) return
+
 		const next = new Map(pendingManualDownloadsByInstance.value)
 		if (remaining.length > 0) next.set(props.instance.id, remaining)
 		else next.delete(props.instance.id)
