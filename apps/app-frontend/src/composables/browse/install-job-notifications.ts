@@ -145,6 +145,10 @@ const failureSummaryMessages = defineMessages({
 		id: 'app.action-bar.install.summary.download-failed',
 		defaultMessage: "Download couldn't finish",
 	},
+	fileDownloadFailed: {
+		id: 'app.action-bar.install.summary.file-download-failed',
+		defaultMessage: "Couldn't download {file}",
+	},
 	modrinthUnreachable: {
 		id: 'app.action-bar.install.summary.modrinth-unreachable',
 		defaultMessage: "Couldn't reach Modrinth",
@@ -297,6 +301,11 @@ export async function useInstallJobNotifications(opts: {
 
 		switch (code) {
 			case 'network_error':
+				if (job.error?.context?.file_path) {
+					return formatMessage(failureSummaryMessages.fileDownloadFailed, {
+						file: job.error.context.file_path,
+					})
+				}
 				return formatMessage(
 					phase === 'downloading_pack_file'
 						? failureSummaryMessages.packDownloadFailed

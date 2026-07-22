@@ -6,7 +6,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 
 /// The latest version of the format the fabric model structs deserialize to
-pub const CURRENT_FABRIC_FORMAT_VERSION: usize = 0;
+pub const CURRENT_FABRIC_FORMAT_VERSION: usize = 1;
 /// The latest version of the format the fabric model structs deserialize to
 pub const CURRENT_FORGE_FORMAT_VERSION: usize = 0;
 /// The latest version of the format the quilt model structs deserialize to

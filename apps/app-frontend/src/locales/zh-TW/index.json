@@ -86,6 +86,9 @@
   "app.action-bar.install.summary.pack-download-failed": {
     "message": "無法下載模組包"
   },
+  "app.action-bar.install.summary.file-download-failed": {
+    "message": "無法下載 {file}"
+  },
   "app.action-bar.install.summary.unexpected-error": {
     "message": "發生預期之外的錯誤"
   },

@@ -86,6 +86,9 @@
   "app.action-bar.install.summary.pack-download-failed": {
     "message": "Couldn't download pack"
   },
+  "app.action-bar.install.summary.file-download-failed": {
+    "message": "Couldn't download {file}"
+  },
   "app.action-bar.install.summary.unexpected-error": {
     "message": "Something went wrong"
   },

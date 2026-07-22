@@ -86,6 +86,9 @@
   "app.action-bar.install.summary.pack-download-failed": {
     "message": "无法下载整合包"
   },
+  "app.action-bar.install.summary.file-download-failed": {
+    "message": "无法下载 {file}"
+  },
   "app.action-bar.install.summary.unexpected-error": {
     "message": "出现意外错误"
   },

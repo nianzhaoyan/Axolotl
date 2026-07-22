@@ -1145,14 +1145,14 @@ pub async fn download_libraries(
                         library.url.as_deref(),
                         &artifact_path,
                     ) else {
-                        tracing::warn!(
-                            "Skipped legacy library {} because no safe Maven repository is known",
+                        return Err(crate::ErrorKind::LauncherError(format!(
+                            "No safe Maven repository is known for required library {}",
                             library.name
-                        );
-                        return Ok(());
+                        ))
+                        .into());
                     };
 
-                    let result = download_minecraft_file(
+                    download_minecraft_file(
                         st,
                         &url,
                         legacy_library_sha1(library),
@@ -1168,20 +1168,13 @@ pub async fn download_libraries(
                             .target_path(path.display().to_string())
                             .build(),
                     )
-                    .await;
+                    .await?;
 
-                    match result {
-                        Ok(_) => tracing::debug!(
-                            "Fetched legacy library {} to path {:?}",
-                            &library.name,
-                            &path
-                        ),
-                        Err(error) => tracing::warn!(
-                            error = ?error,
-                            "Skipped unavailable legacy library {} from {url}",
-                            library.name
-                        ),
-                    }
+                    tracing::debug!(
+                        "Fetched legacy library {} to path {:?}",
+                        &library.name,
+                        &path
+                    );
                 }
             }
 
