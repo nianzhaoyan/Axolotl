@@ -244,7 +244,7 @@ impl Settings {
     ) -> crate::Result<()> {
         let max_concurrent_writes = self.max_concurrent_writes as i32;
         let max_concurrent_downloads =
-            self.max_concurrent_downloads.clamp(1, 64) as i32;
+            self.max_concurrent_downloads.clamp(1, 256) as i32;
         let theme = self.theme.as_str();
         let accent_color = self.accent_color.as_str();
         let default_page = self.default_page.as_str();
@@ -381,12 +381,9 @@ impl Settings {
 
     pub fn effective_max_concurrent_downloads(&self) -> usize {
         if self.auto_concurrent_downloads {
-            std::thread::available_parallelism()
-                .map(|parallelism| parallelism.get().saturating_mul(4))
-                .unwrap_or(16)
-                .clamp(16, 64)
+            64
         } else {
-            self.max_concurrent_downloads.clamp(1, 64)
+            self.max_concurrent_downloads.clamp(1, 256)
         }
     }
 

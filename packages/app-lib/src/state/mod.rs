@@ -67,6 +67,9 @@ pub struct State {
 
     /// Semaphore used to limit concurrent network requests and avoid errors
     pub fetch_semaphore: FetchSemaphore,
+    /// Global capacity for file transfers. Metadata and API requests use their
+    /// own semaphores so they cannot delay an active installation.
+    pub download_semaphore: FetchSemaphore,
     /// Semaphore used to limit concurrent I/O and avoid errors
     pub io_semaphore: IoSemaphore,
     /// Semaphore to limit concurrent API requests. This is separate from the fetch semaphore
@@ -76,8 +79,8 @@ pub struct State {
     minecraft_file_source: AtomicU8,
     modrinth_source: AtomicU8,
     curseforge_source: AtomicU8,
-    auto_prefers_mirror: AtomicBool,
     download_concurrency_target: AtomicUsize,
+    download_concurrency_limit: AtomicUsize,
     fetch_concurrency_limit: AtomicUsize,
     api_concurrency_limit: AtomicUsize,
     pub(crate) install_job_semaphore: Semaphore,
@@ -249,27 +252,14 @@ impl State {
         )
     }
 
-    pub(crate) fn use_minecraft_mirror(&self) -> bool {
-        self.minecraft_file_source()
-            .prefers_mirror(self.auto_prefers_mirror.load(Ordering::Relaxed))
-    }
-
-    pub(crate) fn use_modrinth_mirror(&self) -> bool {
-        self.modrinth_source()
-            .prefers_mirror(self.auto_prefers_mirror.load(Ordering::Relaxed))
-    }
-
-    pub(crate) fn use_curseforge_mirror(&self) -> bool {
-        self.curseforge_source()
-            .prefers_mirror(self.auto_prefers_mirror.load(Ordering::Relaxed))
+    pub(crate) fn download_concurrency(&self) -> usize {
+        self.download_concurrency_target.load(Ordering::Acquire)
     }
 
     pub(crate) fn update_download_settings(
         self: &Arc<Self>,
         settings: &Settings,
     ) {
-        self.auto_prefers_mirror
-            .store(settings.auto_prefers_mirror(), Ordering::Relaxed);
         self.minecraft_metadata_source
             .store(settings.minecraft_metadata_source as u8, Ordering::Relaxed);
         self.minecraft_file_source
@@ -284,13 +274,18 @@ impl State {
     }
 
     fn resize_download_concurrency(self: &Arc<Self>, target: usize) {
-        let target = target.clamp(1, 64);
+        let target = target.clamp(1, 256);
         self.download_concurrency_target
             .store(target, Ordering::Release);
 
         grow_semaphore(
             &self.fetch_semaphore.0,
             &self.fetch_concurrency_limit,
+            target,
+        );
+        grow_semaphore(
+            &self.download_semaphore.0,
+            &self.download_concurrency_limit,
             target,
         );
         grow_semaphore(
@@ -305,6 +300,18 @@ impl State {
                 shrink_semaphore(
                     &state.fetch_semaphore.0,
                     &state.fetch_concurrency_limit,
+                    &state.download_concurrency_target,
+                )
+                .await;
+            });
+        }
+
+        if self.download_concurrency_limit.load(Ordering::Acquire) > target {
+            let state = Arc::clone(self);
+            tokio::spawn(async move {
+                shrink_semaphore(
+                    &state.download_semaphore.0,
+                    &state.download_concurrency_limit,
                     &state.download_concurrency_target,
                 )
                 .await;
@@ -341,9 +348,9 @@ impl State {
         let mut settings = Settings::get(&pool).await?;
         let download_concurrency =
             settings.effective_max_concurrent_downloads();
-        let auto_prefers_mirror = settings.auto_prefers_mirror();
-
         let fetch_semaphore =
+            FetchSemaphore(Semaphore::new(download_concurrency));
+        let download_semaphore =
             FetchSemaphore(Semaphore::new(download_concurrency));
         let io_semaphore =
             IoSemaphore(Semaphore::new(settings.max_concurrent_writes));
@@ -374,6 +381,7 @@ impl State {
         Ok(Arc::new(Self {
             directories,
             fetch_semaphore,
+            download_semaphore,
             io_semaphore,
             api_semaphore,
             minecraft_metadata_source: AtomicU8::new(
@@ -384,8 +392,8 @@ impl State {
             ),
             modrinth_source: AtomicU8::new(settings.modrinth_source as u8),
             curseforge_source: AtomicU8::new(settings.curseforge_source as u8),
-            auto_prefers_mirror: AtomicBool::new(auto_prefers_mirror),
             download_concurrency_target: AtomicUsize::new(download_concurrency),
+            download_concurrency_limit: AtomicUsize::new(download_concurrency),
             fetch_concurrency_limit: AtomicUsize::new(download_concurrency),
             api_concurrency_limit: AtomicUsize::new(download_concurrency),
             install_job_semaphore: Semaphore::new(MAX_CONCURRENT_INSTALL_JOBS),

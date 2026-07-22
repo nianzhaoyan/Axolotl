@@ -210,12 +210,10 @@ mod tests {
         job.record_event(InstallJobEventKind::DownloadMetrics {
             source: "bmclapi".to_string(),
             fallback_count: u64::MAX,
-            resumed_bytes: u64::MAX,
         });
         job.record_event(InstallJobEventKind::DownloadMetrics {
             source: "official".to_string(),
             fallback_count: 1,
-            resumed_bytes: 1,
         });
 
         let summary = job.download_summary();
@@ -223,7 +221,6 @@ mod tests {
         assert_eq!(summary.bytes_total, Some(2_048));
         assert_eq!(summary.source.as_deref(), Some("official"));
         assert_eq!(summary.fallback_count, u64::MAX);
-        assert_eq!(summary.resumed_bytes, u64::MAX);
         assert!(summary.speed_bytes_per_second.is_some());
         assert!(summary.eta_seconds.is_some());
     }
@@ -327,7 +324,6 @@ pub enum InstallJobEventKind {
     DownloadMetrics {
         source: String,
         fallback_count: u64,
-        resumed_bytes: u64,
     },
     TargetInstanceDeleted {
         instance_id: String,
@@ -519,7 +515,6 @@ pub struct DownloadJobSummary {
     pub eta_seconds: Option<u64>,
     pub source: Option<String>,
     pub fallback_count: u64,
-    pub resumed_bytes: u64,
 }
 
 impl InstallJobKind {
@@ -997,13 +992,10 @@ impl InstallJobState {
                 InstallJobEventKind::DownloadMetrics {
                     source,
                     fallback_count,
-                    resumed_bytes,
                 } => {
                     summary.source = Some(source.clone());
                     summary.fallback_count =
                         summary.fallback_count.saturating_add(*fallback_count);
-                    summary.resumed_bytes =
-                        summary.resumed_bytes.saturating_add(*resumed_bytes);
                 }
                 _ => {}
             }

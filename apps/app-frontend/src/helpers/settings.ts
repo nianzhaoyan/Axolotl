@@ -35,16 +35,6 @@ Memorysettings {
 export type UpdateSource = 'cnb' | 'github'
 export type DownloadSourceMode = 'auto' | 'official_only' | 'mirror_preferred'
 
-export type DownloadSourceHealth = {
-	host: string
-	successes: number
-	failures: number
-	ttfb_ms?: number | null
-	throughput_bytes_per_second?: number | null
-	cooling_down: boolean
-	range_splitting_disabled: boolean
-}
-
 const UPDATE_SOURCE_STORAGE_KEY = 'axolotl-update-source'
 
 export function getUpdateSource(): UpdateSource {
@@ -186,12 +176,4 @@ export async function set(settings: AppSettings) {
 
 export async function cancel_directory_change(): Promise<void> {
 	return await invoke('plugin:settings|cancel_directory_change')
-}
-
-export async function getDownloadSourceHealth(): Promise<DownloadSourceHealth[]> {
-	return await invoke('plugin:settings|download_source_health')
-}
-
-export async function resetDownloadSourceHealth(): Promise<void> {
-	return await invoke('plugin:settings|reset_download_source_health')
 }

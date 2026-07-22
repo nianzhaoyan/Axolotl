@@ -7,7 +7,7 @@ use crate::install::{
 use crate::state::JavaVersion;
 use crate::util::fetch::{
     ContentValidation, DownloadRequest, FetchProgressFn, Integrity,
-    ResourceClass, ResumePolicy, download_to_path, fetch_json,
+    ResourceClass, download_to_path, fetch_json,
 };
 use dashmap::DashMap;
 use futures::{TryStreamExt, stream};
@@ -85,7 +85,6 @@ pub async fn auto_install_java_with_reporter(
 const JAVA_INSTALL_STEPS: u64 = 4;
 const JAVA_DOWNLOAD_PROGRESS_MIN_BYTES: u64 = 256 * 1024;
 const MOJANG_RUNTIME_INDEX_URL: &str = "https://piston-meta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
-const JAVA_FILE_DOWNLOAD_CONCURRENCY: usize = 8;
 
 static JAVA_INSTALL_LOCK: LazyLock<tokio::sync::Mutex<()>> =
     LazyLock::new(|| tokio::sync::Mutex::new(()));
@@ -146,7 +145,6 @@ struct AzulPackage {
 struct JavaDownloadMetrics {
     source: Arc<Mutex<Option<String>>>,
     fallback_count: Arc<AtomicU64>,
-    resumed_bytes: Arc<AtomicU64>,
 }
 
 impl JavaDownloadMetrics {
@@ -158,8 +156,6 @@ impl JavaDownloadMetrics {
         }
         self.fallback_count
             .fetch_add(result.fallback_count as u64, Ordering::Relaxed);
-        self.resumed_bytes
-            .fetch_add(result.resumed_bytes, Ordering::Relaxed);
     }
 
     async fn finish(
@@ -172,7 +168,6 @@ impl JavaDownloadMetrics {
                 .record_download_metrics(
                     source,
                     self.fallback_count.load(Ordering::Relaxed),
-                    self.resumed_bytes.load(Ordering::Relaxed),
                 )
                 .await?;
         }
@@ -509,10 +504,9 @@ async fn install_mojang_runtime(
     }
     let download_result = download_to_path(
         DownloadRequest::new(&release.manifest.url, ResourceClass::Java)
-            .with_integrity(manifest_integrity)
-            .with_resume_policy(ResumePolicy::Disabled),
+            .with_integrity(manifest_integrity),
         &manifest_path,
-        &state.fetch_semaphore,
+        &state.download_semaphore,
         &state.pool,
         None,
     )
@@ -524,7 +518,6 @@ async fn install_mojang_runtime(
             .record_download_metrics(
                 download_result.source.as_str(),
                 download_result.fallback_count as u64,
-                download_result.resumed_bytes,
             )
             .await?;
     }
@@ -598,7 +591,7 @@ async fn install_mojang_runtime(
     let download_metrics = JavaDownloadMetrics::default();
     stream::iter(files.into_iter().map(Ok::<_, crate::Error>))
         .try_for_each_concurrent(
-            Some(JAVA_FILE_DOWNLOAD_CONCURRENCY),
+            None,
             |(relative_path, download, executable)| {
                 let downloaded_bytes = downloaded_bytes.clone();
                 let last_reported = last_reported.clone();
@@ -673,7 +666,7 @@ async fn install_mojang_runtime(
                                 .with_size(download.size),
                         ),
                         &path,
-                        &state.fetch_semaphore,
+                        &state.download_semaphore,
                         &state.pool,
                         Some(&mut progress as &mut FetchProgressFn<'_>),
                     )
@@ -896,7 +889,7 @@ async fn install_azul_runtime(
                 ..Integrity::default()
             }),
         &archive_path,
-        &state.fetch_semaphore,
+        &state.download_semaphore,
         &state.pool,
         Some(&mut progress as &mut FetchProgressFn<'_>),
     )
@@ -908,7 +901,6 @@ async fn install_azul_runtime(
             .record_download_metrics(
                 download_result.source.as_str(),
                 download_result.fallback_count as u64,
-                download_result.resumed_bytes,
             )
             .await?;
     }

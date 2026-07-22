@@ -41,9 +41,6 @@ use tokio::sync::Mutex;
 type ExtractProgressFn<'a> = dyn FnMut(u64) -> Pin<Box<dyn Future<Output = crate::Result<()>> + Send + 'a>>
     + Send
     + 'a;
-const MODPACK_CONTENT_DOWNLOAD_CONCURRENCY: usize = 4;
-const MODRINTH_CONTENT_MAX_ATTEMPTS: usize = 3;
-
 #[derive(Clone)]
 struct ModpackContentInstallContext {
     instance_id: String,
@@ -59,7 +56,6 @@ struct ModpackContentInstallContext {
     active_download_bytes: Arc<Mutex<HashMap<String, u64>>>,
     download_source: Arc<Mutex<Option<String>>>,
     fallback_count: Arc<AtomicU64>,
-    resumed_bytes: Arc<AtomicU64>,
     file_infos_by_hash: Arc<HashMap<String, CachedFile>>,
     num_files: usize,
     content_total_bytes: u64,
@@ -159,8 +155,6 @@ impl ModpackContentInstallContext {
         }
         self.fallback_count
             .fetch_add(result.fallback_count as u64, Ordering::Relaxed);
-        self.resumed_bytes
-            .fetch_add(result.resumed_bytes, Ordering::Relaxed);
     }
 
     async fn finish_download_metrics(&self) -> crate::Result<()> {
@@ -170,7 +164,6 @@ impl ModpackContentInstallContext {
                 .record_download_metrics(
                     source,
                     self.fallback_count.load(Ordering::Relaxed),
-                    self.resumed_bytes.load(Ordering::Relaxed),
                 )
                 .await?;
         }
@@ -632,14 +625,13 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
         active_download_bytes,
         download_source: Arc::new(Mutex::new(None)),
         fallback_count: Arc::new(AtomicU64::new(0)),
-        resumed_bytes: Arc::new(AtomicU64::new(0)),
         file_infos_by_hash,
         num_files,
         content_total_bytes,
     };
     loading_try_for_each_concurrent(
         futures::stream::iter(pack.files).map(Ok::<PackFile, crate::Error>),
-        Some(MODPACK_CONTENT_DOWNLOAD_CONCURRENCY),
+        Some(state.download_concurrency()),
         None,
         70.0,
         num_files,
@@ -748,15 +740,12 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                 };
                 let progress =
                     &mut report_download_progress as &mut FetchProgressFn<'_>;
-                let is_modrinth_cdn = project.downloads.iter().any(|url| {
-                    url.starts_with("https://cdn.modrinth.com/")
-                });
                 content_context
                     .report_download_attempt(
                         project_path.clone(),
                         project_size,
                         1,
-                        MODRINTH_CONTENT_MAX_ATTEMPTS,
+                        project.downloads.len().saturating_mul(2).max(1),
                     )
                     .await?;
                 let Some(primary_url) = project.downloads.first() else {
@@ -785,7 +774,7 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                             content_context.download_meta.clone(),
                         ),
                     &target_path,
-                    &state.fetch_semaphore,
+                    &state.download_semaphore,
                     &state.pool,
                     Some(progress),
                 )
@@ -801,27 +790,6 @@ pub(crate) async fn install_zipped_mrpack_files_with_reporter(
                         content_context
                             .remove_active_download(&project_path)
                             .await;
-                        if is_modrinth_cdn {
-                            tracing::warn!(
-                                path = %project_path,
-                                error = %error,
-                                "Skipping Modrinth content file after official CDN retries were exhausted"
-                            );
-                            content_context
-                                .mark_downloaded(
-                                    project_size,
-                                    InstallJobEventKind::ContentFileSkipped {
-                                        path: project_path,
-                                        reason: "[fallback]官方cdn下载失败"
-                                            .to_string(),
-                                        project_id: None,
-                                        version_id: None,
-                                        manual_url: None,
-                                    },
-                                )
-                                .await?;
-                            return Ok(());
-                        }
                         content_context
                             .reporter
                             .persist_failure_context(context)
@@ -1240,4 +1208,48 @@ pub async fn remove_all_related_files(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use async_zip::tokio::write::ZipFileWriter;
+    use async_zip::{Compression, ZipEntryBuilder};
+
+    #[tokio::test]
+    async fn local_mrpack_uses_the_file_backed_reader() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("local.mrpack");
+        let mut file = tokio::fs::File::create(&path).await.unwrap();
+        let mut writer = ZipFileWriter::with_tokio(&mut file);
+        writer
+            .write_entry_whole(
+                ZipEntryBuilder::new(
+                    "modrinth.index.json".to_string().into(),
+                    Compression::Stored,
+                ),
+                br#"{"formatVersion":1,"game":"minecraft","versionId":"test","name":"test","files":[]}"#,
+            )
+            .await
+            .unwrap();
+        writer.close().await.unwrap();
+        drop(file);
+
+        let mut reader = MrpackZipReader::new(&CreatePackFile::Path(path))
+            .await
+            .unwrap();
+        assert!(matches!(&reader, MrpackZipReader::File(_)));
+        let index = reader
+            .file()
+            .entries()
+            .iter()
+            .position(|entry| {
+                matches!(entry.filename().as_str(), Ok("modrinth.index.json"))
+            })
+            .unwrap();
+        assert_eq!(
+            reader.read_entry_to_string(index).await.unwrap(),
+            r#"{"formatVersion":1,"game":"minecraft","versionId":"test","name":"test","files":[]}"#
+        );
+    }
 }

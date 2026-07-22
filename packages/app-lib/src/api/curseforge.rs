@@ -32,7 +32,6 @@ use std::time::{Duration, Instant};
 const API_BASE_URL: &str = "https://api.curseforge.com";
 const MINECRAFT_GAME_ID: u32 = 432;
 const MAX_PAGE_SIZE: u32 = 50;
-const MODPACK_CONTENT_DOWNLOAD_CONCURRENCY: usize = 8;
 const MODPACK_FILE_INSTALL_ATTEMPTS: usize = 1;
 const PROJECT_CACHE_TTL: Duration = Duration::from_secs(5 * 60);
 
@@ -51,7 +50,6 @@ struct CachedCurseForgeProject {
 struct CurseForgeDownloadMetrics {
     source: Mutex<Option<String>>,
     fallback_count: AtomicU64,
-    resumed_bytes: AtomicU64,
 }
 
 impl CurseForgeDownloadMetrics {
@@ -63,8 +61,6 @@ impl CurseForgeDownloadMetrics {
         }
         self.fallback_count
             .fetch_add(result.fallback_count as u64, Ordering::Relaxed);
-        self.resumed_bytes
-            .fetch_add(result.resumed_bytes, Ordering::Relaxed);
     }
 
     async fn finish(
@@ -77,7 +73,6 @@ impl CurseForgeDownloadMetrics {
                 .record_download_metrics(
                     source,
                     self.fallback_count.load(Ordering::Relaxed),
-                    self.resumed_bytes.load(Ordering::Relaxed),
                 )
                 .await?;
         }
@@ -1171,7 +1166,6 @@ pub async fn install_modpack_with_reporter(
             .record_download_metrics(
                 pack_download.source.as_str(),
                 pack_download.fallback_count as u64,
-                pack_download.resumed_bytes,
             )
             .await?;
     }
@@ -1381,7 +1375,7 @@ pub async fn install_modpack_with_reporter(
 
     loading_try_for_each_concurrent(
         stream::iter(selected_files.into_iter().map(Ok::<_, crate::Error>)),
-        Some(MODPACK_CONTENT_DOWNLOAD_CONCURRENCY),
+        Some(state.download_concurrency()),
         // Progress is updated manually with file+byte counts below.
         None,
         1.0,
@@ -2346,7 +2340,7 @@ async fn download_curseforge_path(
     download_to_path(
         request,
         destination,
-        &state.fetch_semaphore,
+        &state.download_semaphore,
         &state.pool,
         progress,
     )
@@ -2647,6 +2641,7 @@ struct RequestRoute {
     source: RequestRouteSource,
 }
 
+#[cfg(test)]
 fn request_routes(
     path: &str,
     mirror_policy: MirrorPolicy,
@@ -2682,9 +2677,9 @@ fn request_routes_with_mode(
         use_api_key: route.allow_sensitive_headers,
         use_system_proxy: route.proxy == ProxyPolicy::System,
         source: match route.source {
-            DownloadRouteSource::Bmclapi
-            | DownloadRouteSource::Mcim
-            | DownloadRouteSource::TencentMaven => RequestRouteSource::Mirror,
+            DownloadRouteSource::Bmclapi | DownloadRouteSource::Mcim => {
+                RequestRouteSource::Mirror
+            }
             DownloadRouteSource::Official | DownloadRouteSource::Alternate => {
                 RequestRouteSource::Official
             }

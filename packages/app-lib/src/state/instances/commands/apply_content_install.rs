@@ -446,7 +446,7 @@ pub(crate) async fn download_project_version(
             .with_integrity(integrity)
             .with_download_meta(download_meta),
         &path,
-        &state.fetch_semaphore,
+        &state.download_semaphore,
         &state.pool,
         None,
     )

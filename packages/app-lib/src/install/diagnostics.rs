@@ -208,9 +208,8 @@ fn timeline_event_description(event: &InstallJobEvent) -> Option<String> {
         InstallJobEventKind::DownloadMetrics {
             source,
             fallback_count,
-            resumed_bytes,
         } => Some(format!(
-            "Downloaded from {source} ({fallback_count} fallbacks, {resumed_bytes} resumed bytes)"
+            "Downloaded from {source} ({fallback_count} fallbacks)"
         )),
     }
 }

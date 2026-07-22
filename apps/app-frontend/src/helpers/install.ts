@@ -162,7 +162,6 @@ export interface InstallJobSnapshot {
 		eta_seconds?: number | null
 		source?: string | null
 		fallback_count: number
-		resumed_bytes: number
 	}
 	items: Array<{
 		id: string

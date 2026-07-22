@@ -388,7 +388,7 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
             })
             .with_download_meta(download_meta),
         &pack_path,
-        &state.fetch_semaphore,
+        &state.download_semaphore,
         &state.pool,
         progress,
     )
@@ -398,7 +398,6 @@ pub(crate) async fn generate_pack_from_version_id_with_reporter(
             .record_download_metrics(
                 download_result.source.as_str(),
                 download_result.fallback_count as u64,
-                download_result.resumed_bytes,
             )
             .await?;
     }

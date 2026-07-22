@@ -7,8 +7,6 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
         .invoke_handler(tauri::generate_handler![
             settings_get,
             settings_set,
-            download_source_health,
-            reset_download_source_health,
             cancel_directory_change
         ])
         .build()
@@ -27,18 +25,6 @@ pub async fn settings_get() -> Result<Settings> {
 #[tauri::command]
 pub async fn settings_set(settings: Settings) -> Result<()> {
     settings::set(settings).await?;
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn download_source_health()
--> Result<Vec<settings::DownloadSourceHealth>> {
-    Ok(settings::download_source_health().await?)
-}
-
-#[tauri::command]
-pub async fn reset_download_source_health() -> Result<()> {
-    settings::reset_download_source_health().await?;
     Ok(())
 }
 

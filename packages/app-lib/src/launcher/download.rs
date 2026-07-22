@@ -45,7 +45,6 @@ pub struct MinecraftDownloadProgress {
     last_reported: Arc<AtomicU64>,
     source: Arc<Mutex<Option<String>>>,
     fallback_count: Arc<AtomicU64>,
-    resumed_bytes: Arc<AtomicU64>,
 }
 
 impl MinecraftDownloadProgress {
@@ -62,7 +61,6 @@ impl MinecraftDownloadProgress {
             last_reported: Arc::new(AtomicU64::new(0)),
             source: Arc::new(Mutex::new(None)),
             fallback_count: Arc::new(AtomicU64::new(0)),
-            resumed_bytes: Arc::new(AtomicU64::new(0)),
         };
 
         if total > 0 {
@@ -153,17 +151,14 @@ impl MinecraftDownloadProgress {
         }
         self.fallback_count
             .fetch_add(result.fallback_count as u64, Ordering::Relaxed);
-        self.resumed_bytes
-            .fetch_add(result.resumed_bytes, Ordering::Relaxed);
     }
 
     async fn finish(&self) -> crate::Result<()> {
         let source = self.source.lock().ok().and_then(|source| source.clone());
         let fallback_count = self.fallback_count.load(Ordering::Relaxed);
-        let resumed_bytes = self.resumed_bytes.load(Ordering::Relaxed);
         if let Some(source) = source {
             self.reporter
-                .record_download_metrics(source, fallback_count, resumed_bytes)
+                .record_download_metrics(source, fallback_count)
                 .await?;
         }
         Ok(())
@@ -207,7 +202,7 @@ async fn download_minecraft_file(
         return download_to_path(
             request,
             destination,
-            &st.fetch_semaphore,
+            &st.download_semaphore,
             &st.pool,
             None,
         )
@@ -232,7 +227,7 @@ async fn download_minecraft_file(
     let result = match download_to_path(
         request,
         destination,
-        &st.fetch_semaphore,
+        &st.download_semaphore,
         &st.pool,
         Some(&mut progress_fn as &mut FetchProgressFn<'_>),
     )

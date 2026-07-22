@@ -408,10 +408,6 @@ const messages = defineMessages({
 	downloadSourceOfficial: { id: 'app.downloads.source.official', defaultMessage: 'Official' },
 	downloadSourceBmclapi: { id: 'app.downloads.source.bmclapi', defaultMessage: 'OpenBMCLAPI' },
 	downloadSourceMcim: { id: 'app.downloads.source.mcim', defaultMessage: 'MCIM' },
-	downloadSourceTencentMaven: {
-		id: 'app.downloads.source.tencent-maven',
-		defaultMessage: 'Tencent Maven',
-	},
 	downloadSourceAlternate: {
 		id: 'app.downloads.source.alternate',
 		defaultMessage: 'Alternate source',
@@ -432,10 +428,6 @@ const messages = defineMessages({
 	downloadFallbacks: {
 		id: 'app.downloads.download-fallbacks',
 		defaultMessage: '{count} fallbacks',
-	},
-	downloadResumed: {
-		id: 'app.downloads.download-resumed',
-		defaultMessage: '{bytes} resumed',
 	},
 })
 
@@ -673,13 +665,6 @@ function downloadTelemetry(job: InstallJobSnapshot) {
 	if (summary.fallback_count > 0) {
 		metrics.push(formatMessage(messages.downloadFallbacks, { count: summary.fallback_count }))
 	}
-	if (summary.resumed_bytes > 0) {
-		metrics.push(
-			formatMessage(messages.downloadResumed, {
-				bytes: formatBytes(summary.resumed_bytes),
-			}),
-		)
-	}
 	return metrics
 }
 
@@ -691,8 +676,6 @@ function downloadSourceLabel(source: string) {
 			return formatMessage(messages.downloadSourceBmclapi)
 		case 'mcim':
 			return formatMessage(messages.downloadSourceMcim)
-		case 'tencent_maven':
-			return formatMessage(messages.downloadSourceTencentMaven)
 		default:
 			return formatMessage(messages.downloadSourceAlternate)
 	}

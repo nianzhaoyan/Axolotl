@@ -111,7 +111,6 @@ impl InstallProgressReporter {
         &self,
         source: impl Into<String>,
         fallback_count: u64,
-        resumed_bytes: u64,
     ) -> crate::Result<()> {
         let app_state = crate::State::get().await?;
         let mut state = self.state.lock().await;
@@ -120,7 +119,6 @@ impl InstallProgressReporter {
             .record_event(InstallJobEventKind::DownloadMetrics {
                 source: source.into(),
                 fallback_count,
-                resumed_bytes,
             });
         let record =
             store::update_state(self.job_id, &state.job, &app_state).await?;

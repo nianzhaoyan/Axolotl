@@ -1,15 +1,11 @@
 <script setup>
 import {
 	BoxIcon,
-	DropdownIcon,
 	FolderOpenIcon,
 	FolderSearchIcon,
-	RefreshCwIcon,
-	TrashIcon,
 } from '@modrinth/assets'
 import {
 	ButtonStyled,
-	Collapsible,
 	Combobox,
 	defineMessages,
 	injectNotificationManager,
@@ -22,15 +18,13 @@ import { computed, ref, watch } from 'vue'
 
 import ConfirmModalWrapper from '@/components/ui/modal/ConfirmModalWrapper.vue'
 import { purge_cache_types } from '@/helpers/cache.js'
-import { get, getDownloadSourceHealth, resetDownloadSourceHealth, set } from '@/helpers/settings.ts'
+import { get, set } from '@/helpers/settings.ts'
 import { showAppDbBackupsFolder } from '@/helpers/utils.js'
 import { useTheming } from '@/store/state'
 
 const { handleError } = injectNotificationManager()
 const themeStore = useTheming()
 const settings = ref(await get())
-const sourceHealth = ref(await getDownloadSourceHealth().catch(() => []))
-const sourceHealthCollapsed = ref(true)
 const purgeCacheConfirmModal = ref(null)
 const { formatMessage } = useVIntl()
 
@@ -76,7 +70,7 @@ const messages = defineMessages({
 	},
 	officialSource: {
 		id: 'app.settings.resources.source.official',
-		defaultMessage: 'Official only',
+		defaultMessage: 'Prefer official sources',
 	},
 	openBmclApiSource: {
 		id: 'app.settings.resources.source.open-bmcl-api',
@@ -118,39 +112,6 @@ const messages = defineMessages({
 		id: 'app.settings.resources.curseforge-mirror-description',
 		defaultMessage: 'CurseForge public API requests and file downloads.',
 	},
-	sourceHealth: {
-		id: 'app.settings.resources.source-health',
-		defaultMessage: 'Source health',
-	},
-	sourceHealthDescription: {
-		id: 'app.settings.resources.source-health-description',
-		defaultMessage:
-			'Connection quality is learned locally from completed downloads and is never uploaded.',
-	},
-	refreshSourceHealth: {
-		id: 'app.settings.resources.source-health-refresh',
-		defaultMessage: 'Refresh',
-	},
-	resetSourceHealth: {
-		id: 'app.settings.resources.source-health-reset',
-		defaultMessage: 'Reset learned data',
-	},
-	noSourceHealth: {
-		id: 'app.settings.resources.source-health-empty',
-		defaultMessage: 'No download measurements have been collected yet.',
-	},
-	sourceCoolingDown: {
-		id: 'app.settings.resources.source-health-cooling-down',
-		defaultMessage: 'Cooling down',
-	},
-	sourceRangeSplittingDisabled: {
-		id: 'app.settings.resources.source-health-range-splitting-disabled',
-		defaultMessage: 'Range splitting disabled',
-	},
-	sourceHealthStats: {
-		id: 'app.settings.resources.source-health-stats',
-		defaultMessage: '{ttfb} TTFB · {speed} · {successes} successful / {failures} failed',
-	},
 	maximumDownloads: {
 		id: 'app.settings.resources.maximum-downloads',
 		defaultMessage: 'Maximum concurrent downloads',
@@ -158,7 +119,7 @@ const messages = defineMessages({
 	maximumDownloadsDescription: {
 		id: 'app.settings.resources.maximum-downloads-description',
 		defaultMessage:
-			'Automatic mode selects between 16 and 64 concurrent downloads based on your device. Manual changes apply immediately.',
+			'Automatic mode uses 64 concurrent downloads. Manual changes apply immediately.',
 	},
 	manualConcurrency: {
 		id: 'app.settings.resources.concurrency.manual',
@@ -235,29 +196,6 @@ const downloadConcurrencyOptions = computed(() => [
 		label: formatMessage(messages.manualConcurrency),
 	},
 ])
-
-function sourceHealthSummary(source) {
-	const ttfb = source.ttfb_ms == null ? '—' : `${Math.round(source.ttfb_ms)} ms`
-	const speed =
-		source.throughput_bytes_per_second == null
-			? '—'
-			: `${(source.throughput_bytes_per_second / 1024 / 1024).toFixed(1)} MiB/s`
-	return formatMessage(messages.sourceHealthStats, {
-		ttfb,
-		speed,
-		successes: source.successes,
-		failures: source.failures,
-	})
-}
-
-async function refreshSourceHealth() {
-	sourceHealth.value = await getDownloadSourceHealth()
-}
-
-async function resetSourceHealth() {
-	await resetDownloadSourceHealth()
-	await refreshSourceHealth()
-}
 
 watch(
 	settings,
@@ -438,69 +376,6 @@ async function findLauncherDir() {
 		</div>
 
 		<div class="flex flex-col gap-2.5">
-			<div class="flex items-start justify-between gap-4 mt-4">
-				<button
-					class="flex min-w-0 flex-1 items-start justify-between gap-2 border-0 bg-transparent p-0 text-left cursor-pointer"
-					@click="sourceHealthCollapsed = !sourceHealthCollapsed"
-				>
-					<div>
-						<h2 class="m-0 text-lg font-semibold text-contrast">
-							{{ formatMessage(messages.sourceHealth) }}
-						</h2>
-						<p class="m-0 leading-tight text-secondary">
-							{{ formatMessage(messages.sourceHealthDescription) }}
-						</p>
-					</div>
-					<DropdownIcon
-						class="mt-1 size-5 shrink-0 text-secondary transition-transform"
-						:class="{ 'rotate-180': !sourceHealthCollapsed }"
-					/>
-				</button>
-				<div class="flex shrink-0 gap-2">
-					<ButtonStyled>
-						<button @click="refreshSourceHealth().catch(handleError)">
-							<RefreshCwIcon />
-							{{ formatMessage(messages.refreshSourceHealth) }}
-						</button>
-					</ButtonStyled>
-					<ButtonStyled>
-						<button @click="resetSourceHealth().catch(handleError)">
-							<TrashIcon />
-							{{ formatMessage(messages.resetSourceHealth) }}
-						</button>
-					</ButtonStyled>
-				</div>
-			</div>
-			<Collapsible :collapsed="sourceHealthCollapsed">
-				<div class="flex flex-col gap-2 pt-3">
-					<p v-if="sourceHealth.length === 0" class="m-0 text-secondary">
-						{{ formatMessage(messages.noSourceHealth) }}
-					</p>
-					<div v-else class="flex flex-col gap-2">
-						<div
-							v-for="source in sourceHealth"
-							:key="source.host"
-							class="flex items-center justify-between gap-4 rounded-xl border border-divider bg-bg-raised px-4 py-3"
-						>
-							<div class="min-w-0">
-								<div class="truncate font-semibold text-contrast">{{ source.host }}</div>
-								<div class="text-sm text-secondary">{{ sourceHealthSummary(source) }}</div>
-							</div>
-							<div class="flex shrink-0 flex-col items-end gap-1 text-sm font-semibold">
-								<span v-if="source.cooling_down" class="text-orange">
-									{{ formatMessage(messages.sourceCoolingDown) }}
-								</span>
-								<span v-if="source.range_splitting_disabled" class="text-orange">
-									{{ formatMessage(messages.sourceRangeSplittingDisabled) }}
-								</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</Collapsible>
-		</div>
-
-		<div class="flex flex-col gap-2.5">
 			<div class="flex items-center justify-between gap-4 mt-4">
 				<h2 class="m-0 text-lg font-semibold text-contrast">
 					{{ formatMessage(messages.maximumDownloads) }}
@@ -514,7 +389,7 @@ async function findLauncherDir() {
 				id="max-downloads"
 				v-model="settings.max_concurrent_downloads"
 				:min="1"
-				:max="64"
+				:max="256"
 				:step="1"
 			/>
 			<p class="m-0 leading-tight text-secondary">
