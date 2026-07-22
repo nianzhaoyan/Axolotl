@@ -1,4 +1,0 @@
-[axolotl]
-SigLevel = Required DatabaseRequired
-Server = https://cnb.cool/axlmc/Axolotl/-/releases/latest/download
-Server = https://github.com/Mystic-Stars/Axolotl/releases/latest/download
