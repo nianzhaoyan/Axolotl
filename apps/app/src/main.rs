@@ -113,6 +113,15 @@ async fn set_restart_after_pending_update(
 // if Tauri app is called with arguments, then those arguments will be treated as commands
 // ie: deep links or filepaths for .mrpacks
 fn main() {
+    // Workaround: NVIDIA's proprietary EGL driver crashes WebKitGTK's DMA-BUF renderer
+    #[cfg(target_os = "linux")]
+    if env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none()
+        && std::path::Path::new("/proc/driver/nvidia/version").exists()
+    {
+        // SAFETY: This is called before any threads are spawned in main()
+        unsafe { env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1") }
+    }
+
     /*
         tracing is set basd on the environment variable RUST_LOG=xxx, depending on the amount of logs to show
             ERROR > WARN > INFO > DEBUG > TRACE
