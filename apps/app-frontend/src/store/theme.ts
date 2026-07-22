@@ -36,6 +36,7 @@ export type ThemeStore = {
 	customBackgroundPath: string | null
 	customBackgroundBlur: number
 	customBackgroundOpacity: number
+	sidebarInstanceCount: number
 
 	devMode: boolean
 	featureFlags: FeatureFlags
@@ -50,6 +51,7 @@ export const DEFAULT_THEME_STORE: ThemeStore = {
 	customBackgroundPath: null,
 	customBackgroundBlur: 12,
 	customBackgroundOpacity: 65,
+	sidebarInstanceCount: 0,
 
 	devMode: false,
 	featureFlags: DEFAULT_FEATURE_FLAGS,

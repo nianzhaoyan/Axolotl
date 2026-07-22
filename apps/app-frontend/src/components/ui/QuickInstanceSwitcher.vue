@@ -2,20 +2,32 @@
 import { SpinnerIcon } from '@modrinth/assets'
 import { injectNotificationManager } from '@modrinth/ui'
 import dayjs from 'dayjs'
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 
 import InstanceIcon from '@/components/ui/InstanceIcon.vue'
 import NavButton from '@/components/ui/NavButton.vue'
 import { instance_listener } from '@/helpers/events.js'
 import { list } from '@/helpers/instance'
+import { useTheming } from '@/store/state'
 
 const { handleError } = injectNotificationManager()
 
-const recentInstances = ref([])
+const themeStore = useTheming()
+
+const fullInstanceList = ref([])
+const instanceCount = computed(() => themeStore.sidebarInstanceCount)
+
+const recentInstances = computed(() => {
+	if (instanceCount.value > 0) {
+		return fullInstanceList.value.slice(0, instanceCount.value)
+	}
+	return fullInstanceList.value
+})
+
 const getInstances = async () => {
 	const instances = await list().catch(handleError)
 
-	recentInstances.value = instances
+	fullInstanceList.value = instances
 		.sort((a, b) => {
 			const dateACreated = dayjs(a.created)
 			const dateAPlayed = a.last_played ? dayjs(a.last_played) : dayjs(0)
@@ -32,7 +44,6 @@ const getInstances = async () => {
 
 			return dateB - dateA
 		})
-		.slice(0, 3)
 }
 
 await getInstances()

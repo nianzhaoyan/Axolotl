@@ -71,6 +71,7 @@ export type AppSettings = {
 	custom_background_path: string | null
 	custom_background_blur: number
 	custom_background_opacity: number
+	sidebar_instance_count: number
 
 	telemetry: boolean
 	discord_rpc: boolean

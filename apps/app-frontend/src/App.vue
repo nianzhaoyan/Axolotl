@@ -375,6 +375,7 @@ async function setupApp() {
 		custom_background_path,
 		custom_background_blur,
 		custom_background_opacity,
+		sidebar_instance_count,
 		developer_mode,
 		feature_flags,
 		pending_update_toast_for_version,
@@ -416,6 +417,7 @@ async function setupApp() {
 	themeStore.customBackgroundPath = custom_background_path
 	themeStore.customBackgroundBlur = custom_background_blur
 	themeStore.customBackgroundOpacity = custom_background_opacity
+	themeStore.sidebarInstanceCount = sidebar_instance_count
 	themeStore.devMode = developer_mode
 	themeStore.featureFlags = feature_flags
 	stateInitialized.value = true
@@ -1522,6 +1524,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	grid-area: nav;
 	position: relative;
 	z-index: 2;
+	overflow-y: auto;
 }
 
 .app-grid-statusbar {

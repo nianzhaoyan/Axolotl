@@ -242,6 +242,12 @@
   "app.appearance-settings.show-play-time.title": {
     "message": "显示总游玩时间"
   },
+  "app.appearance-settings.sidebar-instance-count.description": {
+    "message": "侧边栏中显示的最大实例数量。设为 0 则显示全部。"
+  },
+  "app.appearance-settings.sidebar-instance-count.title": {
+    "message": "侧边栏实例数量限制"
+  },
   "app.appearance-settings.skip-non-essential-warnings.description": {
     "message": "自动跳过低风险确认，包括重复安装整合包、常规内容删除、批量更新、解除整合包关联及修复提示。危险警告仍会显示。"
   },

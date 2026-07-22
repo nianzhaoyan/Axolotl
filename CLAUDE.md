@@ -1,120 +1,149 @@
-# Modrinth Monorepo
+# Axolotl Launcher
 
-This is the Modrinth monorepo — it contains all Modrinth projects, both frontend and backend. When entering a project, either to edit or analyse, you should read it's CLAUDE.md.
+This is a fork of the [Modrinth monorepo](https://github.com/modrinth/code) (upstream remote: `https://github.com/modrinth/code.git`). The product is the **Axolotl Launcher** desktop app — not the Modrinth website or backend. When entering a project, read its `AGENTS.md` or `CLAUDE.md`.
 
 ## Architecture
 
-- **Monorepo tooling:** [Turborepo](https://turbo.build/) (`turbo.jsonc`) + [pnpm workspaces](https://pnpm.io/workspaces) (`pnpm-workspace.yaml`)
+- **Monorepo tooling:** Turborepo (`turbo.jsonc`) + pnpm workspaces (`pnpm-workspace.yaml`)
 - **Frontend:** Vue 3 / Nuxt 3, Tailwind CSS v3
-- **Backend:** Rust (Labrinth API), Postgres, Clickhouse
-- **Indentation:** Use TAB everywhere, never spaces
+- **Backend:** Rust (present from upstream but not the product focus)
+- **Desktop shell:** Tauri v2
+- **Indentation:** TAB everywhere, never spaces
 
 ### Apps (`apps/`)
 
-| App               | Description                    |
-| ----------------- | ------------------------------ |
-| `frontend`        | Main Modrinth website (Nuxt 3) |
-| `app-frontend`    | Desktop/app frontend (Vue 3)   |
-| `app`             | Desktop/app shell (Tauri)      |
-| `app-playground`  | Testing playground for app     |
-| `labrinth`        | Backend API service            |
-| `daedalus_client` | Daedalus client implementation |
-| `docs`            | Documentation site (Astro)     |
+| App               | Description                              | Product? |
+| ----------------- | ---------------------------------------- | -------- |
+| `app`             | Desktop app shell (Tauri)                | Yes      |
+| `app-frontend`    | Desktop app frontend (Vue 3/Vite)        | Yes      |
+| `website`         | Axolotl marketing site (Nuxt 3)          | Yes      |
+| `frontend`        | Modrinth website (Nuxt 3) — from upstream | No       |
+| `labrinth`        | Backend API (Rust) — from upstream       | No       |
+| `app-playground`  | Testing playground for app               | Yes      |
+| `daedalus_client` | Daedalus client implementation           | No       |
+| `docs`            | Documentation site (Astro)               | No       |
 
 ### Packages (`packages/`)
 
-| Package            | Description                                           |
-| ------------------ | ----------------------------------------------------- |
-| `ui`               | Shared Vue component library (`@modrinth/ui`)         |
-| `assets`           | Styling and auto-generated icons (`@modrinth/assets`) |
-| `api-client`       | API client for Nuxt, Tauri, and Node/browser          |
-| `app-lib`          | Shared app library                                    |
-| `blog`             | Blog system and changelog data                        |
-| `utils`            | Shared utility functions (mostly deprecated)          |
-| `moderation`       | Moderation utilities                                  |
-| `daedalus`         | Daedalus protocol                                     |
-| `tooling-config`   | ESLint, Prettier, TypeScript configs                  |
-| `ariadne`          | Analytics library                                     |
-| `modrinth-log`     | Logging utilities                                     |
-| `modrinth-maxmind` | MaxMind GeoIP                                         |
-| `modrinth-util`    | General utilities                                     |
-| `muralpay`         | Payment processing                                    |
-| `path-util`        | Path utilities                                        |
-| `sqlx-tracing`     | SQLx query tracing                                    |
+| Package            | Description                              |
+| ------------------ | ---------------------------------------- |
+| `app-lib`          | Shared Rust app library (crate name `theseus`) |
+| `ui`               | Shared Vue component library (`@modrinth/ui`) |
+| `assets`           | Styling and auto-generated icons         |
+| `api-client`       | API client for Nuxt, Tauri, and Node/browser |
+| `daedalus`         | Daedalus protocol                        |
+| `tooling-config`   | ESLint, Prettier, TypeScript configs     |
+| `utils`            | Shared utility functions (mostly deprecated) |
+| `blog`             | Blog system and changelog data           |
+| `moderation`       | Moderation utilities                     |
+| `ariadne`          | Analytics library                        |
+| `modrinth-log`     | Logging utilities                        |
+| `modrinth-maxmind` | MaxMind GeoIP                            |
+| `modrinth-util`    | General utilities                        |
+| `muralpay`         | Payment processing                       |
+| `path-util`        | Path utilities                           |
+| `sqlx-tracing`     | SQLx query tracing                       |
 
-## Pre-PR Commands
+## Product Scope
 
-Run these from the **root** folder before opening a pull request - do not run these after each prompt the user gives you, only run when asked, ask the user a question if they want to run it if the user indicates that they are about to create a pull request.
+Axolotl changes are confined to:
+- `apps/app` / `apps/app-frontend` / `apps/website`
+- `packages/app-lib`
+- Shared UI/assets packages as needed
 
-- **Website:** `pnpm prepr:frontend:web`
-- **App frontend:** `pnpm prepr:frontend:app`
-- **Frontend libs:** `pnpm prepr:frontend:lib`
-- **All frontend (app+web):** `pnpm prepr`
-- **Labrinth (backend):** See `apps/labrinth/AGENTS.md`
+The website (`apps/frontend`) and backend (`apps/labrinth`) exist from upstream but are **not** the product. Do not modify them unless needed for the desktop app or an upstream sync forces it.
 
-The website and app `prepr` commands
+### Axolotl Branding
+
+- Bundle ID: `red.ghs.axolotl`, deep-link scheme: `axolotl`
+- User-Agent: `garbage-human-studio/axolotl/${version} (${os})`
+- Private Modrinth services (ads, telemetry, Archon, Intercom) are **disabled**
+- Run `pnpm axolotl:brand-guard` to verify none of these invariants have been broken
 
 ## Dev Commands
 
-- **Website:** `pnpm web:dev` (copy `.env` template in `apps/frontend/` first)
-- **App:** `pnpm app:dev` (copy `.env` template in `packages/app-lib/` first)
+- **Desktop app:** `pnpm app:dev` (copy `.env` template in `packages/app-lib/` first)
+- **Axolotl website:** `pnpm website:dev`
+- **Modrinth website:** `pnpm web:dev`
 - **Storybook (packages/ui):** `pnpm storybook`
 
-## Codex Development Workflow
+## Pre-PR Checks
 
-### Local App Verification
-- After completing a development task, start the local development app with `pnpm app:dev` and leave functional verification to the user.
-- Do not take screenshots or perform automated, visual, or manual self-testing of the local app.
+Run from repo root **only when asked** (not after every prompt):
 
-### Remote Commits
-- Before pushing a remote commit, inspect its changed paths. If it does not change the desktop app (`apps/app/`, `apps/app-frontend/`) or its app-specific dependencies, prevent unnecessary GitHub Actions usage by including `[skip ci]` in the commit message.
-- Never use `[skip ci]` for commits that affect the desktop app or its build, packaging, or runtime dependencies.
+- **Desktop app:** `pnpm prepr:frontend:app`
+- **Axolotl website:** `pnpm prepr:website`
+- **Guardrails (always):** `pnpm axolotl:brand-guard` and `pnpm axolotl:i18n-check`
 
-## Project-Specific Instructions
+### Backend (Labrinth)
 
-Each project may have its own file with detailed instructions:
+See `apps/labrinth/AGENTS.md`. Do not run `cargo test` for labrinth unless explicitly asked — it's slow.
 
-- [`apps/labrinth/AGENTS.md`](apps/labrinth/AGENTS.md) — Backend API
-- [`apps/frontend/CLAUDE.md`](apps/frontend/CLAUDE.md) - Frontend Website
+### Rust checks
+
+| Command | Scope |
+| ------- | ----- |
+| `cargo fmt --all --check` | All Rust workspace members |
+| `cargo check --package theseus_gui --features updater` | Desktop app typecheck |
+| `cargo nextest run --all-targets --no-fail-fast` (in `apps/app/` or `packages/app-lib/`) | Desktop app tests |
+| `cargo clippy --all-targets --features updater` | Desktop app lint |
+
+Turbo cache is disabled for `@modrinth/app#build` — Tauri builds are never cached.
+
+## i18n
+
+- **Source:** `en-US` (in `apps/app-frontend/src/locales/` and `packages/ui/src/locales/`)
+- **Primary translation:** `zh-CN` — must be complete and have matching ICU arguments
+- Run `pnpm axolotl:i18n-check` to verify zh-CN coverage
+- Hardcoded strings in Vue templates/components must use the `@modrinth/ui` i18n system (vue-i18n), not raw text
+
+## Release
+
+Triggered by pushing a semver tag matching `v*`:
+
+```bash
+git tag -a v1.2.3 -m "Axolotl Launcher 1.2.3"
+git push origin v1.2.3
+```
+
+The `axolotl-release.yml` workflow builds platform installers, signs update packages, and publishes the GitHub Release. Prerelease tags (e.g. `v1.2.3-beta.1`) create prereleases. The Tauri signing private key is stored in GitHub Secrets — never commit it.
+
+## Upstream Sync
+
+A scheduled workflow attempts to merge `upstream/main` weekly. If it fails due to conflicts, it opens an issue. When resolving:
+
+1. Run `pnpm axolotl:brand-guard` and `pnpm axolotl:i18n-check` after the merge
+2. Review `scripts/axolotl/upstream-impact-report.mjs` output for sensitive lines
+3. Never force-push over Axolotl commits
+
+## Remote Commits
+
+Before pushing, inspect changed paths. If the commit does **not** touch the desktop app (`apps/app/`, `apps/app-frontend/`) or its dependencies, include `[skip ci]` in the commit message to skip the Axolotl desktop CI. Never use `[skip ci]` for commits that affect the desktop app build.
 
 ## Code Guidelines
 
-### Comments
-- DO NOT use "heading" comments like: `=== Helper methods ===`.
-- Use doc comments, but avoid inline comments unless ABSOLUTELY necessary for clarity. Code should aim to be self documenting!
+- No "heading" comments like `=== Helper methods ===`
+- Doc comments are fine; inline comments only when absolutely necessary
+- Types from `@modrinth/utils` are mostly outdated — prefer types from `packages/api-client`
+- When fixing problems, don't deflect ("I didn't introduce these") — just fix them
+
+## Key Env Vars
+
+| Variable | Purpose |
+| -------- | ------- |
+| `SQLX_OFFLINE=true` | Must be set for CI builds (uses cached sqlx data) |
+| `CURSEFORGE_API_KEY` or `AXOLOTL_CURSEFORGE_API_KEY` | CurseForge API access |
+| `AXOLOTL_CURSEFORGE_API_BASE_URL` | Custom CurseForge mirror URL |
+
+## Project-Specific Instructions
+
+- `apps/labrinth/AGENTS.md` — Backend API conventions
+- `apps/frontend/CLAUDE.md` (also `apps/frontend/AGENTS.md`) — Modrinth website
+- `.claude/skills/` — Specialized skill workflows (i18n-pass, tanstack-query, etc.)
+- `standards/` — Frontend and maintenance standards
 
 ## Bash Guidelines
 
-### Output handling
-- DO NOT pipe output through `head`, `tail`, `less`, or `more`
-- NEVER use `| head -n X` or `| tail -n X` to truncate output
-- IMPORTANT: Run commands directly without pipes when possible
-- IMPORTANT: If you need to limit output, use command-specific flags (e.g. `git log -n 10` instead of `git log | head -10`)
-- ALWAYS read the full output — never pipe through filters
-
-### General
-- Do not create new non-source code files (e.g. Bash scripts, SQL scripts) unless explicitly prompted to
-- For Frontend, when doing lint checks, only use the `prepr` commands, do not use `typecheck` or `tsc` etc.
-- Types in `@modrinth/utils` are considered highly outdated, if a component needs them, check if you can switch said component to use types from `packages/api-client`
-- When provided problems, do not say "I didn't introduce these problems" (shifting the blame/effort) - just fix them.
-
-## Edit Tool - Whitespace Handling (CLAUDE ONLY)
-
-The Read tool uses `→` to mark where line numbers end and file content begins.
-
-**Rule:** Copy the EXACT whitespace that appears after the `→` marker.
-- Whatever appears between `→` and the code text is what's actually in the file
-- That whitespace must be used EXACTLY in Edit tool's old_string
-- Don't count arrows, don't interpret - just copy what's after the `→`
-
-**Example:**
-14→		private byte tag;
-For Edit, use: `		private byte tag;` (copy everything after →, including the two tabs)
-
-**If Edit fails:** Stop and explain the problem. Do not attempt sed/awk/bash workarounds.
-
-**IMPORTANT**: Trust the Read tool output. Copy what's after `→` into Edit immediately. DO NOT verify with sed/od/grep first - that's wasting time and the instructions already tell you to stop if Edit fails, not to pre-verify.
-
-## Standards
-
-Standards available at the @standards/ folder.
+- Do not pipe output through `head`, `tail`, `less`, or `more`
+- Use command-specific flags instead (e.g. `git log -n 10`, not `git log | head -10`)
+- Do not create new Bash/shell/SQL script files unless explicitly asked

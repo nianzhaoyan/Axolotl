@@ -208,6 +208,15 @@ const messages = defineMessages({
 		id: 'app.appearance-settings.show-play-time.description',
 		defaultMessage: `Displays how much time you've spent playing an instance.`,
 	},
+	sidebarInstanceCountTitle: {
+		id: 'app.appearance-settings.sidebar-instance-count.title',
+		defaultMessage: 'Sidebar instance limit',
+	},
+	sidebarInstanceCountDescription: {
+		id: 'app.appearance-settings.sidebar-instance-count.description',
+		defaultMessage:
+			'Maximum number of instances to show in the sidebar. Set to 0 to show all.',
+	},
 })
 
 const os = ref(await getOS())
@@ -281,11 +290,13 @@ watch(
 			settings.value.custom_background_path,
 			settings.value.custom_background_blur,
 			settings.value.custom_background_opacity,
+			settings.value.sidebar_instance_count,
 		] as const,
-	([path, blur, opacity]) => {
+	([path, blur, opacity, sidebarInstanceCount]) => {
 		themeStore.customBackgroundPath = path
 		themeStore.customBackgroundBlur = blur
 		themeStore.customBackgroundOpacity = opacity
+		themeStore.sidebarInstanceCount = sidebarInstanceCount
 	},
 	{ immediate: true },
 )
@@ -504,6 +515,22 @@ watch(
 					settings.feature_flags[showPlayTimeFlag] = newValue
 				}
 			"
+		/>
+	</div>
+
+	<div class="mt-6 flex flex-col gap-2">
+		<div>
+			<h2 class="m-0 text-lg font-semibold text-contrast">
+				{{ formatMessage(messages.sidebarInstanceCountTitle) }}
+			</h2>
+			<p class="m-0 mt-1">{{ formatMessage(messages.sidebarInstanceCountDescription) }}</p>
+		</div>
+		<Slider
+			id="sidebar-instance-count"
+			v-model="settings.sidebar_instance_count"
+			:min="0"
+			:max="50"
+			:step="1"
 		/>
 	</div>
 

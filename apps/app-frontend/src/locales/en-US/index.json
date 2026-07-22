@@ -242,6 +242,12 @@
   "app.appearance-settings.show-play-time.title": {
     "message": "Show play time"
   },
+  "app.appearance-settings.sidebar-instance-count.description": {
+    "message": "Maximum number of instances to show in the sidebar. Set to 0 to show all."
+  },
+  "app.appearance-settings.sidebar-instance-count.title": {
+    "message": "Sidebar instance limit"
+  },
   "app.appearance-settings.skip-non-essential-warnings.description": {
     "message": "Automatically skips low-risk confirmations like duplicate modpack installs, normal content deletion, bulk updates, unlinking modpacks, and repair prompts. Dangerous warnings will still be shown."
   },
