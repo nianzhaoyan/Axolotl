@@ -2538,7 +2538,7 @@
     "message": "Enter a username"
   },
   "minecraft-account.offline-modal.username-validation": {
-    "message": "Use 3–16 letters, numbers, or underscores."
+    "message": "Use 1–16 letters, numbers, or underscores, including Chinese characters."
   },
   "minecraft-account.offline-mode": {
     "message": "Offline mode"

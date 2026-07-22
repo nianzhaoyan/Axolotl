@@ -2538,7 +2538,7 @@
     "message": "输入用户名"
   },
   "minecraft-account.offline-modal.username-validation": {
-    "message": "请输入 3–16 个字母、数字或下划线。"
+    "message": "请输入 1–16 个字母、数字或下划线，支持中文。"
   },
   "minecraft-account.offline-mode": {
     "message": "离线模式"
