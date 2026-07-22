@@ -429,9 +429,7 @@ async fn prepare_initial_instance(
 fn spawn_job(job_id: Uuid) {
     tokio::spawn(async move {
         if let Err(error) = run_job(job_id).await {
-            tracing::error!(
-                "Install job {job_id} failed to update state: {error}"
-            );
+            tracing::error!("Install job {job_id} failed: {error}");
         }
     });
 }

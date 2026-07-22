@@ -1,5 +1,6 @@
 //! Downloader for Minecraft data
 
+use crate::data::ModLoader;
 use crate::install::{
     InstallErrorContext, InstallPhaseDetails, InstallPhaseId, InstallProgress,
     InstallProgressReporter,
@@ -27,6 +28,7 @@ use futures::prelude::*;
 use reqwest::Method;
 use std::{
     future::Future,
+    path::Path,
     pin::Pin,
     sync::{
         Arc, Mutex,
@@ -582,6 +584,7 @@ pub async fn download_minecraft(
 pub async fn download_version_info(
     st: &State,
     version: &GameVersion,
+    mod_loader: ModLoader,
     loader: Option<&LoaderVersion>,
     force: Option<bool>,
     loading_bar: Option<&LoadingBarId>,
@@ -596,10 +599,19 @@ pub async fn download_version_info(
         .join(format!("{version_id}.json"));
 
     let res = if path.exists() && !force.unwrap_or(false) {
-        io::read(path)
+        let mut info: GameVersionInfo = io::read(&path)
             .err_into::<crate::Error>()
             .await
-            .and_then(|ref it| Ok(serde_json::from_slice(it)?))
+            .and_then(|ref it| Ok(serde_json::from_slice(it)?))?;
+        if normalize_version_info_libraries(
+            mod_loader,
+            &version.id,
+            &mut info,
+            "cache",
+        ) {
+            write_version_info(&path, serde_json::to_vec(&info)?).await?;
+        }
+        info
     } else {
         tracing::info!(
             "Downloading version info for version {} from {}",
@@ -725,11 +737,18 @@ pub async fn download_version_info(
             info = d::modded::merge_partial_version(partial, info);
         }
 
+        normalize_version_info_libraries(
+            mod_loader,
+            &version.id,
+            &mut info,
+            "network",
+        );
+
         info.id.clone_from(&version_id);
 
-        write(&path, &serde_json::to_vec(&info)?, &st.io_semaphore).await?;
-        Ok(info)
-    }?;
+        write_version_info(&path, serde_json::to_vec(&info)?).await?;
+        info
+    };
 
     if let Some(loading_bar) = loading_bar {
         emit_loading(loading_bar, 5.0, None)?;
@@ -742,6 +761,7 @@ pub async fn download_version_info(
 pub async fn load_local_version_info(
     st: &State,
     version: &GameVersion,
+    mod_loader: ModLoader,
     loader: Option<&LoaderVersion>,
 ) -> crate::Result<GameVersionInfo> {
     let version_id = loader
@@ -760,7 +780,49 @@ pub async fn load_local_version_info(
     }
 
     let bytes = io::read(&path).err_into::<crate::Error>().await?;
-    Ok(serde_json::from_slice(&bytes)?)
+    let mut info: GameVersionInfo = serde_json::from_slice(&bytes)?;
+    if normalize_version_info_libraries(
+        mod_loader,
+        &version.id,
+        &mut info,
+        "cache",
+    ) {
+        write_version_info(&path, serde_json::to_vec(&info)?).await?;
+    }
+    Ok(info)
+}
+
+async fn write_version_info(path: &Path, data: Vec<u8>) -> crate::Result<()> {
+    if let Some(parent) = path.parent() {
+        io::create_dir_all(parent).await?;
+    }
+    io::write(path, data).await?;
+    Ok(())
+}
+
+fn normalize_version_info_libraries(
+    loader: ModLoader,
+    game_version: &str,
+    version_info: &mut GameVersionInfo,
+    version_info_source: &str,
+) -> bool {
+    let removed = d::modded::normalize_loader_libraries(
+        loader.as_meta_str(),
+        game_version,
+        &mut version_info.libraries,
+    );
+
+    for removed_library in &removed {
+        tracing::info!(
+            loader = loader.as_meta_str(),
+            game_version,
+            removed_library,
+            version_info_source,
+            "Removed obsolete Fabric intermediary library for unobfuscated Minecraft version"
+        );
+    }
+
+    !removed.is_empty()
 }
 
 pub fn ensure_local_log_config(
@@ -1244,6 +1306,24 @@ pub async fn download_log_config(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn writing_version_info_creates_missing_parent_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory
+            .path()
+            .join("meta/versions/1.21.11-21.11.44/1.21.11-21.11.44.json");
+
+        assert!(!path.parent().unwrap().exists());
+        write_version_info(&path, br#"{"id":"1.21.11-21.11.44"}"#.to_vec())
+            .await
+            .unwrap();
+
+        assert_eq!(
+            io::read(&path).await.unwrap(),
+            br#"{"id":"1.21.11-21.11.44"}"#
+        );
+    }
 
     #[test]
     fn legacy_launcher_meta_maven_uses_canonical_repositories() {
