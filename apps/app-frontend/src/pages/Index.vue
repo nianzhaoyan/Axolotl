@@ -127,24 +127,28 @@ onUnmounted(() => {
 		<h1 v-else class="m-0 text-2xl font-extrabold">
 			{{ formatMessage(messages.welcome) }}
 		</h1>
-		<RecentWorldsList :recent-instances="recentInstances" />
-		<RowDisplay
-			v-if="hasFeaturedProjects"
-			:instances="[
-				{
-					label: formatMessage(messages.discoverModpack),
-					route: '/browse/modpack',
-					instances: featuredModpacks,
-					downloaded: false,
-				},
-				{
-					label: formatMessage(messages.discoverMods),
-					route: '/browse/mod',
-					instances: featuredMods,
-					downloaded: false,
-				},
-			]"
-			:can-paginate="true"
-		/>
+		<div data-onboarding-id="home-recent">
+			<RecentWorldsList :recent-instances="recentInstances" />
+		</div>
+		<div data-onboarding-id="home-featured">
+			<RowDisplay
+				v-if="hasFeaturedProjects"
+				:instances="[
+					{
+						label: formatMessage(messages.discoverModpack),
+						route: '/browse/modpack',
+						instances: featuredModpacks,
+						downloaded: false,
+					},
+					{
+						label: formatMessage(messages.discoverMods),
+						route: '/browse/mod',
+						instances: featuredMods,
+						downloaded: false,
+					},
+				]"
+				:can-paginate="true"
+			/>
+		</div>
 	</div>
 </template>

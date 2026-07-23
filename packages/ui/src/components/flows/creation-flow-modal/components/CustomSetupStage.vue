@@ -20,7 +20,11 @@
 		</div>
 
 		<!-- Instance-specific: Name field -->
-		<div v-if="ctx.flowType === 'instance'" class="flex flex-col gap-2">
+		<div
+			v-if="ctx.flowType === 'instance'"
+			data-onboarding-id="creation-name"
+			class="flex flex-col gap-2"
+		>
 			<span class="font-semibold text-contrast">{{ formatMessage(messages.nameLabel) }}</span>
 			<StyledInput
 				v-model="ctx.instanceName.value"
@@ -29,7 +33,7 @@
 		</div>
 
 		<!-- Loader chips -->
-		<div v-if="!hideLoaderChips" class="flex flex-col gap-2">
+		<div v-if="!hideLoaderChips" data-onboarding-id="creation-loader" class="flex flex-col gap-2">
 			<span class="font-semibold text-contrast">{{
 				ctx.flowType === 'instance'
 					? formatMessage(messages.loaderLabel)
@@ -44,7 +48,7 @@
 		</div>
 
 		<!-- Game version -->
-		<div class="flex flex-col gap-2">
+		<div data-onboarding-id="creation-game-version" class="flex flex-col gap-2">
 			<span class="font-semibold text-contrast">{{
 				formatMessage(commonMessages.gameVersionLabel)
 			}}</span>

@@ -72,18 +72,44 @@ The website and app `prepr` commands
 - Before pushing a remote commit, inspect its changed paths. If it does not change the desktop app (`apps/app/`, `apps/app-frontend/`) or its app-specific dependencies, prevent unnecessary GitHub Actions usage by including `[skip ci]` in the commit message.
 - Never use `[skip ci]` for commits that affect the desktop app or its build, packaging, or runtime dependencies.
 
+### Desktop Onboarding Maintenance
+
+When adding or materially changing a desktop app page, route, navigation entry, large user-facing component, core workflow, settings section, or content-management feature under `apps/app-frontend`, assess the Axolotl onboarding experience.
+
+- Update the onboarding when the feature is relevant to a new user's first-use journey or changes an existing guided workflow.
+- Define tours and localized message descriptors in `apps/app-frontend/src/components/ui/onboarding/onboardingConfig.ts`. Keep `OnboardingOverlay` presentational and put reusable runtime behavior in `useOnboardingTour`; do not add step-ID-specific branches to either file.
+- Add one stable, semantic `data-onboarding-id` to the component that owns each guided target, then reference that ID through `targetId` in the step configuration. Remove targets when their steps are removed.
+- Choose the interaction deliberately: `navigate` must use the real control and wait for its route, `activate` must execute the control's original behavior, and `inspect` must explain a region while any non-onboarding click advances without activating the underlying UI.
+- Express workflow branches with `branchByTarget` and `nextByCreationPath` in the step configuration instead of hard-coded conditionals. Missing optional targets must time out and skip rather than trap the tour or show placeholder copy.
+- Do not add a navigation step for the page that first-run or replay mode already opens. Establish prerequisite route or modal state before starting the tour, then begin with useful page content.
+- Keep the step definition, target, interaction, expected route, branch behavior, and English and Simplified Chinese FormatJS copy synchronized with the feature.
+- For a major feature that should not appear in the first-run tour, add an appropriate contextual/replayable tour or document why onboarding is not needed.
+- Verify first-run and replay modes, target-missing behavior, narrow windows, and guided modals after changing any target. Guided modals must reserve space for the bottom dialogue instead of rendering beneath it.
+- Add future mascot assets only through `OnboardingMascotStage`; do not scatter mascot asset references across onboarding steps.
+
+### Desktop Update Announcement Maintenance
+
+Launcher release announcements are bundled with `apps/app-frontend` and shown after a completed app update and in Settings > Updates.
+
+- Add ordinary release announcements only to `apps/app-frontend/src/announcements/catalog.ts`; adding an entry must not require changes to `App.vue`, the updater, or the announcement components.
+- Give every release a new immutable ID in the form `launcher-<version>`, use the exact launcher version and ISO `YYYY-MM-DD` publication date, and place the newest release first. Never reuse an ID or change the meaning of a published entry.
+- Use only the Keep a Changelog categories `added`, `changed`, `deprecated`, `removed`, `fixed`, and `security`. Omit empty categories.
+- Provide both `en-US` and `zh-CN` text for the title and every change. Other locales intentionally fall back to English; do not copy announcement bodies into every locale JSON file.
+- Keep entries concise and user-facing. Describe observable features, behavior changes, removals, fixes, and security impact rather than implementation details.
+- `pending_update_toast_for_version` is the persisted trigger for the post-update announcement. Do not add separate per-release startup checks or clear it before the announcement closes.
+- Preserve startup dialog priority: initialization errors, first-run onboarding, post-update announcement, then community announcement. A replayed onboarding tour must not consume a pending post-update announcement.
+- If the announcement schema, categories, fallback behavior, or dialog priority changes, update the catalog types, both announcement display surfaces, and this section together.
+- Keep launcher release notes exclusively in the catalog. Do not create or maintain a separate `UPDATE_LOG.md` file.
+- The GitHub release workflow generates its release body from the matching catalog entry with `scripts/axolotl/create-release-notes.mjs`; a release tag without a catalog entry must fail preflight.
+- Local development builds expose a preview button in Settings > Updates. Use it to test the real announcement modal without changing onboarding or pending-update state; do not add per-version preview branches.
+- Run `pnpm prepr:frontend:app` after adding or changing an announcement.
+
 ## Project-Specific Instructions
 
 Each project may have its own file with detailed instructions:
 
 - [`apps/labrinth/AGENTS.md`](apps/labrinth/AGENTS.md) — Backend API
 - [`apps/frontend/CLAUDE.md`](apps/frontend/CLAUDE.md) - Frontend Website
-
-## Update Logging Instructions
-
-After making any changes, write the changes as an update log(release note style, in Chinese simplified, using unordered list to append) in UPDATE_LOG.md in the project root directory.
-For example: - 修复了xxx问题。
-Append the changes to the log, not replacing.
 
 ## Code Guidelines
 

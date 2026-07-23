@@ -92,6 +92,8 @@ pub struct Settings {
     pub personalized_ads: bool,
 
     pub onboarded: bool,
+    pub onboarding_version: usize,
+    pub onboarding_instance_tour_completed: bool,
 
     pub extra_launch_args: Vec<String>,
     pub custom_env_vars: Vec<(String, String)>,
@@ -148,7 +150,7 @@ impl Settings {
                 minecraft_file_source, modrinth_source, curseforge_source,
                 theme, locale, default_page, collapsed_navigation, hide_nametag_skins_page, advanced_rendering, native_decorations,
                 discord_rpc, developer_mode, telemetry, personalized_ads,
-                onboarded,
+                onboarded, onboarding_version, onboarding_instance_tour_completed,
                 json(extra_launch_args) extra_launch_args, json(custom_env_vars) custom_env_vars,
                 mc_memory_max, mc_force_fullscreen, mc_game_resolution_x, mc_game_resolution_y, hide_on_process_start,
                 hook_pre_launch, hook_wrapper, hook_post_exit,
@@ -198,6 +200,10 @@ impl Settings {
             developer_mode: res.developer_mode == 1,
             personalized_ads: res.personalized_ads == 1,
             onboarded: res.onboarded == 1,
+            onboarding_version: res.onboarding_version as usize,
+            onboarding_instance_tour_completed: res
+                .onboarding_instance_tour_completed
+                == 1,
             extra_launch_args: res
                 .extra_launch_args
                 .as_ref()
@@ -255,6 +261,7 @@ impl Settings {
         let custom_background_opacity =
             self.custom_background_opacity.clamp(10, 100) as i32;
         let version = self.version as i64;
+        let onboarding_version = self.onboarding_version as i64;
         let minecraft_metadata_source = self.minecraft_metadata_source.as_str();
         let minecraft_file_source = self.minecraft_file_source.as_str();
         let modrinth_source = self.modrinth_source.as_str();
@@ -325,7 +332,9 @@ impl Settings {
                 curseforge_source = $42,
                 use_minecraft_mirror = $43,
                 use_modrinth_mirror = $44,
-                use_curseforge_mirror = $45
+                use_curseforge_mirror = $45,
+                onboarding_version = $46,
+                onboarding_instance_tour_completed = $47
             ",
             max_concurrent_writes,
             max_concurrent_downloads,
@@ -372,6 +381,8 @@ impl Settings {
             use_minecraft_mirror,
             use_modrinth_mirror,
             use_curseforge_mirror,
+            onboarding_version,
+            self.onboarding_instance_tour_completed,
         )
         .execute(exec)
         .await?;

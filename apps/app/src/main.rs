@@ -319,7 +319,6 @@ fn main() {
                             }
                         }
 
-                        set_changelog_toast(Some(update.version.clone()));
                         let update = if should_restart {
                             (**update).clone()
                         } else {
@@ -327,6 +326,7 @@ fn main() {
                         };
                         match update.install(data) {
                             Ok(()) => {
+                                set_changelog_toast(Some(update.version.clone()));
                                 if should_restart {
                                     tracing::info!(
                                         "Pending update installed successfully (version {}); restarting because user requested reload",

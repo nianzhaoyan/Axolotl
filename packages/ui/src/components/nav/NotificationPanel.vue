@@ -59,11 +59,7 @@
 									<CopyIcon v-else />
 								</button>
 							</ButtonStyled>
-							<ButtonStyled
-								v-if="item.type === 'error' && onErrorAction"
-								circular
-								size="small"
-							>
+							<ButtonStyled v-if="item.type === 'error' && onErrorAction" circular size="small">
 								<button
 									v-tooltip="errorActionLabel"
 									:disabled="exporting[item.id]"
@@ -158,7 +154,7 @@ async function handleErrorAction(notification: WebNotification): Promise<void> {
 	try {
 		await onErrorAction(notification)
 	} finally {
-		delete exporting.value[notification.id]
+		Reflect.deleteProperty(exporting.value, notification.id)
 	}
 }
 

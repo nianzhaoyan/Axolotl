@@ -92,7 +92,7 @@
 					</div>
 				</template>
 				<template #actions>
-					<div class="flex gap-2">
+					<div data-onboarding-id="instance-actions" class="flex gap-2">
 						<ButtonStyled
 							v-if="
 								[
@@ -236,7 +236,7 @@
 				</template>
 			</ContentPageHeader>
 		</div>
-		<div :class="['px-6', { 'shrink-0': isFixedRender }]">
+		<div data-onboarding-id="instance-tabs" :class="['px-6', { 'shrink-0': isFixedRender }]">
 			<NavTabs :links="tabs" />
 		</div>
 		<div :class="['p-6 pt-4', { 'min-h-0 flex-1 overflow-y-auto': isFixedRender }]">

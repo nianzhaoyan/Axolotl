@@ -53,6 +53,9 @@
   "app.action-bar.install.summary.download-failed": {
     "message": "Download couldn't finish"
   },
+  "app.action-bar.install.summary.file-download-failed": {
+    "message": "Couldn't download {file}"
+  },
   "app.action-bar.install.summary.instance-not-found": {
     "message": "Instance couldn't be found"
   },
@@ -85,9 +88,6 @@
   },
   "app.action-bar.install.summary.pack-download-failed": {
     "message": "Couldn't download pack"
-  },
-  "app.action-bar.install.summary.file-download-failed": {
-    "message": "Couldn't download {file}"
   },
   "app.action-bar.install.summary.unexpected-error": {
     "message": "Something went wrong"
@@ -440,9 +440,6 @@
   "app.downloads.download-fallbacks": {
     "message": "{count} fallbacks"
   },
-  "app.downloads.download-resumed": {
-    "message": "{bytes} resumed"
-  },
   "app.downloads.download-source": {
     "message": "Source: {source}"
   },
@@ -586,9 +583,6 @@
   },
   "app.downloads.source.official": {
     "message": "Official"
-  },
-  "app.downloads.source.tencent-maven": {
-    "message": "Tencent Maven"
   },
   "app.downloads.status.canceled": {
     "message": "Canceled"
@@ -1388,6 +1382,222 @@
   "app.notification.warning": {
     "message": "Warning"
   },
+  "app.onboarding.account.description": {
+    "message": "When you are ready, sign in, switch accounts, or open your profile here. No deadline."
+  },
+  "app.onboarding.account.title": {
+    "message": "Accounts, on your schedule"
+  },
+  "app.onboarding.action.click-create": {
+    "message": "Click Create new instance to continue"
+  },
+  "app.onboarding.action.click-creation-method": {
+    "message": "Choose a route to continue"
+  },
+  "app.onboarding.action.click-discover": {
+    "message": "Click Discover content to continue"
+  },
+  "app.onboarding.action.click-downloads": {
+    "message": "Click Downloads to continue"
+  },
+  "app.onboarding.action.click-library": {
+    "message": "Click Library to continue"
+  },
+  "app.onboarding.action.click-settings": {
+    "message": "Click Settings to continue"
+  },
+  "app.onboarding.action.click-skins": {
+    "message": "Click Skin selector to continue"
+  },
+  "app.onboarding.action.click-tab": {
+    "message": "Click this tab to continue"
+  },
+  "app.onboarding.action.continue-area": {
+    "message": "Click anywhere for the next bit"
+  },
+  "app.onboarding.action.finish-area": {
+    "message": "Click anywhere and you are all set"
+  },
+  "app.onboarding.action.skip": {
+    "message": "Leave the tour"
+  },
+  "app.onboarding.action.start": {
+    "message": "Take the tour"
+  },
+  "app.onboarding.appearance.description": {
+    "message": "Theme, accent, background, and window behavior. Make this launcher look familiar."
+  },
+  "app.onboarding.appearance.title": {
+    "message": "Set the vibe"
+  },
+  "app.onboarding.browse.description": {
+    "message": "Use types, search, and filters to narrow things down. Project pages keep versions, changelogs, galleries, and install options in one place."
+  },
+  "app.onboarding.browse.title": {
+    "message": "Search with receipts"
+  },
+  "app.onboarding.create.description": {
+    "message": "Start from scratch, grab a modpack, or bring in an existing instance. Your call."
+  },
+  "app.onboarding.create.title": {
+    "message": "Make a fresh start"
+  },
+  "app.onboarding.creation-confirm.description": {
+    "message": "This creates the instance with your choices. I keep a strict hands-off policy."
+  },
+  "app.onboarding.creation-confirm.title": {
+    "message": "One last look"
+  },
+  "app.onboarding.creation-loader.description": {
+    "message": "Vanilla, Fabric, Forge, NeoForge, and friends. Pick what your content needs."
+  },
+  "app.onboarding.creation-loader.title": {
+    "message": "Choose the engine"
+  },
+  "app.onboarding.creation-modpack.description": {
+    "message": "Search Modrinth, browse modpacks, or import a pack file. Plenty of adventures ahead."
+  },
+  "app.onboarding.creation-modpack.title": {
+    "message": "Find your next modpack"
+  },
+  "app.onboarding.creation-name.description": {
+    "message": "Pick a name your future self will recognize at a glance."
+  },
+  "app.onboarding.creation-name.title": {
+    "message": "Give it a memorable name"
+  },
+  "app.onboarding.creation-version.description": {
+    "message": "Choose the Minecraft version for this instance. Compatibility likes specifics."
+  },
+  "app.onboarding.creation-version.title": {
+    "message": "Set the game version"
+  },
+  "app.onboarding.creation.description": {
+    "message": "Custom setup, modpack, or import. The choices are yours; I am just here for the subtitles."
+  },
+  "app.onboarding.creation.title": {
+    "message": "Pick your route"
+  },
+  "app.onboarding.defaults.description": {
+    "message": "New instances inherit these choices, so you do not have to repeat the homework."
+  },
+  "app.onboarding.defaults.title": {
+    "message": "Start ahead"
+  },
+  "app.onboarding.discover.description": {
+    "message": "Modpacks, mods, plugins, resource packs, shaders: the good kind of rabbit hole."
+  },
+  "app.onboarding.discover.title": {
+    "message": "Find something new"
+  },
+  "app.onboarding.downloads-page.description": {
+    "message": "Active work, history, errors, retries, cancellations, and diagnostics all leave a paper trail here."
+  },
+  "app.onboarding.downloads-page.title": {
+    "message": "Nothing gets lost"
+  },
+  "app.onboarding.downloads.description": {
+    "message": "Installations and content downloads report in here, so nothing has to disappear mysteriously."
+  },
+  "app.onboarding.downloads.title": {
+    "message": "Download control room"
+  },
+  "app.onboarding.featured.description": {
+    "message": "Recommended modpacks and mods live here for when your next project needs ideas."
+  },
+  "app.onboarding.featured.title": {
+    "message": "A little inspiration"
+  },
+  "app.onboarding.instance-actions.description": {
+    "message": "Launch, stop, repair, configure, export, or open the instance from its header."
+  },
+  "app.onboarding.instance-actions.title": {
+    "message": "The main controls"
+  },
+  "app.onboarding.instance-tabs.description": {
+    "message": "Use these tabs for content, files, screenshots, worlds, and logs. Tidy chaos."
+  },
+  "app.onboarding.instance-tabs.title": {
+    "message": "The rest of the workshop"
+  },
+  "app.onboarding.java.description": {
+    "message": "The Java runtimes that start Minecraft live here. Technical, but well-behaved."
+  },
+  "app.onboarding.java.title": {
+    "message": "Java, under the hood"
+  },
+  "app.onboarding.language.description": {
+    "message": "Pick the launcher language and manage translations. No decoder ring required."
+  },
+  "app.onboarding.language.title": {
+    "message": "Speak your language"
+  },
+  "app.onboarding.library-page.description": {
+    "message": "Filter by modpack, server, or custom setup, then open any instance to manage it."
+  },
+  "app.onboarding.library-page.title": {
+    "message": "Everything, in its place"
+  },
+  "app.onboarding.library.description": {
+    "message": "Instances keep versions, loaders, content, and saves separate. No accidental mod soup."
+  },
+  "app.onboarding.library.title": {
+    "message": "Your launch shelf"
+  },
+  "app.onboarding.mascot-alt": {
+    "message": "Axolotl guide"
+  },
+  "app.onboarding.recent.description": {
+    "message": "Recently played instances and worlds stay here, ready for a quick return."
+  },
+  "app.onboarding.recent.title": {
+    "message": "No more losing your place"
+  },
+  "app.onboarding.resources.description": {
+    "message": "Tune downloads, storage, and app resources. Give the fan a little dignity."
+  },
+  "app.onboarding.resources.title": {
+    "message": "Do not cook the computer"
+  },
+  "app.onboarding.settings.description": {
+    "message": "The useful knobs live here: appearance, language, translation, Java, storage, and updates."
+  },
+  "app.onboarding.settings.title": {
+    "message": "Make it yours"
+  },
+  "app.onboarding.skins-page.description": {
+    "message": "Add, preview, sort, and apply skins here. No pressure to sign in just yet."
+  },
+  "app.onboarding.skins-page.title": {
+    "message": "Your skin drawer"
+  },
+  "app.onboarding.skins.description": {
+    "message": "Keep your Minecraft skins together. Signing in can wait until you feel like it."
+  },
+  "app.onboarding.skins.title": {
+    "message": "A new look, maybe"
+  },
+  "app.onboarding.translation.description": {
+    "message": "Translate Modrinth project titles, summaries, and descriptions while you browse. Keep the original, show both, or make the translation the main character."
+  },
+  "app.onboarding.translation.title": {
+    "message": "Translation, the Axolotl way"
+  },
+  "app.onboarding.updates.description": {
+    "message": "Choose when Axolotl checks for updates and whether it installs them for you."
+  },
+  "app.onboarding.updates.title": {
+    "message": "Stay in the loop"
+  },
+  "app.onboarding.welcome.description": {
+    "message": "Your instances, content, worlds, and downloads now have one home. Let us take a quick lap before you settle in."
+  },
+  "app.onboarding.welcome.footer": {
+    "message": "Your last next launcher."
+  },
+  "app.onboarding.welcome.title": {
+    "message": "Everything is ready"
+  },
   "app.project.curseforge.loading": {
     "message": "Loading CurseForge project…"
   },
@@ -1499,6 +1709,12 @@
   "app.settings.about.project-website": {
     "message": "Visit the project website"
   },
+  "app.settings.about.qq-group": {
+    "message": "Player QQ group"
+  },
+  "app.settings.about.replay-onboarding": {
+    "message": "Replay tour"
+  },
   "app.settings.about.test-error": {
     "message": "Trigger test error"
   },
@@ -1510,9 +1726,6 @@
   },
   "app.settings.about.test-notification-error-title": {
     "message": "Test notification error"
-  },
-  "app.settings.about.qq-group": {
-    "message": "Player QQ group"
   },
   "app.settings.about.version": {
     "message": "Version {version}"
@@ -1635,7 +1848,7 @@
     "message": "Maximum concurrent downloads"
   },
   "app.settings.resources.maximum-downloads-description": {
-    "message": "Automatic mode selects between 16 and 64 concurrent downloads based on your device. Manual changes apply immediately."
+    "message": "Automatic mode uses 64 concurrent downloads. Manual changes apply immediately."
   },
   "app.settings.resources.maximum-writes": {
     "message": "Maximum concurrent writes"
@@ -1676,30 +1889,6 @@
   "app.settings.resources.select-directory": {
     "message": "Select a new app directory"
   },
-  "app.settings.resources.source-health": {
-    "message": "Source health"
-  },
-  "app.settings.resources.source-health-cooling-down": {
-    "message": "Cooling down"
-  },
-  "app.settings.resources.source-health-description": {
-    "message": "Connection quality is learned locally from completed downloads and is never uploaded."
-  },
-  "app.settings.resources.source-health-empty": {
-    "message": "No download measurements have been collected yet."
-  },
-  "app.settings.resources.source-health-range-splitting-disabled": {
-    "message": "Range splitting disabled"
-  },
-  "app.settings.resources.source-health-refresh": {
-    "message": "Refresh"
-  },
-  "app.settings.resources.source-health-reset": {
-    "message": "Reset learned data"
-  },
-  "app.settings.resources.source-health-stats": {
-    "message": "{ttfb} TTFB · {speed} · {successes} successful / {failures} failed"
-  },
   "app.settings.resources.source.automatic": {
     "message": "Automatic (recommended)"
   },
@@ -1707,7 +1896,7 @@
     "message": "Prefer MCIM"
   },
   "app.settings.resources.source.official": {
-    "message": "Official only"
+    "message": "Prefer official sources"
   },
   "app.settings.resources.source.open-bmcl-api": {
     "message": "Prefer OpenBMCLAPI"
@@ -1736,6 +1925,18 @@
   "app.settings.tabs.updates": {
     "message": "Updates"
   },
+  "app.settings.updates.announcements.description": {
+    "message": "See what changed in this version and browse previous releases."
+  },
+  "app.settings.updates.announcements.empty": {
+    "message": "No bundled update announcements are available."
+  },
+  "app.settings.updates.announcements.history": {
+    "message": "Version history"
+  },
+  "app.settings.updates.announcements.title": {
+    "message": "Update announcements"
+  },
   "app.settings.updates.available": {
     "message": "An update is available."
   },
@@ -1762,6 +1963,9 @@
   },
   "app.settings.updates.offline": {
     "message": "Connect to the internet to check for updates."
+  },
+  "app.settings.updates.preview-announcement": {
+    "message": "Preview update announcement"
   },
   "app.settings.updates.security": {
     "message": "Updates are installed only when their cryptographic signature is valid."
@@ -2065,6 +2269,42 @@
   },
   "app.translation.error.rate-limited": {
     "message": "The translation service is temporarily rate limited. Please try again later."
+  },
+  "app.update-announcement.category.added": {
+    "message": "Added"
+  },
+  "app.update-announcement.category.changed": {
+    "message": "Changed"
+  },
+  "app.update-announcement.category.deprecated": {
+    "message": "Deprecated"
+  },
+  "app.update-announcement.category.fixed": {
+    "message": "Fixed"
+  },
+  "app.update-announcement.category.removed": {
+    "message": "Removed"
+  },
+  "app.update-announcement.category.security": {
+    "message": "Security"
+  },
+  "app.update-announcement.modal.header": {
+    "message": "What's new"
+  },
+  "app.update-announcement.notes": {
+    "message": "Notes"
+  },
+  "app.update-announcement.open-changelog": {
+    "message": "Open full changelog"
+  },
+  "app.update-announcement.unknown-body": {
+    "message": "This version does not have a bundled announcement yet. Visit the website for the full changelog."
+  },
+  "app.update-announcement.unknown-title": {
+    "message": "Axolotl Launcher was updated"
+  },
+  "app.update-announcement.version": {
+    "message": "Version {version}"
   },
   "app.update-popup.body.download-complete": {
     "message": "Axolotl Launcher v{version} has finished downloading. Reload to update now, or automatically when you close Axolotl Launcher."

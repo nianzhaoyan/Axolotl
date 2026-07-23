@@ -1801,7 +1801,7 @@ provideBrowseManager({
 </script>
 
 <template>
-	<div class="flex flex-col gap-3 p-6">
+	<div data-onboarding-id="browse-content" class="flex flex-col gap-3 p-6">
 		<div v-if="curseForgeCapability.configured && projectType !== 'server'" class="flex gap-2">
 			<ButtonStyled
 				v-for="source in [

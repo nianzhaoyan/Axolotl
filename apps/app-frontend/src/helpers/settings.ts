@@ -75,6 +75,8 @@ export type AppSettings = {
 	telemetry: boolean
 	discord_rpc: boolean
 	onboarded: boolean
+	onboarding_version: number
+	onboarding_instance_tour_completed: boolean
 
 	extra_launch_args: string[]
 	custom_env_vars: [string, string][]

@@ -29,7 +29,7 @@
   "app.action-bar.install.retry": {
     "message": "重試"
   },
-    "app.action-bar.install.summary.app-closing": {
+  "app.action-bar.install.summary.app-closing": {
     "message": "因應用程式正在關閉而取消"
   },
   "app.action-bar.install.summary.bad-modpack-file": {
@@ -302,7 +302,7 @@
   "app.browse.project-type.modpacks": {
     "message": "模組包"
   },
-    "app.browse.project-type.mods": {
+  "app.browse.project-type.mods": {
     "message": "模組"
   },
   "app.browse.project-type.resourcepacks": {
@@ -1568,12 +1568,6 @@
   "app.settings.resources.download-mirrors-description": {
     "message": "為每項服務選擇下載來源。當鏡像來源請求失敗時，將自動退回至官方來源。"
   },
-  "app.settings.resources.minecraft-mirror": {
-    "message": "Minecraft 與模組載入器"
-  },
-  "app.settings.resources.minecraft-mirror-description": {
-    "message": "使用 OpenBMCLAPI 加速 Minecraft、Forge、Fabric 和 NeoForge 檔案下載。"
-  },
   "app.settings.resources.modrinth-mirror": {
     "message": "Modrinth"
   },
@@ -1757,7 +1751,7 @@
   "app.skins.modal.upload-skin-first-tooltip": {
     "message": "請先上傳外觀檔案！"
   },
-"app.skins.offline-account.compatibility": {
+  "app.skins.offline-account.compatibility": {
     "message": "離線外觀是透過本地資源包來套用。在 Minecraft 1.6–1.19.2 擁有最佳相容性；較新版本則為盡力支援。外觀不會上傳至 Mojang，且可能會在你的客戶端中同時替換其他使用預設外觀的玩家；部分外觀模組或伺服器外掛也可能會覆蓋它。"
   },
   "app.skins.offline-account.compatibility-title": {
@@ -1844,7 +1838,7 @@
   "app.skins.title": {
     "message": "外觀選擇工具"
   },
-"app.splash.checking-for-updates": {
+  "app.splash.checking-for-updates": {
     "message": "正在檢查更新……"
   },
   "app.splash.updating-app-directory": {

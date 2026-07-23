@@ -1,11 +1,13 @@
 <template>
 	<div class="flex flex-col gap-3 p-6">
-		<NavTabs
-			:active-index="tab === 'active' ? 0 : 1"
-			:links="downloadTabs"
-			mode="local"
-			@tab-click="selectTab"
-		/>
+		<div data-onboarding-id="downloads-tabs">
+			<NavTabs
+				:active-index="tab === 'active' ? 0 : 1"
+				:links="downloadTabs"
+				mode="local"
+				@tab-click="selectTab"
+			/>
+		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
 			<StyledInput

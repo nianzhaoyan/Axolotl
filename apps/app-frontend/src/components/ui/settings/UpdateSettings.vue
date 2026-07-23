@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RefreshCwIcon } from '@modrinth/assets'
+import { EyeIcon, RefreshCwIcon } from '@modrinth/assets'
 import {
 	ButtonStyled,
 	Combobox,
@@ -7,9 +7,12 @@ import {
 	injectNotificationManager,
 	useVIntl,
 } from '@modrinth/ui'
-import { ref, watch } from 'vue'
+import { getVersion } from '@tauri-apps/api/app'
+import { inject, ref, watch } from 'vue'
 
+import UpdateAnnouncementHistory from '@/components/ui/announcement/UpdateAnnouncementHistory.vue'
 import { getUpdateSource, setUpdateSource, type UpdateSource } from '@/helpers/settings.ts'
+import { isDev } from '@/helpers/utils.js'
 import { type AppUpdateCheckResult, checkForAppUpdate } from '@/providers/app-update.ts'
 
 const { formatMessage } = useVIntl()
@@ -17,6 +20,9 @@ const { handleError } = injectNotificationManager()
 const selectedSource = ref<UpdateSource>(getUpdateSource())
 const checking = ref(false)
 const checkResult = ref<AppUpdateCheckResult | 'failed' | null>(null)
+const currentVersion = await getVersion()
+const isDevEnvironment = await isDev()
+const previewUpdateAnnouncement = inject<(version: string) => void>('previewUpdateAnnouncement')
 
 const messages = defineMessages({
 	title: {
@@ -66,6 +72,10 @@ const messages = defineMessages({
 	security: {
 		id: 'app.settings.updates.security',
 		defaultMessage: 'Updates are installed only when their cryptographic signature is valid.',
+	},
+	preview: {
+		id: 'app.settings.updates.preview-announcement',
+		defaultMessage: 'Preview update announcement',
 	},
 })
 
@@ -124,12 +134,20 @@ async function checkForUpdates() {
 		</div>
 
 		<div class="flex flex-col items-start gap-3">
-			<ButtonStyled color="brand">
-				<button :disabled="checking" @click="checkForUpdates">
-					<RefreshCwIcon :class="{ 'animate-spin': checking }" />
-					{{ formatMessage(checking ? messages.checking : messages.check) }}
-				</button>
-			</ButtonStyled>
+			<div class="flex flex-wrap gap-2">
+				<ButtonStyled color="brand">
+					<button :disabled="checking" @click="checkForUpdates">
+						<RefreshCwIcon :class="{ 'animate-spin': checking }" />
+						{{ formatMessage(checking ? messages.checking : messages.check) }}
+					</button>
+				</ButtonStyled>
+				<ButtonStyled v-if="isDevEnvironment && previewUpdateAnnouncement" type="outlined">
+					<button type="button" @click="previewUpdateAnnouncement(currentVersion)">
+						<EyeIcon />
+						{{ formatMessage(messages.preview) }}
+					</button>
+				</ButtonStyled>
+			</div>
 			<p v-if="checkResult" class="m-0 text-sm text-secondary" role="status">
 				{{ formatMessage(messages[resultMessages[checkResult]]) }}
 			</p>
@@ -138,5 +156,7 @@ async function checkForUpdates() {
 		<p class="m-0 rounded-xl bg-surface-4 p-4 text-sm leading-tight text-secondary">
 			{{ formatMessage(messages.security) }}
 		</p>
+
+		<UpdateAnnouncementHistory :current-version="currentVersion" />
 	</div>
 </template>

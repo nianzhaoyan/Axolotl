@@ -57,6 +57,7 @@ const tabs = [
 		}),
 		icon: PaintbrushIcon,
 		content: AppearanceSettings,
+		onboardingId: 'settings-tab-appearance',
 	},
 	{
 		name: defineMessage({
@@ -66,6 +67,7 @@ const tabs = [
 		icon: LanguagesIcon,
 		content: LanguageSettings,
 		badge: commonMessages.beta,
+		onboardingId: 'settings-tab-language',
 	},
 	{
 		name: defineMessage({
@@ -75,6 +77,7 @@ const tabs = [
 		icon: GlobeIcon,
 		content: TranslationSettings,
 		badge: commonMessages.beta,
+		onboardingId: 'settings-tab-translation',
 	},
 	{
 		name: defineMessage({
@@ -83,6 +86,7 @@ const tabs = [
 		}),
 		icon: CoffeeIcon,
 		content: JavaSettings,
+		onboardingId: 'settings-tab-java',
 	},
 	{
 		name: defineMessage({
@@ -91,6 +95,7 @@ const tabs = [
 		}),
 		icon: GameIcon,
 		content: DefaultInstanceSettings,
+		onboardingId: 'settings-tab-defaults',
 	},
 	{
 		name: defineMessage({
@@ -99,6 +104,7 @@ const tabs = [
 		}),
 		icon: GaugeIcon,
 		content: ResourceManagementSettings,
+		onboardingId: 'settings-tab-resources',
 	},
 	{
 		name: defineMessage({
@@ -107,6 +113,7 @@ const tabs = [
 		}),
 		icon: RefreshCwIcon,
 		content: UpdateSettings,
+		onboardingId: 'settings-tab-updates',
 	},
 	{
 		name: defineMessage({
@@ -130,7 +137,11 @@ function show() {
 	modal.value?.show()
 }
 
-defineExpose({ show })
+function hide() {
+	modal.value?.hide()
+}
+
+defineExpose({ show, hide })
 
 const { progress, version: downloadingVersion } = injectAppUpdateDownloadProgress()
 

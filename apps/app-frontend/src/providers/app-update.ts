@@ -25,7 +25,7 @@ interface AppUpdateActions {
 	check?: () => Promise<AppUpdateCheckResult>
 	download?: () => Promise<void> | void
 	install?: () => Promise<void> | void
-	changelog?: () => Promise<void> | void
+	changelog?: (version?: string) => Promise<void> | void
 }
 
 const progress = ref(0)
@@ -171,7 +171,9 @@ export async function installAvailableAppUpdate(): Promise<void> {
 	await actions.install?.()
 }
 
-export async function openAppUpdateChangelog(): Promise<void> {
+export async function openAppUpdateChangelog(
+	version = availableUpdate.value?.version,
+): Promise<void> {
 	recordAppUpdateUserAction()
-	await actions.changelog?.()
+	await actions.changelog?.(version)
 }

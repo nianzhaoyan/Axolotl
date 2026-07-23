@@ -49,18 +49,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          release_notes="${RUNNER_TEMP}/axolotl-release-notes.md"
+          node scripts/axolotl/create-release-notes.mjs "${GITHUB_REF_NAME}" "$release_notes"
           existing_release="$(
             gh release list --limit 100 --json tagName \
               --jq ".[] | select(.tagName == \"${GITHUB_REF_NAME}\") | .tagName"
           )"
           if [[ -n "$existing_release" ]]; then
             echo "Release ${GITHUB_REF_NAME} already exists"
+            gh release edit "${GITHUB_REF_NAME}" --notes-file "$release_notes"
             exit 0
           fi
 
           release_args=(
             --draft
-            --generate-notes
+            --notes-file "$release_notes"
             --title "Axolotl Launcher ${GITHUB_REF_NAME}"
           )
           if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
@@ -139,7 +142,7 @@ jobs:
           releaseName: Axolotl Launcher ${{ github.ref_name }}
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, '-') }}
-          generateReleaseNotes: true
+          generateReleaseNotes: false
           includeUpdaterJson: false
           updaterJsonPreferNsis: true
           retryAttempts: 2

@@ -6,20 +6,23 @@
 
 		<!-- Instance flow options -->
 		<template v-if="ctx.flowType === 'instance'">
-			<div class="flex flex-col gap-3">
+			<div data-onboarding-id="creation-methods" class="flex flex-col gap-3">
 				<BigOptionButton
+					data-onboarding-id="creation-method-custom"
 					:icon="BoxesIcon"
 					:title="formatMessage(messages.customSetupTitle)"
 					:description="formatMessage(messages.customSetupDescription)"
 					@click="setSetupType('custom')"
 				/>
 				<BigOptionButton
+					data-onboarding-id="creation-method-modpack"
 					:icon="PackageIcon"
 					:title="formatMessage(messages.modpackBaseTitle)"
 					:description="formatMessage(messages.modpackBaseDescription)"
 					@click="setSetupType('modpack')"
 				/>
 				<BigOptionButton
+					data-onboarding-id="creation-method-import"
 					:icon="BoxImportIcon"
 					:title="formatMessage(messages.importInstanceTitle)"
 					:description="formatMessage(messages.importInstanceDescription)"
@@ -33,20 +36,23 @@
 
 		<!-- World / Server onboarding flow options -->
 		<template v-else>
-			<div class="flex flex-col gap-3">
+			<div data-onboarding-id="creation-methods" class="flex flex-col gap-3">
 				<BigOptionButton
+					data-onboarding-id="creation-method-modpack"
 					:icon="PackageIcon"
 					:title="formatMessage(messages.modpackBaseTitle)"
 					:description="formatMessage(messages.modpackBaseDescription)"
 					@click="setSetupType('modpack')"
 				/>
 				<BigOptionButton
+					data-onboarding-id="creation-method-custom"
 					:icon="BoxesIcon"
 					:title="formatMessage(messages.customSetupTitle)"
 					:description="formatMessage(messages.customSetupDescription)"
 					@click="setSetupType('custom')"
 				/>
 				<BigOptionButton
+					data-onboarding-id="creation-method-vanilla"
 					:icon="BoxIcon"
 					:title="formatMessage(messages.vanillaMinecraftTitle)"
 					:description="formatMessage(messages.vanillaMinecraftDescription)"

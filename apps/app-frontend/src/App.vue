@@ -48,10 +48,12 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
 import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
+import { getAnnouncementByVersion } from '@/announcements/catalog'
 import AccountsCard from '@/components/ui/AccountsCard.vue'
+import UpdateAnnouncementModal from '@/components/ui/announcement/UpdateAnnouncementModal.vue'
 import AppActionBar from '@/components/ui/AppActionBar.vue'
 import AxolotlLogo from '@/components/ui/AxolotlLogo.vue'
 import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
@@ -68,6 +70,7 @@ import InstanceIconPickerModal from '@/components/ui/modal/InstanceIconPickerMod
 import ModpackAlreadyInstalledModal from '@/components/ui/modal/ModpackAlreadyInstalledModal.vue'
 import UpdateToPlayModal from '@/components/ui/modal/UpdateToPlayModal.vue'
 import NavButton from '@/components/ui/NavButton.vue'
+import OnboardingOverlay from '@/components/ui/onboarding/OnboardingOverlay.vue'
 import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
 import SplashScreen from '@/components/ui/SplashScreen.vue'
 import WindowControls from '@/components/ui/WindowControls.vue'
@@ -213,6 +216,10 @@ const {
 const { browserOffline, offline, setNetworkReachable } = useNetworkStatus()
 
 const showOnboarding = ref(false)
+const onboardingMode = ref('main')
+const onboardingSettings = ref(null)
+const onboardingReplay = ref(false)
+const settingsModal = ref(null)
 const nativeDecorations = ref(false)
 
 const os = ref('')
@@ -220,6 +227,9 @@ const isDevEnvironment = ref(false)
 
 const stateInitialized = ref(false)
 const communityAnnouncementModal = ref()
+const updateAnnouncementModal = ref()
+const pendingUpdateAnnouncementVersion = ref(null)
+const updateAnnouncementShowing = ref(false)
 
 const isMaximized = ref(false)
 
@@ -402,7 +412,10 @@ async function setupApp() {
 	const dev = await isDev()
 	isDevEnvironment.value = dev
 	const version = await getVersion()
+	pendingUpdateAnnouncementVersion.value = pending_update_toast_for_version
+	if (!onboarded && route.path !== '/') await router.replace('/')
 	showOnboarding.value = !onboarded
+	onboardingSettings.value = initialSettings
 
 	nativeDecorations.value = native_decorations
 	if (os.value !== 'MacOS') await getCurrentWindow().setDecorations(native_decorations)
@@ -459,13 +472,81 @@ async function setupApp() {
 	} catch (error) {
 		console.warn('Failed to generate skin previews in app setup.', error)
 	}
+}
 
-	if (pending_update_toast_for_version !== null) {
-		const settings = await getSettings()
+function startOnboarding(mode = 'main') {
+	onboardingReplay.value = false
+	onboardingMode.value = mode
+	showOnboarding.value = true
+}
+
+async function replayOnboarding(mode) {
+	onboardingReplay.value = true
+	onboardingMode.value = mode
+	settingsModal.value?.hide()
+	if (mode === 'main') await router.replace('/')
+	showOnboarding.value = true
+}
+
+async function finishOnboarding() {
+	const wasReplay = onboardingReplay.value
+	const settings = onboardingSettings.value ?? (await getSettings())
+	if (!onboardingReplay.value) {
+		if (onboardingMode.value === 'instance') {
+			settings.onboarding_instance_tour_completed = true
+		} else {
+			settings.onboarded = true
+			settings.onboarding_version = 1
+		}
+		await setSettings(settings)
+		onboardingSettings.value = settings
+	}
+	showOnboarding.value = false
+	onboardingReplay.value = false
+	if (!wasReplay) await scheduleStartupDialogs()
+}
+
+async function skipOnboarding() {
+	await finishOnboarding()
+}
+
+function closeOnboardingSettings() {
+	settingsModal.value?.hide()
+}
+
+async function handleUpdateAnnouncementClosed(version) {
+	if (pendingUpdateAnnouncementVersion.value !== version) return
+
+	const settings = await getSettings()
+	if (settings.pending_update_toast_for_version === version) {
 		settings.pending_update_toast_for_version = null
 		await setSettings(settings)
 	}
+	pendingUpdateAnnouncementVersion.value = null
+	updateAnnouncementShowing.value = false
+	await new Promise((resolve) => setTimeout(resolve, 350))
+	await scheduleStartupDialogs()
 }
+
+async function scheduleStartupDialogs() {
+	if (!stateInitialized.value || showOnboarding.value || updateAnnouncementShowing.value) return
+
+	if (pendingUpdateAnnouncementVersion.value && updateAnnouncementModal.value) {
+		updateAnnouncementShowing.value = true
+		settingsModal.value?.hide()
+		await nextTick()
+		updateAnnouncementModal.value.show(pendingUpdateAnnouncementVersion.value)
+		return
+	}
+
+	communityAnnouncementModal.value?.showIfNeeded()
+}
+
+provide('replayOnboarding', replayOnboarding)
+provide('previewUpdateAnnouncement', (version = null) => {
+	const previewVersion = version ?? pendingUpdateAnnouncementVersion.value
+	if (previewVersion) updateAnnouncementModal.value?.show(previewVersion)
+})
 
 const stateFailed = ref(false)
 initialize_state()
@@ -556,7 +637,7 @@ watch(
 				loading.end(routerToken)
 				routerToken = null
 			}
-			communityAnnouncementModal.value?.showIfNeeded()
+			void scheduleStartupDialogs()
 		}
 	},
 	{ flush: 'post' },
@@ -567,6 +648,20 @@ watch(offline, (isOffline) => {
 		void router.push('/library')
 	}
 })
+
+watch(
+	() => route.path,
+	(path) => {
+		if (
+			path.startsWith('/instance/') &&
+			onboardingSettings.value?.onboarded &&
+			!onboardingSettings.value?.onboarding_instance_tour_completed &&
+			!showOnboarding.value
+		) {
+			startOnboarding('instance')
+		}
+	},
+)
 
 const error = useError()
 const errorModal = ref()
@@ -1071,7 +1166,13 @@ setAppUpdateActions({
 	check: manualUpdateCheck,
 	download: downloadAvailableUpdate,
 	install: installUpdate,
-	changelog: () => openUrl(AxolotlBrandConfig.website),
+	changelog: (version) => {
+		if (version && getAnnouncementByVersion(version)) {
+			updateAnnouncementModal.value?.show(version)
+		} else {
+			openUrl(AxolotlBrandConfig.website)
+		}
+	},
 })
 
 async function openModrinthProjectLinkInApp(parsed) {
@@ -1204,6 +1305,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			</NavButton>
 			<NavButton
 				v-tooltip.right="formatMessage(messages.discoverContent)"
+				data-onboarding-id="nav-discover"
 				to="/browse/modpack"
 				:disabled="offline"
 				:is-primary="() => route.path.startsWith('/browse') && !route.query.i"
@@ -1211,11 +1313,16 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			>
 				<CompassIcon />
 			</NavButton>
-			<NavButton v-tooltip.right="formatMessage(messages.skinSelector)" to="/skins">
+			<NavButton
+				v-tooltip.right="formatMessage(messages.skinSelector)"
+				data-onboarding-id="nav-skins"
+				to="/skins"
+			>
 				<ChangeSkinIcon />
 			</NavButton>
 			<NavButton
 				v-tooltip.right="formatMessage(messages.library)"
+				data-onboarding-id="nav-library"
 				to="/library"
 				:is-primary="(r) => r.path === '/library' || r.path === '/library'"
 				:is-subpage="
@@ -1229,6 +1336,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			</NavButton>
 			<NavButton
 				v-tooltip.right="formatMessage(messages.downloads)"
+				data-onboarding-id="nav-downloads"
 				to="/downloads"
 				class="relative"
 			>
@@ -1246,6 +1354,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			</suspense>
 			<NavButton
 				v-tooltip.right="formatMessage(messages.createInstance)"
+				data-onboarding-id="create-instance"
 				:to="() => installationModal?.show()"
 				:disabled="offline"
 			>
@@ -1254,13 +1363,15 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<div class="flex flex-grow"></div>
 			<NavButton
 				v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-				:to="() => $refs.settingsModal.show()"
+				data-onboarding-id="nav-settings"
+				:to="() => settingsModal?.show()"
 			>
 				<SettingsIcon />
 			</NavButton>
 			<OverflowMenu
 				v-if="AxolotlBrandConfig.capabilities.privateModrinthServices && credentials?.user"
 				v-tooltip.right="`Modrinth account`"
+				data-onboarding-id="account-entry"
 				class="w-12 h-12 text-primary rounded-full flex items-center justify-center text-2xl transition-all bg-transparent hover:bg-button-bg hover:text-contrast border-0 cursor-pointer"
 				:options="[
 					{
@@ -1292,6 +1403,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 			<NavButton
 				v-else-if="AxolotlBrandConfig.capabilities.privateModrinthServices"
 				v-tooltip.right="'Sign in to a Modrinth account'"
+				data-onboarding-id="account-entry"
 				:to="() => signIn()"
 			>
 				<LogInIcon class="text-brand" />
@@ -1423,6 +1535,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 		:error-action-label="formatMessage(messages.exportErrorLogs)"
 	/>
 	<CommunityAnnouncementModal ref="communityAnnouncementModal" />
+	<UpdateAnnouncementModal ref="updateAnnouncementModal" @closed="handleUpdateAnnouncementClosed" />
 	<ErrorModal ref="errorModal" />
 	<MinecraftAuthErrorModal ref="minecraftAuthErrorModal" />
 	<ContentInstallModal
@@ -1474,6 +1587,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload)
 	/>
 	<InstallToPlayModal ref="installToPlayModal" />
 	<UpdateToPlayModal ref="updateToPlayModal" />
+	<OnboardingOverlay
+		:visible="showOnboarding"
+		:mode="onboardingMode"
+		@complete="finishOnboarding"
+		@skip="skipOnboarding"
+		@request-close-settings="closeOnboardingSettings"
+	/>
 </template>
 
 <style lang="scss" scoped>

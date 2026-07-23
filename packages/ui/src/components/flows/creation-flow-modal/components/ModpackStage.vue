@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col gap-4">
+	<div data-onboarding-id="creation-modpack-source" class="flex flex-col gap-4">
 		<span class="font-semibold text-contrast">{{
 			formatMessage(messages.knownModpackPrompt)
 		}}</span>

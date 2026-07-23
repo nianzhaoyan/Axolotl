@@ -52,7 +52,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="p-6 flex flex-col gap-3">
+	<div data-onboarding-id="library-content" class="p-6 flex flex-col gap-3">
 		<h1 class="m-0 text-2xl hidden">{{ formatMessage(messages.library) }}</h1>
 		<NavTabs
 			:links="[
@@ -73,7 +73,11 @@ onUnmounted(() => {
 			</div>
 			<h3>{{ formatMessage(messages.noInstances) }}</h3>
 			<ButtonStyled color="brand">
-				<button :disabled="offline" @click="showCreationModal?.()">
+				<button
+					data-onboarding-id="create-instance"
+					:disabled="offline"
+					@click="showCreationModal?.()"
+				>
 					<PlusIcon />
 					{{ formatMessage(messages.createInstance) }}
 				</button>

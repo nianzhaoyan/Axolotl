@@ -86,6 +86,7 @@
 				<ButtonStyled v-if="rightButtonConfig" :color="rightButtonConfig.color">
 					<button
 						v-tooltip="rightButtonConfig.tooltip"
+						:data-onboarding-id="rightButtonConfig.onboardingId"
 						class="!shadow-none"
 						:class="rightButtonConfig.buttonClass"
 						:disabled="rightButtonConfig.disabled || rightButtonConfig.loading"
@@ -133,6 +134,7 @@ export interface StageButtonConfig {
 	tooltip?: string
 	iconClass?: string | null
 	buttonClass?: string | null
+	onboardingId?: string
 	onClick?: () => void
 }
 
