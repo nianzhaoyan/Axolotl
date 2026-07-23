@@ -20,7 +20,15 @@ import { computed, ref, watch } from 'vue'
 import { get, set } from '@/helpers/settings.ts'
 import { getOS } from '@/helpers/utils'
 import { useTheming } from '@/store/state'
-import type { AccentColor, ColorTheme, FeatureFlag } from '@/store/theme.ts'
+import {
+	type AccentColor,
+	type ColorTheme,
+	deriveAccentVariants,
+	type FeatureFlag,
+	hexToHsl,
+	hslToHex,
+	parseCustomAccentColor,
+} from '@/store/theme.ts'
 
 const themeStore = useTheming()
 const { formatMessage } = useVIntl()
@@ -67,6 +75,30 @@ const messages = defineMessages({
 	accentColorPurple: {
 		id: 'app.appearance-settings.accent-color.purple',
 		defaultMessage: 'Purple',
+	},
+	accentColorCustom: {
+		id: 'app.appearance-settings.accent-color.custom',
+		defaultMessage: 'Custom',
+	},
+	accentColorCustomPalette: {
+		id: 'app.appearance-settings.accent-color.custom-palette',
+		defaultMessage: 'Preset palette',
+	},
+	accentColorCustomHue: {
+		id: 'app.appearance-settings.accent-color.custom-hue',
+		defaultMessage: 'Hue',
+	},
+	accentColorCustomHex: {
+		id: 'app.appearance-settings.accent-color.custom-hex',
+		defaultMessage: 'Hex color',
+	},
+	accentColorCustomPreviewLight: {
+		id: 'app.appearance-settings.accent-color.custom-preview-light',
+		defaultMessage: 'Light theme',
+	},
+	accentColorCustomPreviewDark: {
+		id: 'app.appearance-settings.accent-color.custom-preview-dark',
+		defaultMessage: 'Dark theme',
 	},
 	customBackgroundTitle: {
 		id: 'app.appearance-settings.custom-background.title',
@@ -238,6 +270,47 @@ const accentColorOptions: Array<{
 	{ value: 'purple', color: 'var(--color-purple)', label: messages.accentColorPurple },
 ]
 
+const CUSTOM_ACCENT_PALETTE = [
+	'#ef4444',
+	'#f97316',
+	'#f59e0b',
+	'#84cc16',
+	'#22c55e',
+	'#14b8a6',
+	'#06b6d4',
+	'#3b82f6',
+	'#6366f1',
+	'#a855f7',
+	'#ec4899',
+	'#f43f5e',
+]
+
+const isCustomAccent = computed(() => settings.value.accent_color.startsWith('custom:'))
+const customAccentHex = ref(parseCustomAccentColor(settings.value.accent_color) ?? '#db2777')
+const customAccentHexInput = ref(customAccentHex.value)
+const customAccentHue = computed(() => Math.round(hexToHsl(customAccentHex.value).h))
+const customAccentPreview = computed(() => deriveAccentVariants(customAccentHex.value))
+
+function applyCustomAccent(hex: string) {
+	const normalized = hex.toLowerCase()
+	customAccentHex.value = normalized
+	customAccentHexInput.value = normalized
+	const value = `custom:${normalized}` as `custom:#${string}`
+	themeStore.setAccentColor(value)
+	settings.value.accent_color = value
+}
+
+function onCustomHueInput(value: string) {
+	const { s, l } = hexToHsl(customAccentHex.value)
+	applyCustomAccent(hslToHex(Number(value), Math.max(s, 40), l))
+}
+
+function onCustomHexInput(value: string) {
+	customAccentHexInput.value = value
+	const normalized = value.startsWith('#') ? value : `#${value}`
+	if (/^#[0-9a-fA-F]{6}$/.test(normalized)) applyCustomAccent(normalized)
+}
+
 async function chooseCustomBackground() {
 	const selectedPath = await open({
 		multiple: false,
@@ -333,7 +406,7 @@ watch(
 		<p class="m-0 mt-1">{{ formatMessage(messages.accentColorDescription) }}</p>
 
 		<div
-			class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5"
+			class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
 			role="radiogroup"
 			:aria-label="formatMessage(messages.accentColorTitle)"
 		>
@@ -366,6 +439,102 @@ watch(
 					class="ml-auto size-4 shrink-0"
 				/>
 			</button>
+			<button
+				type="button"
+				role="radio"
+				:aria-checked="isCustomAccent"
+				class="flex min-w-0 items-center gap-2 rounded-xl border border-solid px-3 py-2.5 font-semibold transition-all active:scale-[0.97]"
+				:class="
+					isCustomAccent
+						? 'border-brand bg-brand-highlight text-brand'
+						: 'border-divider bg-button-bg text-secondary hover:border-surface-5 hover:text-contrast'
+				"
+				@click="applyCustomAccent(customAccentHex)"
+			>
+				<span
+					class="size-4 shrink-0 rounded-full ring-2 ring-white/20"
+					:style="{
+						background: isCustomAccent
+							? customAccentHex
+							: 'conic-gradient(#ef4444, #f59e0b, #22c55e, #06b6d4, #6366f1, #ec4899, #ef4444)',
+					}"
+				/>
+				<span class="truncate">{{ formatMessage(messages.accentColorCustom) }}</span>
+				<CheckIcon v-if="isCustomAccent" class="ml-auto size-4 shrink-0" />
+			</button>
+		</div>
+
+		<div
+			v-if="isCustomAccent"
+			class="mt-3 rounded-xl border border-solid border-divider bg-button-bg p-4"
+		>
+			<div
+				class="flex flex-wrap gap-2"
+				role="group"
+				:aria-label="formatMessage(messages.accentColorCustomPalette)"
+			>
+				<button
+					v-for="presetColor in CUSTOM_ACCENT_PALETTE"
+					:key="presetColor"
+					type="button"
+					class="size-7 shrink-0 cursor-pointer rounded-full border-none ring-2 transition-transform hover:scale-110 active:scale-95"
+					:class="customAccentHex === presetColor ? 'ring-brand' : 'ring-white/20'"
+					:style="{ backgroundColor: presetColor }"
+					:aria-label="presetColor"
+					@click="applyCustomAccent(presetColor)"
+				/>
+			</div>
+
+			<label class="mt-4 block">
+				<span class="text-sm font-semibold text-contrast">
+					{{ formatMessage(messages.accentColorCustomHue) }}
+				</span>
+				<input
+					type="range"
+					min="0"
+					max="360"
+					step="1"
+					:value="customAccentHue"
+					class="hue-slider mt-2"
+					:aria-label="formatMessage(messages.accentColorCustomHue)"
+					@input="onCustomHueInput(($event.target as HTMLInputElement).value)"
+				/>
+			</label>
+
+			<div class="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+				<label class="flex items-center gap-2">
+					<span class="text-sm font-semibold text-contrast">
+						{{ formatMessage(messages.accentColorCustomHex) }}
+					</span>
+					<input
+						type="text"
+						maxlength="7"
+						spellcheck="false"
+						:value="customAccentHexInput"
+						class="w-28"
+						@input="onCustomHexInput(($event.target as HTMLInputElement).value)"
+						@blur="customAccentHexInput = customAccentHex"
+					/>
+				</label>
+				<div class="flex items-center gap-2">
+					<span
+						class="size-6 shrink-0 rounded-full ring-2 ring-white/20"
+						:style="{ backgroundColor: customAccentPreview.light }"
+					/>
+					<span class="text-sm text-secondary">
+						{{ formatMessage(messages.accentColorCustomPreviewLight) }}
+					</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<span
+						class="size-6 shrink-0 rounded-full ring-2 ring-white/20"
+						:style="{ backgroundColor: customAccentPreview.dark }"
+					/>
+					<span class="text-sm text-secondary">
+						{{ formatMessage(messages.accentColorCustomPreviewDark) }}
+					</span>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -659,3 +828,51 @@ watch(
 		/>
 	</div>
 </template>
+
+<style scoped lang="scss">
+.hue-slider {
+	appearance: none;
+	display: block;
+	width: 100%;
+	height: 0.75rem;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-max);
+	background: linear-gradient(
+		to right,
+		hsl(0, 80%, 55%),
+		hsl(60, 80%, 55%),
+		hsl(120, 80%, 55%),
+		hsl(180, 80%, 55%),
+		hsl(240, 80%, 55%),
+		hsl(300, 80%, 55%),
+		hsl(360, 80%, 55%)
+	);
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--color-focus-ring);
+		outline-offset: 2px;
+	}
+
+	&::-webkit-slider-thumb {
+		appearance: none;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 50%;
+		background: var(--color-brand);
+		border: 0.1875rem solid #ffffff;
+		box-shadow: var(--shadow-button);
+	}
+
+	&::-moz-range-thumb {
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 50%;
+		background: var(--color-brand);
+		border: 0.1875rem solid #ffffff;
+		box-shadow: var(--shadow-button);
+	}
+}
+</style>

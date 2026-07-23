@@ -449,7 +449,7 @@ html {
 	--color-gradient-button-bg: linear-gradient(180deg, #1b1b20 0%, #25262b 100%);
 }
 
-:is(.accent-pink, .accent-orange, .accent-green, .accent-blue, .accent-purple) {
+:is(.accent-pink, .accent-orange, .accent-green, .accent-blue, .accent-purple, .accent-custom) {
 	--color-focus-ring: var(--color-brand);
 	--brand-gradient-bg: linear-gradient(
 		0deg,
@@ -497,6 +497,18 @@ html {
 	--color-brand: var(--color-purple);
 	--color-brand-highlight: var(--color-purple-highlight);
 	--color-brand-shadow: color-mix(in srgb, var(--color-purple) 68%, transparent);
+}
+
+.accent-custom {
+	--color-brand: var(--custom-accent-light, var(--color-pink));
+	--color-brand-highlight: color-mix(in srgb, var(--color-brand) 25%, transparent);
+	--color-brand-shadow: color-mix(in srgb, var(--color-brand) 68%, transparent);
+}
+
+.dark-mode.accent-custom,
+.dark.accent-custom,
+:root[data-theme='dark'].accent-custom {
+	--color-brand: var(--custom-accent-dark, var(--color-pink));
 }
 
 .retro-mode {

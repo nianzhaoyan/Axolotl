@@ -134,6 +134,24 @@
   "app.appearance-settings.accent-color.blue": {
     "message": "Blue"
   },
+  "app.appearance-settings.accent-color.custom": {
+    "message": "Custom"
+  },
+  "app.appearance-settings.accent-color.custom-hex": {
+    "message": "Hex color"
+  },
+  "app.appearance-settings.accent-color.custom-hue": {
+    "message": "Hue"
+  },
+  "app.appearance-settings.accent-color.custom-palette": {
+    "message": "Preset palette"
+  },
+  "app.appearance-settings.accent-color.custom-preview-dark": {
+    "message": "Dark theme"
+  },
+  "app.appearance-settings.accent-color.custom-preview-light": {
+    "message": "Light theme"
+  },
   "app.appearance-settings.accent-color.description": {
     "message": "Choose the color used for buttons, selections, and highlights."
   },

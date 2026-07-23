@@ -140,6 +140,24 @@
   "app.appearance-settings.accent-color.blue": {
     "message": "藍色"
   },
+  "app.appearance-settings.accent-color.custom": {
+    "message": "自訂"
+  },
+  "app.appearance-settings.accent-color.custom-hex": {
+    "message": "十六進位色號"
+  },
+  "app.appearance-settings.accent-color.custom-hue": {
+    "message": "色相"
+  },
+  "app.appearance-settings.accent-color.custom-palette": {
+    "message": "預設調色盤"
+  },
+  "app.appearance-settings.accent-color.custom-preview-dark": {
+    "message": "深色主題"
+  },
+  "app.appearance-settings.accent-color.custom-preview-light": {
+    "message": "淺色主題"
+  },
   "app.appearance-settings.accent-color.description": {
     "message": "選擇用於按鈕、選取狀態與醒目提示的顏色。"
   },

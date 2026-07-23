@@ -552,24 +552,35 @@ fn legacy_download_source(enabled: bool) -> DownloadSourceMode {
 }
 
 /// Accent color used for interactive controls and highlights.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+///
+/// Serialized as a plain string: either a preset name (`pink`, `orange`, ...)
+/// or `custom:#rrggbb` for a user-defined color. Unknown values fall back to
+/// [`AccentColor::Pink`], keeping older builds forward-compatible.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AccentColor {
     Pink,
     Orange,
     Green,
     Blue,
     Purple,
+    Custom(String),
 }
 
 impl AccentColor {
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &str {
         match self {
             AccentColor::Pink => "pink",
             AccentColor::Orange => "orange",
             AccentColor::Green => "green",
             AccentColor::Blue => "blue",
             AccentColor::Purple => "purple",
+            AccentColor::Custom(value) => {
+                if Self::is_valid_custom(value) {
+                    value
+                } else {
+                    "pink"
+                }
+            }
         }
     }
 
@@ -579,8 +590,43 @@ impl AccentColor {
             "green" => AccentColor::Green,
             "blue" => AccentColor::Blue,
             "purple" => AccentColor::Purple,
-            _ => AccentColor::Pink,
+            other => match Self::parse_custom(other) {
+                Some(custom) => custom,
+                None => AccentColor::Pink,
+            },
         }
+    }
+
+    fn is_valid_custom(string: &str) -> bool {
+        string.strip_prefix("custom:#").is_some_and(|hex| {
+            hex.len() == 6 && hex.chars().all(|c| c.is_ascii_hexdigit())
+        })
+    }
+
+    fn parse_custom(string: &str) -> Option<AccentColor> {
+        if Self::is_valid_custom(string) {
+            Some(AccentColor::Custom(string.to_ascii_lowercase()))
+        } else {
+            None
+        }
+    }
+}
+
+impl Serialize for AccentColor {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for AccentColor {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        Ok(AccentColor::from_string(&value))
     }
 }
 
@@ -667,6 +713,66 @@ impl DefaultPage {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn accent_color_parses_preset_values() {
+        assert_eq!(AccentColor::from_string("pink"), AccentColor::Pink);
+        assert_eq!(AccentColor::from_string("orange"), AccentColor::Orange);
+        assert_eq!(AccentColor::from_string("green"), AccentColor::Green);
+        assert_eq!(AccentColor::from_string("blue"), AccentColor::Blue);
+        assert_eq!(AccentColor::from_string("purple"), AccentColor::Purple);
+    }
+
+    #[test]
+    fn accent_color_normalizes_custom_hex_to_lowercase() {
+        assert_eq!(
+            AccentColor::from_string("custom:#DB2777"),
+            AccentColor::Custom("custom:#db2777".to_owned())
+        );
+    }
+
+    #[test]
+    fn accent_color_falls_back_to_pink_on_invalid_values() {
+        for value in [
+            "",
+            "magenta",
+            "custom:",
+            "custom:#db27",
+            "custom:#db2777aa",
+            "custom:#db277g",
+        ] {
+            assert_eq!(AccentColor::from_string(value), AccentColor::Pink);
+        }
+    }
+
+    #[test]
+    fn accent_color_serializes_as_plain_strings() {
+        let custom = AccentColor::Custom("custom:#db2777".to_owned());
+        assert_eq!(
+            serde_json::to_string(&AccentColor::Blue).unwrap(),
+            "\"blue\""
+        );
+        assert_eq!(
+            serde_json::to_string(&custom).unwrap(),
+            "\"custom:#db2777\""
+        );
+    }
+
+    #[test]
+    fn accent_color_serializes_invalid_custom_as_pink() {
+        let invalid = AccentColor::Custom("not-a-color".to_owned());
+        assert_eq!(invalid.as_str(), "pink");
+        assert_eq!(serde_json::to_string(&invalid).unwrap(), "\"pink\"");
+    }
+
+    #[test]
+    fn accent_color_deserializes_from_plain_strings() {
+        let color: AccentColor =
+            serde_json::from_str("\"custom:#1bd96a\"").unwrap();
+        assert_eq!(color, AccentColor::Custom("custom:#1bd96a".to_owned()));
+        let preset: AccentColor = serde_json::from_str("\"purple\"").unwrap();
+        assert_eq!(preset, AccentColor::Purple);
+    }
 
     #[test]
     fn download_source_mode_uses_stable_wire_values() {

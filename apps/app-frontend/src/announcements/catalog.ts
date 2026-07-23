@@ -33,6 +33,24 @@ export const ANNOUNCEMENT_CHANGE_TYPES: readonly AnnouncementChangeType[] = [
 
 export const launcherAnnouncements: readonly LauncherAnnouncement[] = [
 	{
+		id: 'launcher-1.4.1',
+		version: '1.4.1',
+		publishedAt: '2026-07-23',
+		title: {
+			'en-US': 'Axolotl Launcher 1.4.1',
+			'zh-CN': 'Axolotl Launcher 1.4.1',
+		},
+		changes: {
+			added: [
+				{
+					'en-US':
+						'Added custom accent colors with a preset palette, hue slider, hex input, and automatic light and dark theme variants.',
+					'zh-CN': '新增自定义强调色，支持预设色板、色相滑块、十六进制色号及自动生成浅色和深色主题变体。',
+				},
+			],
+		},
+	},
+	{
 		id: 'launcher-1.4.0',
 		version: '1.4.0',
 		publishedAt: '2026-07-23',
